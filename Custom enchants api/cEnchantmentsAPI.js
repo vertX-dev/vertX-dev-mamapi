@@ -3,7 +3,7 @@
  *======================*/
 import { world, system, EquipmentSlot, EntityComponentTypes } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { enchantments, itemTagMapping, structureGroups } from './cEnchantmentsConfig.js';
+import { enchantments, itemTagMapping, structureData, varCfg } from './cEnchantmentsConfig.js';
 
 
 
@@ -12,67 +12,66 @@ import { enchantments, itemTagMapping, structureGroups } from './cEnchantmentsCo
  ======================*/
 // Roman numeral conversion functions
 function intToRoman(num) {
-  // Input validation
-  if (num <= 0 || num > 3999) {
-    throw new Error("Number must be between 1 and 3999");
-  }
+    const valueSymbols = [
+      { value: 1000, symbol: "M" },
+      { value: 900,  symbol: "CM" },
+      { value: 500,  symbol: "D" },
+      { value: 400,  symbol: "CD" },
+      { value: 100,  symbol: "C" },
+      { value: 90,   symbol: "XC" },
+      { value: 50,   symbol: "L" },
+      { value: 40,   symbol: "XL" },
+      { value: 10,   symbol: "X" },
+      { value: 9,    symbol: "IX" },
+      { value: 5,    symbol: "V" },
+      { value: 4,    symbol: "IV" },
+      { value: 1,    symbol: "I" }
+    ];
 
-  const valueSymbols = [
-    { value: 1000, symbol: "M" },
-    { value: 900,  symbol: "CM" },
-    { value: 500,  symbol: "D" },
-    { value: 400,  symbol: "CD" },
-    { value: 100,  symbol: "C" },
-    { value: 90,   symbol: "XC" },
-    { value: 50,   symbol: "L" },
-    { value: 40,   symbol: "XL" },
-    { value: 10,   symbol: "X" },
-    { value: 9,    symbol: "IX" },
-    { value: 5,    symbol: "V" },
-    { value: 4,    symbol: "IV" },
-    { value: 1,    symbol: "I" }
-  ];
-  
-  let roman = "";
-  for (const { value, symbol } of valueSymbols) {
-    while (num >= value) {
-      roman += symbol;
-      num -= value;
+    let roman = "";
+    for (const {
+            value,
+            symbol
+        }
+        of valueSymbols) {
+        while (num >= value) {
+            roman += symbol;
+            num -= value;
+        }
     }
-  }
-  return roman;
+    return roman;
 }
 
 function romanToInt(roman) {
-  const romanMap = {
-    I: 1,
-    V: 5,
-    X: 10,
-    L: 50,
-    C: 100,
-    D: 500,
-    M: 1000
-  };
-  
-  let num = 0;
-  let prevValue = 0;
-  
-  // Process the numeral from right to left
-  for (let i = roman.length - 1; i >= 0; i--) {
-    const currentValue = romanMap[roman[i]];
-    if (currentValue === undefined) {
-      throw new Error("Invalid Roman numeral character encountered: " + roman[i]);
+    const romanMap = {
+        I: 1,
+        V: 5,
+        X: 10,
+        L: 50,
+        C: 100,
+        D: 500,
+        M: 1000
+    };
+
+    let num = 0;
+    let prevValue = 0;
+
+    // Process the numeral from right to left
+    for (let i = roman.length - 1; i >= 0; i--) {
+        const currentValue = romanMap[roman[i]];
+        if (currentValue === undefined) {
+            throw new Error("Invalid Roman numeral character encountered: " + roman[i]);
+        }
+
+        if (currentValue < prevValue) {
+            num -= currentValue;
+        } else {
+            num += currentValue;
+            prevValue = currentValue;
+        }
     }
-    
-    if (currentValue < prevValue) {
-      num -= currentValue;
-    } else {
-      num += currentValue;
-      prevValue = currentValue;
-    }
-  }
-  
-  return num;
+
+    return num;
 }
 
 
@@ -93,10 +92,10 @@ function getItemTags(itemId) {
 // Structure classification system
 function getStructureTags(structureId) {
     // Loop through mapping and see if structureId contains one of the keys.
-    for (const key in structureGroups) {
+    for (const key in structureData) {
         if (structureId.includes(key)) {
             // Always include the "all" tag.
-            return ["all", ...structureGroups[key]];
+            return ["all", ...structureGroups[key].tags];
         }
     }
     player.sendMessage("§c[MINECRAFT] This structure is not recognized as a known structure.");
@@ -125,7 +124,10 @@ function parseEnchantments(loreArray) {
         // If the line does not match the expected pattern, treat it as general lore.
         otherLore.push(line);
     }
-    return { enchants, otherLore };
+    return {
+        enchants,
+        otherLore
+    };
 }
 
 
@@ -138,26 +140,28 @@ function getScoreboardValue(scoreboard, player) {
 
 // convert xp to lvl
 function rdxplvl(num) {
-  let level;
+    let level;
 
-  if (num <= 352) {
-    // Levels 0–16
-    level = Math.sqrt(num + 9) - 3;
-  } else if (num <= 1507) {
-    // Levels 17–31
-    level = (81 / 10) + Math.sqrt((2 / 5) * (num - (7839 / 40)));
-  } else {
-    // Levels 32+
-    level = (325 / 18) + Math.sqrt((2 / 9) * (num - (54215 / 72)));
-  }
+    if (num <= 352) {
+        // Levels 0–16
+        level = Math.sqrt(num + 9) - 3;
+    } else if (num <= 1507) {
+        // Levels 17–31
+        level = (81 / 10) + Math.sqrt((2 / 5) * (num - (7839 / 40)));
+    } else {
+        // Levels 32+
+        level = (325 / 18) + Math.sqrt((2 / 9) * (num - (54215 / 72)));
+    }
 
-  return Math.floor(level); // Minecraft levels are whole numbers
+    return Math.floor(level); // Minecraft levels are whole numbers
 }
 
 
 // Combine the enchantments
 function combineEnchants(itemEnchants, bookEnchants, player) {
-    const combinedEnchants = { ...itemEnchants };
+    const combinedEnchants = {
+        ...itemEnchants
+    };
     // Merge enchantments from book
     for (let enchant in bookEnchants) {
         if (combinedEnchants.hasOwnProperty(enchant)) {
@@ -172,7 +176,7 @@ function combineEnchants(itemEnchants, bookEnchants, player) {
                 // If levels are different, take the highest level
                 combinedEnchants[enchant] = Math.max(combinedEnchants[enchant], bookEnchants[enchant]);
             }
-            
+
         } else {
             combinedEnchants[enchant] = bookEnchants[enchant];
         }
@@ -185,7 +189,7 @@ function combineEnchants(itemEnchants, bookEnchants, player) {
 function validateEnchantmentConflicts(combinedEnchants) {
     // Create a map to track enchantment groups
     const groupCounts = {};
-    
+
     // Check each enchantment
     for (const enchantName in combinedEnchants) {
         // Find the enchantment data
@@ -197,15 +201,15 @@ function validateEnchantmentConflicts(combinedEnchants) {
             }
             // Add enchantment to its group
             groupCounts[enchantData.enchantmentGroup].push(enchantName);
-            
+
             // Check if group has more than one enchantment
             if (groupCounts[enchantData.enchantmentGroup].length > 1) {
-                return false;//conflict between enchantments
-             console.warn(`Incompatible enchantments: ${groupCounts[enchantData.group].join(", ")} cannot be combined because they belong to the same group: ${enchantData.group}`);
+                return false; //conflict between enchantments
+                console.warn(`Incompatible enchantments: ${groupCounts[enchantData.group].join(", ")} cannot be combined because they belong to the same group: ${enchantData.group}`);
             }
         }
     }
-    return true;//all enchantments are valid
+    return true; //all enchantments are valid
 }
 
 //============================================================================================
@@ -229,10 +233,13 @@ function handleEnchant(player, itemId, itemStack) {
 
     // Get current enchantments on the item
     const itemLore = itemStack.getLore ? itemStack.getLore() : [];
-    let { enchants: currentEnchants, otherLore: itemOtherLore } = parseEnchantments(itemLore);
+    let {
+        enchants: currentEnchants,
+        otherLore: itemOtherLore
+    } = parseEnchantments(itemLore);
     const points = player.getTotalXp();
-//------------------UI-----------------------------------------------------------
-    
+    //------------------UI-----------------------------------------------------------
+
     // Create the form
     const form = new ModalFormData()
         .title(`Enchant Item      XP: §a${points}`);
@@ -247,20 +254,20 @@ function handleEnchant(player, itemId, itemStack) {
         if (canApply) {
             availableEnchants.push(enchantData);
             const currentLevel = currentEnchants[enchantData.name] || 0;
-            
+
             // Create slider label with name and cost
-            const costText = enchantData.cost > 0 ? 
-                `§c${enchantData.xpCost}` : 
+            const costText = enchantData.cost > 0 ?
+                `§c${enchantData.xpCost}` :
                 `§a${enchantData.xpCost}`;
             const label = `${enchantData.name} (${costText})`;
-            
+
             // Add slider
             form.slider(
                 label,
-                0,                      // min level (0 = not applied)
-                enchantData.maxLvl,     // max level from enchant data
-                1,                      // step size
-                currentLevel           // current level (if exists)
+                0, // min level (0 = not applied)
+                enchantData.maxLvl, // max level from enchant data
+                1, // step size
+                currentLevel // current level (if exists)
             );
         }
     }
@@ -268,8 +275,8 @@ function handleEnchant(player, itemId, itemStack) {
 
     // Show the form to the player
     form.show(player).then((response) => {
-//-----------------UI RESPONSE----------------------------------------------------
-        
+        //-----------------UI RESPONSE----------------------------------------------------
+
         if (response.canceled) return;
 
         try {
@@ -281,7 +288,7 @@ function handleEnchant(player, itemId, itemStack) {
                 if (level > 0) { // Only process enchants that were selected
                     const enchant = availableEnchants[index];
                     newEnchants[enchant.name] = level;
-                    
+
                     // Calculate cost based on level selected
                     const enchantCost = enchant.xpCost * (level - (currentEnchants[enchant.name] || 0));
                     totalCost += enchantCost;
@@ -297,12 +304,12 @@ function handleEnchant(player, itemId, itemStack) {
             // Create new item with enchantments
             const newItem = itemStack.clone();
             let newLore = [...itemOtherLore];
-            
+
             // Add each enchantment to lore
             for (const [enchantName, level] of Object.entries(newEnchants)) {
                 newLore.push(`${enchantName} ${intToRoman(level)}`);
             }
-            
+
             // Set the new lore
             if (newItem.setLore && validateEnchantmentConflicts(newEnchants)) {
                 newItem.setLore(newLore);
@@ -316,11 +323,11 @@ function handleEnchant(player, itemId, itemStack) {
                 const equipment = player.getComponent("minecraft:equippable");
                 if (equipment) {
                     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
-                    
+
                     // Deduct points
                     player.runCommand(`xp -99999L @s`);
                     player.runCommand(`xp ${points - totalCost} @s`);
-                    
+
                     player.sendMessage(`§aSuccessfully applied enchantments for ${totalCost} xp!`);
                 }
             } catch (error) {
@@ -364,8 +371,13 @@ function handleEnchantWithBook(player, itemId, itemStack) {
         const bookLore = bookStack.getLore ? bookStack.getLore() : [];
 
         // Parse enchantments
-        let { enchants: itemEnchants, otherLore: itemOtherLore } = parseEnchantments(itemLore);
-        let { enchants: bookEnchants } = parseEnchantments(bookLore);
+        let {
+            enchants: itemEnchants,
+            otherLore: itemOtherLore
+        } = parseEnchantments(itemLore);
+        let {
+            enchants: bookEnchants
+        } = parseEnchantments(bookLore);
 
         // Filter book enchants to only include valid ones for this item type
         const validBookEnchants = {};
@@ -383,7 +395,7 @@ function handleEnchantWithBook(player, itemId, itemStack) {
 
         // Combine enchantments using the filtered book enchants
         const combinedEnchants = combineEnchants(itemEnchants, validBookEnchants, player);
-        
+
         if (!validateEnchantmentConflicts(combinedEnchants)) {
             player.sendMessage("§c[MINECRAFT] Unsupported combination of enchantments!");
             return;
@@ -413,11 +425,11 @@ function handleEnchantWithBook(player, itemId, itemStack) {
             if (Object.keys(bookEnchants).length !== Object.keys(validBookEnchants).length) {
                 player.sendMessage("§eNot all enchantments could be applied because they were not compatible with this item.");
             }
-            
+
             player.sendMessage("§aItem enchanted successfully!");
         } catch (equipError) {
             console.log('[ERROR] Equipment update failed:', equipError);
-            
+
             // Try alternative inventory approach
             try {
                 const inventory = player.getComponent("minecraft:inventory");
@@ -488,14 +500,14 @@ world.beforeEvents.playerInteractWithBlock.subscribe((eventData) => {
     if (eventData.block.typeId === "veapi:enchanter") { // custom enchanting table
         // Get the player who interacted with the block
         const player = eventData.player;
-        
+
         // Get the item in the player's main hand
         const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
         const itemId = itemStack?.typeId;
 
         // Optional: Log the interaction for debugging
         console.warn(`Player ${player.name} interacted with enchanter block`);
-        
+
         // Create the main enchanting UI with button icons
         const enchantingMainUI = new ActionFormData()
             .title("Enchanting Menu")
@@ -526,19 +538,19 @@ world.beforeEvents.playerInteractWithBlock.subscribe((eventData) => {
 system.runInterval(() => {
     // Get all players
     const players = world.getAllPlayers();
-    
+
     for (const player of players) {
         // Get player's main hand item
         const equipment = player.getComponent("minecraft:equippable");
         if (!equipment) continue;
-        
+
         const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
         if (!itemStack) continue;
-        
+
         // Get item lore
         const lore = itemStack.getLore();
         if (!lore || lore.length === 0) continue;
-        
+
         // Check each line of lore for the special tag
         for (const line of lore) {
             if (line.startsWith('§klt{')) {
@@ -559,30 +571,19 @@ system.runInterval(() => {
 
 //§klt{Structure}
 function Enchants(player, specialTag, itemStack) {
-    // Debug mode
-    const DEBUG = true;
-    function debug(...args) {
-        if (DEBUG) console.warn('[LootEnchant Debug]:', ...args);
-    }
-
     try {
         // 1. Clone itemStack
         const newItem = itemStack.clone();
-        debug('Item cloned successfully');
 
         // 2. Identify structure
-        const structure = structures[specialTag];
-        if (!structure) {
-            debug('Invalid structure tag:', specialTag);
+        const structureTags = getStructureTags(specialTag);
+        if (!structureTags) {
             return;
         }
-        debug('Structure identified:', structure.id, 'LootLevel:', structure.lootLevel, 'MaxEnchants:', structure.maxEnchants);
 
         // Get item tags for filtering enchantments
-        const itemTags = getWeaponTags(itemStack.typeId);
-        debug('Item tags:', itemTags);
+        const itemTags = getItemTags(itemStack.typeId);
         if (itemTags.length === 0) {
-            debug('No valid weapon tags found');
             return;
         }
 
@@ -591,50 +592,11 @@ function Enchants(player, specialTag, itemStack) {
         let newLore = [];
 
         // Perform rolls based on maxEnchants
-        for (let i = 0; i < structure.maxEnchants; i++) {
-            // 33% chance to apply enchant (increased from 20%)
-            if (Math.random() < 0.33) {
-                debug('Roll', i + 1, 'successful');
-
-                // Filter available enchants based on weapon tags
-                const availableEnchants = structure.aenchants.filter(id => {
-                    // Get enchant data
-                    const enchantData = Object.values(enchants).find(e => e.id === id);
-                    // Check if enchant exists and hasn't been applied yet
-                    if (!enchantData || appliedEnchants.some(e => e.id === id)) {
-                        return false;
-                    }
-                    // Check if any of the item's tags match the enchantment's valid targets
-                    return enchantData.enchantOn.some(tag => itemTags.includes(tag));
-                });
-
-                if (availableEnchants.length === 0) {
-                    debug('No more available compatible enchants');
-                    break;
+        for (let i = 0; i < structureData.maxEnchants; i++) {
+            if (Math.random() < varCfg.enchantRollChance) {
+                for (const [key, enchant] of Object.entries(enchantments)) {
+                    //TODO: add logic to retriwing random id of enchantments based on structure groups comatibility
                 }
-
-                const randomEnchantId = availableEnchants[Math.floor(Math.random() * availableEnchants.length)];
-                
-                // Find corresponding enchant in enchants const
-                const enchantData = Object.values(enchants).find(e => e.id === randomEnchantId);
-                if (!enchantData) {
-                    debug('Enchant not found for ID:', randomEnchantId);
-                    continue;
-                }
-
-                // Generate random level between 1 and structure's lootLevel
-                const level = Math.floor(Math.random() * structure.lootLevel) + 1;
-                
-                // Add to applied enchants
-                appliedEnchants.push({
-                    id: randomEnchantId,
-                    name: enchantData.name,
-                    level: Math.min(level, enchantData.maxLvl) // Ensure we don't exceed max level
-                });
-
-                debug('Applied enchant:', enchantData.name, 'Level:', level);
-            } else {
-                debug('Roll', i + 1, 'failed');
             }
         }
 
@@ -643,27 +605,18 @@ function Enchants(player, specialTag, itemStack) {
             newLore.push(`${enchant.name} ${intToRoman(enchant.level)}`);
         });
 
-        // Process lore through giveLore function
-        newLore = giveLore(itemStack, newLore);
-        debug('Processed lore:', newLore);
-
         // 4. Set new lore
         newItem.setLore(newLore);
-        debug('New lore set:', newLore);
 
         // 5. Give item to player
         try {
             const equipment = player.getComponent("minecraft:equippable");
             if (equipment) {
                 equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
-                debug('Item successfully given to player');
-                
-                // Remove the special tag from lore
-                player.sendMessage("§aItem successfully enchanted!");
             }
         } catch (equipError) {
-            debug('Equipment update failed:', equipError);
-            
+            console.error('Equipment update failed:', equipError);
+
             // Fallback to inventory approach
             try {
                 const inventory = player.getComponent("minecraft:inventory");
@@ -680,8 +633,6 @@ function Enchants(player, specialTag, itemStack) {
         }
 
     } catch (error) {
-        debug('Fatal error:', error);
-        player.sendMessage("§cAn error occurred while enchanting the item!");
         console.error('LootEnchant Error:', error);
     }
 }
@@ -700,6 +651,3 @@ function Enchants(player, specialTag, itemStack) {
 
 
 //================================TRIGGERS============================
-
-
-
