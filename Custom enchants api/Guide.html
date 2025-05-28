@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Enchants Lite API Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .nav ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 30px;
+        }
+
+        .nav li {
+            margin-bottom: 8px;
+            break-inside: avoid;
+        }
+
+        .nav a {
+            color: #555;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            display: block;
+        }
+
+        .nav a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .section {
+            margin-bottom: 40px;
+            scroll-margin-top: 100px;
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: #764ba2;
+        }
+
+        h3 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+            padding-left: 15px;
+            border-left: 4px solid #764ba2;
+        }
+
+        h4 {
+            color: #555;
+            margin: 20px 0 10px 0;
+            font-size: 1.1em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
+        }
+
+        .highlight-box h4 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #e17055;
+            color: #2d3436;
+        }
+
+        .warning-box h4 {
+            color: #e17055;
+            margin-top: 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card h4 {
+            color: white;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .nav ul {
+                columns: 1;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top:hover {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Custom Enchants Lite API Guide</h1>
+            <p style="color: rgba(255,255,255,0.9); font-size: 1.1em; margin-top: 10px;">Complete guide for implementing custom enchantments in your project</p>
+        </div>
+
+        <div class="content">
+            <nav class="nav">
+                <h3>Quick Navigation</h3>
+                <ul>
+                    <li><a href="#required-files">Required Files</a></li>
+                    <li><a href="#basic-setup">Basic Setup</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#configuration">Configuration</a></li>
+                    <li><a href="#loot-integration">Loot Integration</a></li>
+                    <li><a href="#limitations">Limitations</a></li>
+                </ul>
+            </nav>
+
+            <section id="required-files" class="section">
+                <h2>Required Files</h2>
+                <p>To use the lite version of the custom enchants API, you need to include these files:</p>
+                <ol>
+                    <li><strong>cEnchantmentsLiteAPI.js</strong> - The main API file</li>
+                    <li><strong>cEnchantmentsData.js</strong> - Contains enchantment definitions</li>
+                    <li><strong>cEnchantmentsConfig.js</strong> - Contains configuration data for items and structures</li>
+                </ol>
+            </section>
+
+            <section id="basic-setup" class="section">
+                <h2>Basic Setup</h2>
+                
+                <h3>1. Custom Block Setup</h3>
+                <div class="info-box">
+                    <p>The system requires a custom enchanting table block with the ID <code>veapi:enchanter</code>. Players will interact with this block to access the enchanting interface.</p>
+                </div>
+
+                <h3>2. Custom Book Setup</h3>
+                <div class="info-box">
+                    <p>For book enchanting, you'll need a custom book item with the ID <code>veapi:book</code> that will be used to transfer enchantments.</p>
+                </div>
+            </section>
+
+            <section id="features" class="section">
+                <h2>Features</h2>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>1. Direct Enchanting</h4>
+                        <p>Players can directly enchant items using XP with automatic validation and conflict checking.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>2. Book Enchanting</h4>
+                        <p>Transfer enchantments from books to items with compatibility filtering and rule-based combining.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>3. Enchantment Library</h4>
+                        <p>Access comprehensive information about all available enchantments and their properties.</p>
+                    </div>
+                </div>
+
+                <h3>1. Direct Enchanting</h3>
+                <p>Players can directly enchant items using XP:</p>
+                <ul>
+                    <li>Access by clicking the enchanting table and selecting "Enchant"</li>
+                    <li>Shows available enchantments for the held item</li>
+                    <li>Displays XP cost for each enchantment level</li>
+                    <li>Validates enchantment conflicts automatically</li>
+                    <li>Updates item immediately upon successful enchanting</li>
+                </ul>
+
+                <h3>2. Book Enchanting</h3>
+                <p>Transfer enchantments from books to items:</p>
+                <ul>
+                    <li>Hold the target item in main hand</li>
+                    <li>Hold enchanted book in off-hand</li>
+                    <li>Access through enchanting table's "Enchant with Book" option</li>
+                    <li>System automatically filters compatible enchantments</li>
+                    <li>Combines existing and new enchantments according to rules</li>
+                </ul>
+
+                <h3>3. Enchantment Library</h3>
+                <p>Access information about all available enchantments:</p>
+                <ul>
+                    <li>View through the "Library" option</li>
+                    <li>Shows for each enchantment:
+                        <ul>
+                            <li>Maximum level</li>
+                            <li>XP cost per level</li>
+                            <li>Compatible items</li>
+                            <li>Spawn locations</li>
+                            <li>Chest spawn chance</li>
+                            <li>Enchantment group (for conflict checking)</li>
+                            <li>Full description</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section id="configuration" class="section">
+                <h2>Configuration</h2>
+
+                <h3>1. Item Configuration</h3>
+                <p>In <code>cEnchantmentsConfig.js</code>, define item tags for compatibility:</p>
+                <div class="code-block">
+                    <pre>itemTagMapping: {
+    "sword": ["weapon", "melee"],
+    "axe": ["tool", "weapon", "melee"],
+    // etc.
+}</pre>
+                </div>
+
+                <h3>2. Structure Configuration</h3>
+                <p>Define structure types and their enchantment properties:</p>
+                <div class="code-block">
+                    <pre>structureData: {
+    "dungeon": {
+        tags: ["dungeon", "common"],
+        maxEnchantments: 3,
+        maxEnchantmentLvl: 3,
+        chanceToRoll: 0.7
+    }
+    // etc.
+}</pre>
+                </div>
+
+                <h3>3. Enchantment Definition</h3>
+                <p>In <code>cEnchantmentsData.js</code>, define enchantments:</p>
+                <div class="code-block">
+                    <pre>enchantments: {
+    "EnchantmentName": {
+        name: "Display Name",
+        maxLvl: 3,
+        xpCost: 5,
+        enchantOn: ["weapon", "tool"],
+        structureGroup: ["dungeon", "temple"],
+        spawnChanceChest: 0.3,
+        enchantmentGroup: ["damage"],
+        description: "Enchantment description"
+    }
+}</pre>
+                </div>
+            </section>
+
+            <section id="loot-integration" class="section">
+                <h2>Loot Integration</h2>
+                <div class="highlight-box">
+                    <h4>Automatic Loot Table Integration</h4>
+                    <p>The system includes automatic loot table integration with the following features:</p>
+                </div>
+                <ul>
+                    <li>Add the tag <code>§klt{StructureType}</code> to item lore</li>
+                    <li>System will automatically apply appropriate enchantments based on structure type</li>
+                    <li>Respects structure-specific constraints (max level, number of enchantments)</li>
+                    <li>Automatically validates enchantment conflicts</li>
+                </ul>
+            </section>
+
+            <section id="limitations" class="section">
+                <h2>Limitations</h2>
+                <div class="warning-box">
+                    <h4>Important Limitations to Consider</h4>
+                    <ol>
+                        <li>Only supports built-in Minecraft function methods for enchantment effects</li>
+                        <li>Cannot use custom scripts for individual enchantments</li>
+                        <li>Limited to predefined enchantment groups and compatibility rules</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>Note:</strong> This guide covers the basic implementation of the lite version. For the full version (when available), users will need to include:</p>
+                    <ul style="margin-top: 10px;">
+                        <li><strong>cEnchantmentsAPI.js</strong> - Full version of the API</li>
+                        <li><strong>cEnchantmentsTrigger.js</strong> - For custom enchantment scripts</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <button class="scroll-to-top" onclick="scrollToTop()">↑</button>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Show/hide scroll to top button
+        const scrollButton = document.querySelector('.scroll-to-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollButton.classList.add('visible');
+            } else {
+                scrollButton.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Add hover effects to code blocks
+        document.querySelectorAll('.code-block').forEach(block => {
+            block.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            block.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body>
+</html>
