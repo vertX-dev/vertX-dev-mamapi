@@ -42,101 +42,220 @@ export const itemTagMapping = {
 
 // All tags of structures
 export const structureData = {
-    "village": {
+    // ── Village ──
+    "village_blacksmith": {
         tags: ["overworld", "village"],
         maxEnchantmentLvl: 2,
         maxEnchantments: 2,
         chanceToRoll: 0.1
     },
-    "stronghold": {
+    "village_two_room_house": {
+        tags: ["overworld", "village"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.1
+    },
+    "spawn_bonus_chest": {
+        tags: ["overworld", "village"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.1
+    },
+
+    // ── Stronghold ──
+    "stronghold_library": {
         tags: ["overworld", "underground", "stronghold"],
         maxEnchantmentLvl: 3,
         maxEnchantments: 3,
         chanceToRoll: 0.9
     },
-    "mineshaft": {
+    "stronghold_corridor": {
+        tags: ["overworld", "underground", "stronghold"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 3,
+        chanceToRoll: 0.9
+    },
+    "stronghold_crossing": {
+        tags: ["overworld", "underground", "stronghold"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 3,
+        chanceToRoll: 0.9
+    },
+    "monster_room": {
+        tags: ["overworld", "underground", "stronghold"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 3,
+        chanceToRoll: 0.9
+    },
+
+    // ── Mineshaft ──
+    "abandoned_mineshaft": {
         tags: ["overworld", "underground", "mineshaft"],
         maxEnchantmentLvl: 2,
         maxEnchantments: 3,
         chanceToRoll: 0.7
     },
+    "dispenser_trap": {
+        tags: ["overworld", "underground", "mineshaft"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 3,
+        chanceToRoll: 0.7
+    },
+
+    // ── Desert Pyramid ──
     "desert_pyramid": {
         tags: ["overworld", "desert", "pyramid"],
         maxEnchantmentLvl: 2,
         maxEnchantments: 2,
         chanceToRoll: 0.8
     },
-    "jungle_pyramid": {
+
+    // ── Jungle Pyramid ──
+    "jungle_temple": {
         tags: ["overworld", "jungle", "pyramid"],
         maxEnchantmentLvl: 2,
         maxEnchantments: 2,
         chanceToRoll: 0.8
     },
-    "igloo": {
+
+    // ── Igloo ──
+    "igloo_chest": {
         tags: ["overworld", "snow", "igloo"],
         maxEnchantmentLvl: 1,
         maxEnchantments: 1,
         chanceToRoll: 0.05
     },
+
+    // ── Swamp Hut ──
     "swamp_hut": {
         tags: ["overworld", "swamp", "hut"],
         maxEnchantmentLvl: 1,
         maxEnchantments: 1,
         chanceToRoll: 0.9
     },
+
+    // ── Woodland Mansion ──
     "woodland_mansion": {
         tags: ["overworld", "forest", "mansion"],
         maxEnchantmentLvl: 4,
         maxEnchantments: 4,
         chanceToRoll: 0.8
     },
-    "ocean_ruin": {
+
+    // ── Ocean Ruins ──
+    "underwater_ruin_small": {
         tags: ["overworld", "ocean", "ruin"],
         maxEnchantmentLvl: 2,
         maxEnchantments: 2,
         chanceToRoll: 0.9
     },
-    "buried_treasure": {
+    "underwater_ruin_big": {
+        tags: ["overworld", "ocean", "ruin"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.9
+    },
+
+    // ── Shipwrecks ──
+    "shipwreck": {
+        tags: ["overworld", "ocean", "shipwreck"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.9
+    },
+    "shipwrecksupply": {
+        tags: ["overworld", "ocean", "shipwreck"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.9
+    },
+    "shipwrecktreasure": {
+        tags: ["overworld", "ocean", "shipwreck"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.9
+    },
+
+    // ── Buried Treasure ──
+    "buriedtreasure": {
         tags: ["overworld", "beach", "treasure"],
         maxEnchantmentLvl: 3,
         maxEnchantments: 3,
         chanceToRoll: 0.9
     },
+
+    // ── Ruined Portal ──
     "ruined_portal": {
         tags: ["overworld", "end", "nether", "portal"],
         maxEnchantmentLvl: 3,
         maxEnchantments: 3,
         chanceToRoll: 0.3
     },
+
+    // ── Pillager Outpost ──
     "pillager_outpost": {
         tags: ["overworld", "plains", "outpost"],
         maxEnchantmentLvl: 1,
         maxEnchantments: 2,
         chanceToRoll: 0.1
     },
-    "nether_fortress": {
+
+    // ── Nether Fortress ──
+    "nether_bridge": {
         tags: ["nether", "fortress"],
         maxEnchantmentLvl: 3,
         maxEnchantments: 4,
         chanceToRoll: 0.6
     },
-    "bastion_remnant": {
+
+    // ── Bastion Remnant ──
+    "bastion_treasure": {
         tags: ["nether", "bastion"],
         maxEnchantmentLvl: 4,
         maxEnchantments: 4,
         chanceToRoll: 0.7
     },
-    "end_city": {
+    "bastion_bridge": {
+        tags: ["nether", "bastion"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.7
+    },
+    "bastion_hoglin_stable": {
+        tags: ["nether", "bastion"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.7
+    },
+    "bastion_other": {
+        tags: ["nether", "bastion"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.7
+    },
+
+    // ── End City ──
+    "end_city_treasure": {
         tags: ["end", "city"],
         maxEnchantmentLvl: 4,
         maxEnchantments: 4,
         chanceToRoll: 0.9
     },
+
+    // ── Ancient City ──
     "ancient_city": {
         tags: ["overworld", "underground", "deep_dark", "ancient"],
         maxEnchantmentLvl: 4,
         maxEnchantments: 4,
         chanceToRoll: 0.7
+    },
+
+    // ── Simple Dungeon ──
+    "simple_dungeon": {
+        tags: ["overworld", "underground", "dungeon"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.5
     }
 };
 
@@ -155,7 +274,7 @@ export const enchantments = {
         structureGroup: ["overworld"], // list of structure tags where enchantment can spawn (2*)
         enchantmentGroup: ["testGroup"] // enchantments with same group can't be enchanted on same item (e.g. Fire protection, Blast protection, Projectile protection, Protection)
         triggers: { //Only for lite version
-            event: "entityHitEntity", // event to trigger enchantment effect (itemUse, projectileHitBlock, projectileHitEntity, entityDie, entityHurt, playerBreakBlock, entityHitEntity)
+            event: "entityHitEntity", // event to trigger enchantment effect (projectileHitEntity, entityHurt, playerBreakBlock, entityHitEntity, tick20)
             target: "player", // function will be executed from target (mob, player)
             function: "example" // you need to create functions for all enchantment levels, name it as "example_1, example_2, example_3...", script will automatically assign functions to the appropriate levels 
         }
