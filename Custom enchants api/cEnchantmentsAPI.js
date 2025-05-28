@@ -95,7 +95,7 @@ function getStructureTags(structureId) {
     for (const key in structureData) {
         if (structureId.includes(key)) {
             // Always include the "all" tag.
-            return ["all", ...structureGroups[key].tags];
+            return ["all", ...structureData[key].tags];
         }
     }
     player.sendMessage("§c[MINECRAFT] This structure is not recognized as a known structure.");
