@@ -659,121 +659,202 @@ function Enchants(player, specialTag, itemStack) {
 
 //===============================TRIGGERS===================================================
 
-/**
- * Entity melee hits another entity
- */
 world.afterEvents.entityHitEntity.subscribe((event) => {
     const damagingEntity = event.damagingEntity;
     if (damagingEntity.typeId != "minecraft:player") {
-      return;
+        return;
     }
-  
+   
     //get item
     const weaponStack = damagingEntity.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
     const weapon = weaponStack?.typeId;
     const weaponTags = getItemTags(weapon);
     if (weaponTags.includes("armor") || weaponTags.includes("ranged") || weaponTags.includes("book") || weaponTags.includes("elytra")) {
-      return;
+        return;
     }
     if (!weaponTags.includes("weapon")) {
-      return;
+        return;
     }
     
     //get enchants from item
     let allLore = weaponStack.getLore();
     let { enchants: allEnchantments } = parseEnchantments(allLore);
-    // The entity that was hit
     const hitEntity = event.hitEntity;
     
-    
+    // Process each enchantment
+    for (const [enchantName, level] of Object.entries(allEnchantments)) {
+        const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
+        if (enchantData && enchantData.triggers) {
+            // Check if the enchantment has the entityHit trigger
+            const trigger = enchantData.triggers.find(t => t.event === 'entityHit');
+            if (trigger) {
+                // Execute the function with the appropriate target
+                const functionName = `${trigger.function}_${level}`;
+                if (trigger.target === 'player') {
+                    damagingEntity.runCommand(`function ${functionName}`);
+                } else if (trigger.target === 'mob') {
+                    hitEntity.runCommand(`function ${functionName}`);
+                }
+            }
+        }
+    }
 });
 
-/**
- * Player break a block
- */
+world.afterEvents.entityHurt.subscribe((event) => {
+    const hurtEntity = event.hurtEntity;
+    if (hurtEntity.typeId !== "minecraft:player") {
+        return;
+    }
+
+    // Get all armor pieces
+    const equipment = hurtEntity.getComponent("minecraft:equippable");
+    if (!equipment) return;
+
+    const armorSlots = [
+        EquipmentSlot.Head,
+        EquipmentSlot.Chest,
+        EquipmentSlot.Legs,
+        EquipmentSlot.Feet
+    ];
+
+    // Process enchantments on each armor piece
+    for (const slot of armorSlots) {
+        const armorStack = equipment.getEquipment(slot);
+        if (!armorStack) continue;
+
+        const armorTags = getItemTags(armorStack.typeId);
+        if (!armorTags.includes("armor")) continue;
+
+        let { enchants: armorEnchants } = parseEnchantments(armorStack.getLore() || []);
+
+        // Process each enchantment
+        for (const [enchantName, level] of Object.entries(armorEnchants)) {
+            const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
+            if (enchantData && enchantData.triggers) {
+                // Check if the enchantment has the entityHurt trigger
+                const trigger = enchantData.triggers.find(t => t.event === 'entityHurt');
+                if (trigger) {
+                    const functionName = `${trigger.function}_${level}`;
+                    const damageSource = event.damageSource.damagingEntity;
+                    
+                    if (trigger.target === 'player') {
+                        hurtEntity.runCommand(`function ${functionName}`);
+                    } else if (trigger.target === 'mob' && damageSource) {
+                        damageSource.runCommand(`function ${functionName}`);
+                    }
+                }
+            }
+        }
+    }
+});
+
+world.afterEvents.projectileHitEntity.subscribe((event) => {
+    const source = event.source;
+    if (source.typeId !== "minecraft:player") {
+        return;
+    }
+
+    // Get the bow/crossbow
+    const weaponStack = source.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+    if (!weaponStack) return;
+
+    const weaponTags = getItemTags(weaponStack.typeId);
+    if (!weaponTags.includes("ranged")) return;
+
+    let { enchants: rangedEnchants } = parseEnchantments(weaponStack.getLore() || []);
+    const hitInfo = event.getEntityHit();
+    const target = hitInfo.entity;
+
+    // Process each enchantment
+    for (const [enchantName, level] of Object.entries(rangedEnchants)) {
+        const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
+        if (enchantData && enchantData.triggers) {
+            // Check if the enchantment has the projectileHit trigger
+            const trigger = enchantData.triggers.find(t => t.event === 'projectileHit');
+            if (trigger) {
+                const functionName = `${trigger.function}_${level}`;
+                
+                if (trigger.target === 'player') {
+                    source.runCommand(`function ${functionName}`);
+                } else if (trigger.target === 'mob') {
+                    target.runCommand(`function ${functionName}`);
+                }
+            }
+        }
+    }
+});
+
 world.afterEvents.playerBreakBlock.subscribe((event) => {
     // Player
     const player = event.player;
     // Tool
     const toolStack = event.itemStackBeforeBreak;
-    const tool = toolStack?.typeId;
-    // Handle custom break block enchantments
+    if (!toolStack) return;
     
-});
+    const tool = toolStack.typeId;
+    const toolTags = getItemTags(tool);
+    if (!toolTags.includes("tool")) return;
 
-/**
- * Entity takes damage
- */
-world.afterEvents.entityHurt.subscribe((event) => {
-    // The entity that got hurt
-    const hurtEntity = event.hurtEntity;
-    // Handle on-hurt enchantment effects
-    
-   
-});
+    // Get enchantments from the tool
+    let { enchants: toolEnchants } = parseEnchantments(toolStack.getLore() || []);
 
-/**
- * Entity dies
- */
-world.afterEvents.entityDie.subscribe((event) => {
-    // The source of the damage that caused death
-    const damageSource = event.damageSource.damagingEntity?.typeId;
-    if (damageSource != "minecraft:player") {
-        return;
+    // Process each enchantment
+    for (const [enchantName, level] of Object.entries(toolEnchants)) {
+        const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
+        if (enchantData && enchantData.triggers) {
+            // Check if the enchantment has the blockBreak trigger
+            const trigger = enchantData.triggers.find(t => t.event === 'blockBreak');
+            if (trigger && trigger.target === 'source') {
+                const functionName = `${trigger.function}_${level}`;
+                player.runCommand(`function ${functionName}`);
+            }
+        }
     }
-    // Handle on-kill enchantment effects
-    
-    
 });
 
-/**
- * Projectile hits an entity
- */
-world.afterEvents.projectileHitEntity.subscribe((event) => {
-    // The projectile that hit the entity (arrow, snowball, etc.)
-    const projectile = event.projectile;
+system.runInterval(() => {
+    // Get all players
+    const players = world.getAllPlayers();
 
-    // The entity that launched the projectile
-    const source = event.source;
+    for (const player of players) {
+        const equipment = player.getComponent("minecraft:equippable");
+        if (!equipment) continue;
 
-    // Detailed hit information
-    const hitInfo = event.getEntityHit();
+        // Define all slots to check
+        const slots = [
+            EquipmentSlot.Mainhand,
+            EquipmentSlot.Offhand,
+            EquipmentSlot.Head,
+            EquipmentSlot.Chest,
+            EquipmentSlot.Legs,
+            EquipmentSlot.Feet
+        ];
 
-    // The entity that was hit
-    const target = hitInfo.entity;
+        // Check each slot
+        for (const slot of slots) {
+            const itemStack = equipment.getEquipment(slot);
+            if (!itemStack) continue;
 
-    // Handle custom projectile entity-hit enchantments
-});
+            // Get item tags and lore
+            const itemTags = getItemTags(itemStack.typeId);
+            if (itemTags.length === 0) continue;
 
-/**
- * Projectile hits a block
- */
-world.afterEvents.projectileHitBlock.subscribe((event) => {
-    // The projectile that hit the block
-    const projectile = event.projectile;
+            let { enchants: slotEnchants } = parseEnchantments(itemStack.getLore() || []);
 
-    // The vector position where the projectile hit
-    const hitVector = event.hitVector;
-
-    // Handle custom projectile block-impact enchantments
-});
-
-/**
- * Item use
- */
-world.afterEvents.itemUse.subscribe((event) => {
-    // The player who used the item
-    const source = event.source;
-
-    // The item stack that was used
-    const itemStack = event.itemStack;
-
-    // Handle custom item use enchantments
-});
-
-
-
-
-
+            // Process each enchantment
+            for (const [enchantName, level] of Object.entries(slotEnchants)) {
+                const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
+                if (enchantData && enchantData.triggers) {
+                    // Check if the enchantment has the tick20 trigger
+                    const trigger = enchantData.triggers.find(t => t.event === 'tick20');
+                    if (trigger && trigger.target === 'player') {
+                        const functionName = `${trigger.function}_${level}`;
+                        player.runCommand(`function ${functionName}`);
+                    }
+                }
+            }
+        }
+    }
+}, 20); // Run every 20 ticks (1 second)
 
 
