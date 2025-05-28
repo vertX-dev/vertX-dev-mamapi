@@ -275,7 +275,7 @@ export const enchantments = {
         enchantmentGroup: ["testGroup"] // enchantments with same group can't be enchanted on same item (e.g. Fire protection, Blast protection, Projectile protection, Protection)
         triggers: { //Only for lite version
             event: "entityHitEntity", // event to trigger enchantment effect (projectileHitEntity, entityHurt, playerBreakBlock, entityHitEntity, tick20)
-            target: "player", // function will be executed from target (mob, player)
+            target: "player", // function will be executed from target (hit, source)
             function: "example" // you need to create functions for all enchantment levels, name it as "example_1, example_2, example_3...", script will automatically assign functions to the appropriate levels 
         }
     }
@@ -293,7 +293,7 @@ export const enchantments = {
         enchantmentGroup: ["combat"],
         triggers: {
             event: "entityHitEntity",
-            target: "mob",
+            target: "hit",
             function: "test"
         }
     }
