@@ -3,7 +3,7 @@
  *======================*/
 import { world, system, EquipmentSlot, EntityComponentTypes } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { enchantments, itemTagMapping, structureData, varCfg } from './cEnchantmentsConfig.js';
+import { enchantments, itemTagMapping, structureData } from './cEnchantmentsConfig.js';
 
 
 
@@ -229,7 +229,7 @@ function handleEnchant(player, itemId, itemStack) {
 
     // Get item tags to determine valid enchantments
     const itemTags = getItemTags(itemId);
-    if (itemTags.length === 0) return; // getWeaponTags already sends an error message
+    if (itemTags.length === 0) return;
 
     // Get current enchantments on the item
     const itemLore = itemStack.getLore ? itemStack.getLore() : [];
@@ -588,21 +588,37 @@ function Enchants(player, specialTag, itemStack) {
         }
 
         // 3. Process enchantments
-        let appliedEnchants = [];
+        let appliedEnchants = {};
         let newLore = [];
-
+        let availableEnchants = [];
+            
         // Perform rolls based on maxEnchants
         for (let i = 0; i < structureData.maxEnchants; i++) {
-            if (Math.random() < varCfg.enchantRollChance) {
-                for (const [key, enchant] of Object.entries(enchantments)) {
-                    //TODO: add logic to retriwing random id of enchantments based on structure groups comatibility
+            if (Math.random() < structureData.chanceToRoll) {
+                for (const [enchantId, enchantData] of Object.entries(enchantments)) {
+                    // Check if the enchant can be applied to this item type
+                    const canApply = enchantData.structureGroup.some(tag => structureTags.includes(tag));
+                    if (canApply) {
+                        availableEnchants.push(enchantData);
+                    }
+                }
+                const randomEnchantId = availableEnchants[Math.floor(Math.random() * availableEnchants.length)];
+                const maxValidLevel = Math.min(randomEnchantId.maxLvl, structureData.maxEnchantmentLvl);
+                const randomLevel = Math.floor(Math.random() * (maxValidLevel - 1) + 1);
+
+                // Clone test object to avoid mutation
+                const testEnchants = { ...appliedEnchants };
+                testEnchants[randomEnchantId.name] = randomLevel;
+
+                if (validateEnchantmentConflicts(testEnchants)) {
+                    appliedEnchants[randomEnchantId.name] = randomLevel;
                 }
             }
         }
 
         // Create lore with enchants
         appliedEnchants.forEach(enchant => {
-            newLore.push(`${enchant.name} ${intToRoman(enchant.level)}`);
+            newLore.push(`${enchant} ${intToRoman(enchant.level)}`);
         });
 
         // 4. Set new lore
