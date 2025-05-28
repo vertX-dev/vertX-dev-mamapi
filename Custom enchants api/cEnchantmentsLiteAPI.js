@@ -684,15 +684,18 @@ world.afterEvents.entityHitEntity.subscribe((event) => {
     // Process each enchantment
     for (const [enchantName, level] of Object.entries(allEnchantments)) {
         const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
-        if (enchantData && enchantData.triggers) {
+        if (enchantData && Array.isArray(enchantData.triggers)) {
             // Check if the enchantment has the entityHit trigger
-            const trigger = enchantData.triggers.find(t => t.event === 'entityHit');
-            if (trigger) {
+            const matchingTrigger = enchantData.triggers.find(t => 
+                typeof t === 'object' && t.event === 'entityHit'
+            );
+            
+            if (matchingTrigger) {
                 // Execute the function with the appropriate target
-                const functionName = `${trigger.function}_${level}`;
-                if (trigger.target === 'player') {
+                const functionName = `${matchingTrigger.function}_${level}`;
+                if (matchingTrigger.target === 'source') {
                     damagingEntity.runCommand(`function ${functionName}`);
-                } else if (trigger.target === 'mob') {
+                } else if (matchingTrigger.target === 'hit') {
                     hitEntity.runCommand(`function ${functionName}`);
                 }
             }
@@ -706,7 +709,6 @@ world.afterEvents.entityHurt.subscribe((event) => {
         return;
     }
 
-    // Get all armor pieces
     const equipment = hurtEntity.getComponent("minecraft:equippable");
     if (!equipment) return;
 
@@ -717,7 +719,6 @@ world.afterEvents.entityHurt.subscribe((event) => {
         EquipmentSlot.Feet
     ];
 
-    // Process enchantments on each armor piece
     for (const slot of armorSlots) {
         const armorStack = equipment.getEquipment(slot);
         if (!armorStack) continue;
@@ -727,19 +728,20 @@ world.afterEvents.entityHurt.subscribe((event) => {
 
         let { enchants: armorEnchants } = parseEnchantments(armorStack.getLore() || []);
 
-        // Process each enchantment
         for (const [enchantName, level] of Object.entries(armorEnchants)) {
             const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
-            if (enchantData && enchantData.triggers) {
-                // Check if the enchantment has the entityHurt trigger
-                const trigger = enchantData.triggers.find(t => t.event === 'entityHurt');
-                if (trigger) {
-                    const functionName = `${trigger.function}_${level}`;
+            if (enchantData && Array.isArray(enchantData.triggers)) {
+                const matchingTrigger = enchantData.triggers.find(t => 
+                    typeof t === 'object' && t.event === 'entityHurt'
+                );
+                
+                if (matchingTrigger) {
+                    const functionName = `${matchingTrigger.function}_${level}`;
                     const damageSource = event.damageSource.damagingEntity;
                     
-                    if (trigger.target === 'player') {
+                    if (matchingTrigger.target === 'hit') {
                         hurtEntity.runCommand(`function ${functionName}`);
-                    } else if (trigger.target === 'mob' && damageSource) {
+                    } else if (matchingTrigger.target === 'source' && damageSource) {
                         damageSource.runCommand(`function ${functionName}`);
                     }
                 }
@@ -768,26 +770,29 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
     // Process each enchantment
     for (const [enchantName, level] of Object.entries(rangedEnchants)) {
         const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
-        if (enchantData && enchantData.triggers) {
+        if (enchantData && Array.isArray(enchantData.triggers)) {
             // Check if the enchantment has the projectileHit trigger
-            const trigger = enchantData.triggers.find(t => t.event === 'projectileHit');
-            if (trigger) {
-                const functionName = `${trigger.function}_${level}`;
+            const matchingTrigger = enchantData.triggers.find(t => 
+                typeof t === 'object' && t.event === 'projectileHit'
+            );
+            
+            if (matchingTrigger) {
+                const functionName = `${matchingTrigger.function}_${level}`;
                 
-                if (trigger.target === 'player') {
+                if (matchingTrigger.target === 'source') {
                     source.runCommand(`function ${functionName}`);
-                } else if (trigger.target === 'mob') {
+                } else if (matchingTrigger.target === 'hit') {
                     target.runCommand(`function ${functionName}`);
                 }
+                // Optional: You can also run commands on the projectile if needed
+                // event.projectile.runCommand(`function ${functionName}`);
             }
         }
     }
 });
 
 world.afterEvents.playerBreakBlock.subscribe((event) => {
-    // Player
     const player = event.player;
-    // Tool
     const toolStack = event.itemStackBeforeBreak;
     if (!toolStack) return;
     
@@ -795,17 +800,17 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
     const toolTags = getItemTags(tool);
     if (!toolTags.includes("tool")) return;
 
-    // Get enchantments from the tool
     let { enchants: toolEnchants } = parseEnchantments(toolStack.getLore() || []);
 
-    // Process each enchantment
     for (const [enchantName, level] of Object.entries(toolEnchants)) {
         const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
-        if (enchantData && enchantData.triggers) {
-            // Check if the enchantment has the blockBreak trigger
-            const trigger = enchantData.triggers.find(t => t.event === 'blockBreak');
-            if (trigger && trigger.target === 'player') {
-                const functionName = `${trigger.function}_${level}`;
+        if (enchantData && Array.isArray(enchantData.triggers)) {
+            const matchingTrigger = enchantData.triggers.find(t => 
+                typeof t === 'object' && t.event === 'blockBreak'
+            );
+            
+            if (matchingTrigger && matchingTrigger.target === 'source') {
+                const functionName = `${matchingTrigger.function}_${level}`;
                 player.runCommand(`function ${functionName}`);
             }
         }
@@ -813,14 +818,12 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
 });
 
 system.runInterval(() => {
-    // Get all players
     const players = world.getAllPlayers();
 
     for (const player of players) {
         const equipment = player.getComponent("minecraft:equippable");
         if (!equipment) continue;
 
-        // Define all slots to check
         const slots = [
             EquipmentSlot.Mainhand,
             EquipmentSlot.Offhand,
@@ -830,31 +833,30 @@ system.runInterval(() => {
             EquipmentSlot.Feet
         ];
 
-        // Check each slot
         for (const slot of slots) {
             const itemStack = equipment.getEquipment(slot);
-            if (!itemStack) continue;
+            if (!itemStack || itemStack.typeId == "veapi:book") continue;
 
-            // Get item tags and lore
             const itemTags = getItemTags(itemStack.typeId);
             if (itemTags.length === 0) continue;
 
             let { enchants: slotEnchants } = parseEnchantments(itemStack.getLore() || []);
 
-            // Process each enchantment
             for (const [enchantName, level] of Object.entries(slotEnchants)) {
                 const enchantData = Object.values(enchantments).find(e => e.name === enchantName);
-                if (enchantData && enchantData.triggers) {
-                    // Check if the enchantment has the tick20 trigger
-                    const trigger = enchantData.triggers.find(t => t.event === 'tick20');
-                    if (trigger && trigger.target === 'player') {
-                        const functionName = `${trigger.function}_${level}`;
+                if (enchantData && Array.isArray(enchantData.triggers)) {
+                    const matchingTrigger = enchantData.triggers.find(t => 
+                        typeof t === 'object' && t.event === 'tick20'
+                    );
+                    
+                    if (matchingTrigger && matchingTrigger.target === 'source') {
+                        const functionName = `${matchingTrigger.function}_${level}`;
                         player.runCommand(`function ${functionName}`);
                     }
                 }
             }
         }
     }
-}, 20); // Run every 20 ticks (1 second)
+}, 20);
 
 
