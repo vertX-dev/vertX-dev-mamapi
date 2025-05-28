@@ -611,14 +611,14 @@ function Enchants(player, specialTag, itemStack) {
                 testEnchants[randomEnchantId.name] = randomLevel;
 
                 if (validateEnchantmentConflicts(testEnchants)) {
-                    appliedEnchants[randomEnchantId.name] = randomLevel;
+                    appliedEnchants[randomEnchantId] = {level: randomLevel, name: randomEnchantId.name};
                 }
             }
         }
 
         // Create lore with enchants
         appliedEnchants.forEach(enchant => {
-            newLore.push(`${enchant} ${intToRoman(enchant.level)}`);
+            newLore.push(`${enchant.name} ${intToRoman(enchant.level)}`);
         });
 
         // 4. Set new lore
@@ -652,18 +652,3 @@ function Enchants(player, specialTag, itemStack) {
         console.error('LootEnchant Error:', error);
     }
 }
-
-//================================================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-//================================TRIGGERS============================
