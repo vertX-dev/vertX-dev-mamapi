@@ -587,39 +587,46 @@ function Enchants(player, specialTag, itemStack) {
             return;
         }
 
+        // Get structure specific data
+        const structureSpecificData = structureData[specialTag];
+        if (!structureSpecificData) {
+            console.error('No structure data found for:', specialTag);
+            return;
+        }
+
         // 3. Process enchantments
         let appliedEnchants = {};
         let newLore = [];
-        let availableEnchants = [];
             
         // Perform rolls based on maxEnchants
-        for (let i = 0; i < structureData.maxEnchants; i++) {
-            if (Math.random() < structureData.chanceToRoll) {
-                for (const [enchantId, enchantData] of Object.entries(enchantments)) {
-                    // Check if the enchant can be applied to this item type
-                    const canApply = enchantData.structureGroup.some(tag => structureTags.includes(tag));
-                    if (canApply) {
-                        availableEnchants.push(enchantData);
-                    }
-                }
-                const randomEnchantId = availableEnchants[Math.floor(Math.random() * availableEnchants.length)];
-                const maxValidLevel = Math.min(randomEnchantId.maxLvl, structureData.maxEnchantmentLvl);
-                const randomLevel = Math.floor(Math.random() * (maxValidLevel - 1) + 1);
+        for (let i = 0; i < structureSpecificData.maxEnchants; i++) {
+            if (Math.random() < structureSpecificData.chanceToRoll) {
+                // Filter available enchants for this structure and item
+                const availableEnchants = Object.values(enchantments).filter(enchantData => 
+                    enchantData.structureGroup.some(tag => structureTags.includes(tag)) &&
+                    enchantData.enchantOn.some(tag => itemTags.includes(tag))
+                );
+
+                if (availableEnchants.length === 0) continue;
+
+                const randomEnchant = availableEnchants[Math.floor(Math.random() * availableEnchants.length)];
+                const maxValidLevel = Math.min(randomEnchant.maxLvl, structureSpecificData.maxEnchantmentLvl);
+                const randomLevel = Math.floor(Math.random() * maxValidLevel) + 1;
 
                 // Clone test object to avoid mutation
                 const testEnchants = { ...appliedEnchants };
-                testEnchants[randomEnchantId.name] = randomLevel;
+                testEnchants[randomEnchant.name] = randomLevel;
 
                 if (validateEnchantmentConflicts(testEnchants)) {
-                    appliedEnchants[randomEnchantId] = {level: randomLevel, name: randomEnchantId.name};
+                    appliedEnchants[randomEnchant.name] = randomLevel;
                 }
             }
         }
 
         // Create lore with enchants
-        appliedEnchants.forEach(enchant => {
-            newLore.push(`${enchant.name} ${intToRoman(enchant.level)}`);
-        });
+        for (const [enchantName, level] of Object.entries(appliedEnchants)) {
+            newLore.push(`${enchantName} ${intToRoman(level)}`);
+        }
 
         // 4. Set new lore
         newItem.setLore(newLore);
@@ -638,11 +645,11 @@ function Enchants(player, specialTag, itemStack) {
                 const inventory = player.getComponent("minecraft:inventory");
                 if (inventory && inventory.container) {
                     inventory.container.setItem(player.selectedSlot, newItem);
-                    debug('Item given to player (fallback method)');
+                    console.log('Item given to player (fallback method)');
                     player.sendMessage("§aItem successfully enchanted! (alt method)");
                 }
             } catch (invError) {
-                debug('Inventory update failed:', invError);
+                console.error('Inventory update failed:', invError);
                 player.sendMessage("§cFailed to enchant item!");
                 throw invError;
             }
