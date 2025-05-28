@@ -41,14 +41,109 @@ export const itemTagMapping = {
 
 
 // All tags of structures
-export const structureGroups = {
-    "village": ["overworld", "villagr"]
+export const structureData = {
+    "village": {
+        tags: ["overworld", "village"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.1
+    },
+    "stronghold": {
+        tags: ["overworld", "underground", "stronghold"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 3,
+        chanceToRoll: 0.9
+    },
+    "mineshaft": {
+        tags: ["overworld", "underground", "mineshaft"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 3,
+        chanceToRoll: 0.7
+    },
+    "desert_pyramid": {
+        tags: ["overworld", "desert", "pyramid"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.8
+    },
+    "jungle_pyramid": {
+        tags: ["overworld", "jungle", "pyramid"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.8
+    },
+    "igloo": {
+        tags: ["overworld", "snow", "igloo"],
+        maxEnchantmentLvl: 1,
+        maxEnchantments: 1,
+        chanceToRoll: 0.05
+    },
+    "swamp_hut": {
+        tags: ["overworld", "swamp", "hut"],
+        maxEnchantmentLvl: 1,
+        maxEnchantments: 1,
+        chanceToRoll: 0.9
+    },
+    "woodland_mansion": {
+        tags: ["overworld", "forest", "mansion"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.8
+    },
+    "ocean_ruin": {
+        tags: ["overworld", "ocean", "ruin"],
+        maxEnchantmentLvl: 2,
+        maxEnchantments: 2,
+        chanceToRoll: 0.9
+    },
+    "buried_treasure": {
+        tags: ["overworld", "beach", "treasure"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 3,
+        chanceToRoll: 0.9
+    },
+    "ruined_portal": {
+        tags: ["overworld", "end", "nether", "portal"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 3,
+        chanceToRoll: 0.3
+    },
+    "pillager_outpost": {
+        tags: ["overworld", "plains", "outpost"],
+        maxEnchantmentLvl: 1,
+        maxEnchantments: 2,
+        chanceToRoll: 0.1
+    },
+    "nether_fortress": {
+        tags: ["nether", "fortress"],
+        maxEnchantmentLvl: 3,
+        maxEnchantments: 4,
+        chanceToRoll: 0.6
+    },
+    "bastion_remnant": {
+        tags: ["nether", "bastion"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.7
+    },
+    "end_city": {
+        tags: ["end", "city"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.9
+    },
+    "ancient_city": {
+        tags: ["overworld", "underground", "deep_dark", "ancient"],
+        maxEnchantmentLvl: 4,
+        maxEnchantments: 4,
+        chanceToRoll: 0.7
+    }
 };
 
 
-// All listed enchantments
-//1* - function for removing just xp doesn't exist im minecraft, so we need convert xp to lvl and then remove levels. If player has high level it can remove more xp
-//2* - for adding items with enchantments to chest in structures you can use https://vertx-dev.github.io/loot-table-generator.html
+/**All listed enchantments
+1* - function for removing just xp doesn't exist im minecraft, so we need convert xp to lvl and then remove levels. If player has high level it can remove more xp
+2* - for adding items with enchantments to chest in structures you can use https://vertx-dev.github.io/loot-table-generator.html
 export const enchantments = {
     exampleEnchant: {
         id: -1, // 1 - 2,147,483,647 
@@ -58,8 +153,30 @@ export const enchantments = {
         xpCost: 150, // cost of enchanting 1 level of enchant, player need to have over 1 level of xp (2*)
         enchantOn: ["weapon"], // list of item tags
         structureGroup: ["overworld"], // list of structure tags where enchantment can spawn (2*)
-        spawnChanceChest: 0.3, // 0 - 1 chance of generating this enchantment on item in chest
         enchantmentGroup: ["testGroup"] // enchantments with same group can't be enchanted on same item (e.g. Fire protection, Blast protection, Projectile protection, Protection)
+        triggers: { //Only for lite version
+            event: "entityHitEntity", // event to trigger enchantment effect (itemUse, projectileHitBlock, projectileHitEntity, entityDie, entityHurt, playerBreakBlock, entityHitEntity)
+            target: "player", // function will be executed from target (mob, player)
+            function: "example" // you need to create functions for all enchantment levels, name it as "example_1, example_2, example_3...", script will automatically assign functions to the appropriate levels 
+        }
+    }
+};*/
+
+export const enchantments = {
+    testEnchant: {
+        id: 1,
+        name: "§7Shiny",
+        maxLvl: 5,
+        description: "test description",
+        xpCost: 100,
+        enchantOn: ["weapon"],
+        structureGroup: ["overworld"],
+        enchantmentGroup: ["combat"],
+        triggers: {
+            event: "entityHitEntity",
+            target: "mob",
+            function: "test"
+        }
     }
 };
 
