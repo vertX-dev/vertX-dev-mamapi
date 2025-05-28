@@ -804,7 +804,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
         if (enchantData && enchantData.triggers) {
             // Check if the enchantment has the blockBreak trigger
             const trigger = enchantData.triggers.find(t => t.event === 'blockBreak');
-            if (trigger && trigger.target === 'source') {
+            if (trigger && trigger.target === 'player') {
                 const functionName = `${trigger.function}_${level}`;
                 player.runCommand(`function ${functionName}`);
             }
