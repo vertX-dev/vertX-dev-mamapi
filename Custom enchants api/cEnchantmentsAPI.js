@@ -653,7 +653,6 @@ function Enchants(player, specialTag, itemStack) {
         }
 
     } catch (error) {
-        // Keep error message for player but remove console warnings
         player.sendMessage("§cAn error occurred while enchanting!");
     }
 }
