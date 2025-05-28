@@ -3,7 +3,8 @@
  *======================*/
 import { world, system, EquipmentSlot, EntityComponentTypes } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
-import { enchantments, itemTagMapping, structureData } from './cEnchantmentsConfig.js';
+import { itemTagMapping, structureData } from './cEnchantmentsConfig.js';
+import { enchantments } from './cEnchantmentsData.js'
 
 
 
