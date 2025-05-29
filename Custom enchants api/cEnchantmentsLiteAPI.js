@@ -660,7 +660,11 @@ function Enchants(player, specialTag, itemStack) {
 
 //===============================TRIGGERS===================================================
 
-function hasLore(stack) { if (!stack) return false; const lore = stack.getLore(); return Array.isArray(lore) && lore.length > 0; }
+function hasLore(stack) { 
+    if (!stack) return false; 
+    const lore = stack.getLore(); 
+    return Array.isArray(lore) && lore.length > 0; 
+}
 
 world.afterEvents.entityHitEntity.subscribe((event) => {
     const damagingEntity = event.damagingEntity;
@@ -670,9 +674,7 @@ world.afterEvents.entityHitEntity.subscribe((event) => {
     if (!hasLore(weaponStack)) return;
 
     const lore = weaponStack.getLore();
-    let {
-        enchants: allEnchantments
-    } = parseEnchantments(lore);
+    let { enchants: allEnchantments } = parseEnchantments(lore);
 
     const weaponTags = getItemTags(weaponStack.typeId);
     if (["armor", "ranged", "book", "elytra"].some(tag => weaponTags.includes(tag))) return;
@@ -688,13 +690,11 @@ world.afterEvents.entityHitEntity.subscribe((event) => {
             else if (fn.target === 'hit') hitEntity.runCommand(`function ${functionName}`);
         }
     }
-
 });
 
 world.afterEvents.entityHurt.subscribe((event) => {
     const hurtEntity = event.hurtEntity;
-    if (hurtEntity.typeId !== "minecraft:player") return;
-
+    // Removed the incorrect condition - we want to process for all entities
     const equipment = hurtEntity.getComponent("minecraft:equippable");
     if (!equipment) return;
 
@@ -704,9 +704,7 @@ world.afterEvents.entityHurt.subscribe((event) => {
         if (!hasLore(armorStack)) continue;
 
         const lore = armorStack.getLore();
-        let {
-            enchants: armorEnchants
-        } = parseEnchantments(lore);
+        let { enchants: armorEnchants } = parseEnchantments(lore);
         const armorTags = getItemTags(armorStack.typeId);
         if (!armorTags.includes("armor")) continue;
 
@@ -721,7 +719,6 @@ world.afterEvents.entityHurt.subscribe((event) => {
             }
         }
     }
-
 });
 
 world.afterEvents.projectileHitEntity.subscribe((event) => {
@@ -732,9 +729,7 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
     if (!hasLore(weaponStack)) return;
 
     const lore = weaponStack.getLore();
-    let {
-        enchants: rangedEnchants
-    } = parseEnchantments(lore);
+    let { enchants: rangedEnchants } = parseEnchantments(lore);
 
     const tags = getItemTags(weaponStack.typeId);
     if (!tags.includes("ranged")) return;
@@ -751,7 +746,6 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
             else if (fn.target === 'hit') target.runCommand(`function ${functionName}`);
         }
     }
-
 });
 
 world.afterEvents.playerBreakBlock.subscribe((event) => {
@@ -762,9 +756,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
     if (!hasLore(toolStack)) return;
 
     const lore = toolStack.getLore();
-    let {
-        enchants: toolEnchants
-    } = parseEnchantments(lore);
+    let { enchants: toolEnchants } = parseEnchantments(lore);
     const tags = getItemTags(toolStack.typeId);
     if (!tags.includes("tool")) return;
 
@@ -776,7 +768,6 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
             player.runCommand(`function ${functionName}`);
         }
     }
-
 });
 
 system.runInterval(() => {
@@ -798,9 +789,7 @@ system.runInterval(() => {
             if (!hasLore(itemStack)) continue;
 
             const lore = itemStack.getLore();
-            let {
-                enchants: slotEnchants
-            } = parseEnchantments(lore);
+            let { enchants: slotEnchants } = parseEnchantments(lore);
             const tags = getItemTags(itemStack.typeId);
             if (tags.length === 0) continue;
 
@@ -813,5 +802,4 @@ system.runInterval(() => {
             }
         }
     }
-
 }, 20);
