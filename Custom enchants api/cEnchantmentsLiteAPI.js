@@ -660,6 +660,8 @@ function Enchants(player, specialTag, itemStack) {
 
 //===============================TRIGGERS===================================================
 
+function hasLore(stack) { if (!stack) return false; const lore = stack.getLore(); return Array.isArray(lore) && lore.length > 0; }
+
 world.afterEvents.entityHitEntity.subscribe((event) => {
     const damagingEntity = event.damagingEntity;
     if (damagingEntity.typeId !== "minecraft:player") return;
@@ -679,7 +681,7 @@ world.afterEvents.entityHitEntity.subscribe((event) => {
     const hitEntity = event.hitEntity;
     for (const [enchantName, level] of Object.entries(allEnchantments)) {
         const data = Object.values(enchantments).find(e => e.name === enchantName);
-        if (data?.triggers?.event === 'entityHit') {
+        if (data?.triggers?.event === 'entityHitEntity') {
             const fn = data.triggers;
             const functionName = `${fn.function}_${level}`;
             if (fn.target === 'source') damagingEntity.runCommand(`function ${functionName}`);
@@ -742,7 +744,7 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
 
     for (const [enchantName, level] of Object.entries(rangedEnchants)) {
         const data = Object.values(enchantments).find(e => e.name === enchantName);
-        if (data?.triggers?.event === 'projectileHit') {
+        if (data?.triggers?.event === 'projectileHitEntity') {
             const fn = data.triggers;
             const functionName = `${fn.function}_${level}`;
             if (fn.target === 'source') source.runCommand(`function ${functionName}`);
@@ -768,7 +770,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
 
     for (const [enchantName, level] of Object.entries(toolEnchants)) {
         const data = Object.values(enchantments).find(e => e.name === enchantName);
-        if (data?.triggers?.event === 'blockBreak' && data.triggers.target === 'source') {
+        if (data?.triggers?.event === 'playerBreakBlock' && data.triggers.target === 'source') {
             const fn = data.triggers;
             const functionName = `${fn.function}_${level}`;
             player.runCommand(`function ${functionName}`);
