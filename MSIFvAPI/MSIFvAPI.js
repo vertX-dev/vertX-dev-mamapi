@@ -169,7 +169,7 @@ world.afterEvents.itemStopUse.subscribe((ev) => {
             if (setscoreb(player, scoreboardObj, newIndex)) {
                 const name = skillNames?.[newIndex] ?? `Skill ${newIndex}`;
                 const icon = fontIcons?.[newIndex] ?? "";
-                player.sendMessage(`Changed to ${name}${icon ? " " + icon : ""}`);
+                player.runCommand(`tell @s Changed to ${name}${icon ? " " + icon : ""}`);
             }
         } else {
             // This was a quick use - execute function
@@ -181,7 +181,7 @@ world.afterEvents.itemStopUse.subscribe((ev) => {
                     player.runCommand(`function ${functionName}`);
                 } catch (error) {
                     console.warn(`Error running function ${functionName}:`, error);
-                    player.sendMessage("§cError: Function not found or failed to execute");
+                    player.runCommand("tell @s §cError: Function not found or failed to execute");
                 }
             }
         }
