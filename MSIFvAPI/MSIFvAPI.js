@@ -103,11 +103,11 @@ function parseMSIFTags(tags) {
                     case "cooldown":
                         cooldownGroupG = parts[currentIndex + 1];
                         if (parts[currentIndex + 2] != "dName") {
-                            cooldownG = parts[currentIndex + 2];
+                            cooldownG = Number(parts[currentIndex + 2]);
                             cooldownGroupNameG = cooldownGroupG;
                             currentIndex = currentIndex + 3;
                         } else {
-                            cooldownG = parts[currentIndex + 4];
+                            cooldownG = Number(parts[currentIndex + 4]);
                             cooldownGroupNameG = parts[currentIndex + 3].replace("_p", "§").replace("_", " ");
                             currentIndex = currentIndex + 5;
                         }
@@ -138,11 +138,11 @@ function taddsb(objectiveName, player) {
     }
 }
 
-function taddsbc(value, objectiveNameA, player) {
+function taddsbc(value, objectiveNameA, player, groupName) {
     const objectiveName = "cd" + objectiveNameA;
     try {
         if (!world.scoreboard.getObjective(objectiveName)) {
-            world.scoreboard.addObjective(objectiveName, objectiveName);
+            world.scoreboard.addObjective(objectiveName, groupName);
             player.runCommand(`scoreboard players add @s ${objectiveName} 0`);
         }
     } catch (error) {
@@ -218,7 +218,7 @@ function useSkill(player) {
     const skill = skills[currentIndex];
     
     if (!skill || !skill.functionName) return;
-    const CDTEST = taddsbc(skill.cooldown, skill.cooldownGroup, player);
+    const CDTEST = taddsbc(skill.cooldown, skill.cooldownGroup, player, skill.cooldownGroupName);
     if (CDTEST.state) {
         try {
             player.runCommand(`function ${skill.functionName}`);
