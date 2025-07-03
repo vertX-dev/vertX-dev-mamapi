@@ -80,6 +80,7 @@ function parseMSIFTags(tags) {
             let skillNameG = "Skill";
             let cooldownG = 0;
             let cooldownGroupG = "none";
+            let cooldownGroupNameG = "";
             let iconG = "";
             
             const plength = parts.length;
@@ -107,7 +108,7 @@ function parseMSIFTags(tags) {
                             currentIndex = currentIndex + 3;
                         } else {
                             cooldownG = parts[currentIndex + 4];
-                            cooldownGroupNameG = parts[currentIndex + 3].replacr("_p", "§").replace("_", " ");
+                            cooldownGroupNameG = parts[currentIndex + 3].replace("_p", "§").replace("_", " ");
                             currentIndex = currentIndex + 5;
                         }
                         break;
@@ -209,14 +210,15 @@ function useSkill(player) {
     if (skills.length === 0) return;
 
     const scoreboardObj = parseItemIdToScoreboardObj(itemId);
-    const CDTEST = taddsbc(skills.cooldown, skills.cooldownGroup, player);
+    
+    taddsb(scoreboardObj, player);
+    
+    const currentIndex = getScoreboardValue(scoreboardObj, player);
+    const skill = skills[currentIndex];
+    
+    if (!skill || !skill.functionName) return;
+    const CDTEST = taddsbc(skill.cooldown, skill.cooldownGroup, player);
     if (CDTEST.state) {
-        taddsb(scoreboardObj, player);
-        const currentIndex = getScoreboardValue(scoreboardObj, player);
-        const skill = skills[currentIndex];
-    
-        if (!skill || !skill.functionName) return;
-    
         try {
             player.runCommand(`function ${skill.functionName}`);
         } catch (error) {
