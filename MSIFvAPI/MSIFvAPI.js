@@ -227,7 +227,7 @@ function useSkill(player) {
             player.runCommand("tell @s §cError: Function failed or missing.");
         }
     } else {
-        let timeLeft = CDTEST.value * 0.1;
+        let timeLeft = (CDTEST.value * 0.1).toFixed(1);
         player.runCommand(`title @s actionbar §6[${skill.cooldownGroupName}] will be ready in ${timeLeft}s`);
     }
 }
