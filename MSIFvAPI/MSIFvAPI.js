@@ -238,4 +238,4 @@ world.afterEvents.itemUse.subscribe((ev) => {
 
 system.runInterval(() => {
     updateCooldown();
-}, 10); //redstone ticks
+}, 2); //redstone ticks
