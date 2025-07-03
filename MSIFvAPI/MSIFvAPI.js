@@ -1,35 +1,64 @@
 import { world, system, EquipmentSlot, EntityComponentTypes } from "@minecraft/server";
+
 import { ActionFormData, FormCancelationReason } from "@minecraft/server-ui";
 
+
+
 export async function forceShow(player, form, timeout = Infinity) {
+
     const startTick = system.currentTick;
+
     while ((system.currentTick - startTick) < timeout) {
+
         const response = await form.show(player);
+
         if (response.cancelationReason !== FormCancelationReason.UserBusy) return response;
+
     };
+
     throw new Error(`Timed out after ${timeout} ticks`);
+
 }
 
+
+
 async function mostrarMenu(player) {
+
     const menu = new ActionFormData()
+
         .title('custom_buttons')
         .button('', 'textures/ui/refresh_hover')
     const response = await forceShow(player, menu, 200);
+
     if (response.selection >= 0) {
+
         switch (response.selection) {
+
             case 0:
+
                 changeSkill(player);
+
                 break;
         }
+
         mostrarMenu(player);
+
     }
+
 }
 
+
+
 world.afterEvents.playerSpawn.subscribe(ev => {
+
     const player = ev.player;
+
     if (ev.initialSpawn) {
+
         mostrarMenu(player);
+
     }
+
 });
 
 //Functions
@@ -110,6 +139,18 @@ function parseMSIFTags(tags) {
                             cooldownG = Number(parts[currentIndex + 4]);
                             cooldownGroupNameG = parts[currentIndex + 3].replace("_p", "§").replace("_", " ");
                             currentIndex = currentIndex + 5;
+                        }
+                        break;
+                    default:
+                        if (currentIndex == 0) {
+                            return {
+                                functionName: parts[0],
+                                skillName: parts[1],
+                                cooldown: 0,
+                                cooldownGroup: "none",
+                                cooldownGroupName: "none",
+                                icon: ""
+                            };
                         }
                         break;
                 }
