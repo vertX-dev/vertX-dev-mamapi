@@ -167,10 +167,11 @@ function updateCooldown() {
     const COBJS = world.scoreboard.getObjectives().filter(cobj => cobj.id.startsWith("cd"));
     for (const obj of COBJS) {
         const players = world.getPlayers();
+        const SBOBJ = world.scoreboard.getObjective(obj.id);
         for (const player of players) {
-            const cd = getScoreboardValue(obj.id, player);
+            const cd = SBOBJ.getScore(player);
             if (cd >= 0) {
-                world.scoreboard.getObjective(obj.id).addScore(player, -1);
+                SBOBJ.addScore(player, -1);
             } 
             if (cd == 0) {
                 player.runCommand(`title @s actionbar §b➤ §aSkill group §l${obj.displayName}§r§a is off cooldown and ready!`)
