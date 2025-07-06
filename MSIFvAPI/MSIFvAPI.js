@@ -1,65 +1,61 @@
 import { world, system, EquipmentSlot, EntityComponentTypes } from "@minecraft/server";
-
-import { ActionFormData, FormCancelationReason } from "@minecraft/server-ui";
-
-
+import { ActionFormData, FormCancelationReason, uiManager } from "@minecraft/server-ui";
 
 export async function forceShow(player, form, timeout = Infinity) {
-
     const startTick = system.currentTick;
-
     while ((system.currentTick - startTick) < timeout) {
-
         const response = await form.show(player);
-
         if (response.cancelationReason !== FormCancelationReason.UserBusy) return response;
-
     };
-
     throw new Error(`Timed out after ${timeout} ticks`);
-
 }
 
-
-
-async function mostrarMenu(player) {
-
+async function msifMenu(player) {
     const menu = new ActionFormData()
-
-        .title('custom_buttons')
+        .title('msif_buttons')
         .button('', 'textures/ui/refresh_hover')
+        .button('', 'textures/items/iron_helmet')
+        .button('', 'textures/items/iron_chestplate')
+        .button('', 'textures/items/iron_leggings')
+        .button('', 'textures/items/iron_boots')
+        .button('')
+        .button('', 'textures/ui/sidebar_icons/dr_body');
     const response = await forceShow(player, menu, 200);
-
     if (response.selection >= 0) {
-
         switch (response.selection) {
-
             case 0:
-
                 changeSkill(player);
-
+                break;
+            case 1:
+                useSkill(player, EquipmentSlot.Head);
+                break;
+            case 2:
+                useSkill(player, EquipmentSlot.Chest);
+                break;
+            case 3:
+                useSkill(player, EquipmentSlot.Legs);
+                break;
+            case 4:
+                useSkill(player, EquipmentSlot.Feet);
+                break;
+            case 5:
+                useSkill(player, EquipmentSlot.Offhand);
+                break;
+            case 6:
+                useSkill(player, EquipmentSlot.Mainhand);
                 break;
         }
-
-        mostrarMenu(player);
-
+        msifMenu(player);
     }
-
 }
 
-
-
-world.afterEvents.playerSpawn.subscribe(ev => {
-
-    const player = ev.player;
-
-    if (ev.initialSpawn) {
-
-        mostrarMenu(player);
-
+system.runTimeout(() => {
+    const players = world.getPlayers();
+    for (const player of players) {
+        uiManager.closeAllForms();
+        await msifMenu(player);
     }
-
-});
+}, 70)
 
 //Functions
 function parseItemIdToScoreboardObj(itemId) {
@@ -105,12 +101,15 @@ function parseMSIFTags(tags) {
         .map(tag => {
             const parts = tag.slice(5).split(":");
             
-            let functionNameG = " ";
+            let functionNameG = "";
             let skillNameG = "Skill";
             let cooldownG = 0;
             let cooldownGroupG = "none";
-            let cooldownGroupNameG = "";
+            let cooldownGroupNameG = "none";
             let iconG = "";
+            let aSetNameG = [];
+            let aSetFunctionG = [];
+            let aSetMainG = "none";
             
             const plength = parts.length;
             let currentIndex = 0;
@@ -141,18 +140,26 @@ function parseMSIFTags(tags) {
                             currentIndex = currentIndex + 5;
                         }
                         break;
-                    default:
-                        if (currentIndex == 0) {
-                            return {
-                                functionName: parts[0],
-                                skillName: parts[1],
-                                cooldown: 0,
-                                cooldownGroup: "none",
-                                cooldownGroupName: "none",
-                                icon: ""
-                            };
+                    case "armorSet":
+                        let CIX = currentIndex + 1;
+                        let END = false;
+                        while (!END) {
+                            switch (parts[CIX]) {
+                                case "END":
+                                    END = true;
+                                    currentIndex = CIX + 1;
+                                    break;
+                                case "parts":
+                                    aSetFunctionG[parts[CIX + 1]] = parts[CIX + 2];
+                                    aSetNameG[parts[CIX + 1]] = parts[CIX + 3];
+                                    CIX = CIX + 4;
+                                    break;
+                                case "setMain":
+                                    aSetMainG = parts[CIX + 1];
+                                    CIX = CIX + 2;
+                                    break;
+                            }
                         }
-                        break;
                 }
             }
             
@@ -163,7 +170,10 @@ function parseMSIFTags(tags) {
                 cooldown: cooldownG,
                 cooldownGroup: cooldownGroupG,
                 cooldownGroupName: cooldownGroupNameG,
-                icon: iconG
+                icon: iconG,
+                aSetFunctions: aSetFunctionG,
+                aSetNames: aSetNameG,
+                aSetMain: aSetMainG
             };
         });
 }
@@ -242,8 +252,8 @@ function changeSkill(player) {
     }
 }
 
-function useSkill(player) {
-    const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+function useSkill(player, eSlot) {
+    const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(eSlot);
     const itemId = itemStack?.typeId;
     if (!itemStack || !itemId) return;
 
@@ -274,7 +284,7 @@ function useSkill(player) {
 }
 
 world.afterEvents.itemUse.subscribe((ev) => {
-    useSkill(ev.source);
+    useSkill(ev.source, EquipmentSlot.Mainhand);
 });
 
 system.runInterval(() => {
