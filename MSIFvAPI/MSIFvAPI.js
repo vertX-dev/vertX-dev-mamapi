@@ -19,7 +19,6 @@ async function msifMenu(player) {
         .button('', 'textures/items/iron_leggings')
         .button('', 'textures/items/iron_boots')
         .button('')
-        .button('', 'textures/ui/sidebar_icons/dr_body');
     const response = await forceShow(player, menu, 200);
     if (response.selection >= 0) {
         switch (response.selection) {
@@ -41,21 +40,24 @@ async function msifMenu(player) {
             case 5:
                 useSkill(player, EquipmentSlot.Offhand);
                 break;
-            case 6:
-                useSkill(player, EquipmentSlot.Mainhand);
-                break;
         }
         msifMenu(player);
     }
 }
 
+world.afterEvents.playerSpawn.subscribe((ev) => {
+    const player = ev.player;
+    uiManager.closeAllForms(player);
+    msifMenu(player);
+});
+
 system.runTimeout(() => {
     const players = world.getPlayers();
     for (const player of players) {
-        uiManager.closeAllForms();
-        await msifMenu(player);
+        uiManager.closeAllForms(player);
+        msifMenu(player);
     }
-}, 70)
+}, 20)
 
 //Functions
 function parseItemIdToScoreboardObj(itemId) {
@@ -106,10 +108,9 @@ function parseMSIFTags(tags) {
             let cooldownGroupG = "none";
             let cooldownGroupNameG = "none";
             let iconG = "";
-            let aSetNameG = [];
-            let aSetFunctionG = [];
-            let aSetMainG = "none";
-            let aSetStrictG = true; // Default to true
+            let aSetNameG = "";
+            let aSetFunctionG = "";
+            let aSetPartsG = 4;
             
             const plength = parts.length;
             let currentIndex = 0;
@@ -140,30 +141,11 @@ function parseMSIFTags(tags) {
                             currentIndex = currentIndex + 5;
                         }
                         break;
-                    case "armorSet":
-                        let CIX = currentIndex + 1;
-                        let END = false;
-                        while (!END) {
-                            switch (parts[CIX]) {
-                                case "END":
-                                    END = true;
-                                    currentIndex = CIX + 1;
-                                    break;
-                                case "parts":
-                                    aSetFunctionG[parts[CIX + 1]] = parts[CIX + 2];
-                                    aSetNameG[parts[CIX + 1]] = parts[CIX + 3];
-                                    CIX = CIX + 4;
-                                    break;
-                                case "setMain":
-                                    aSetMainG = parts[CIX + 1];
-                                    CIX = CIX + 2;
-                                    break;
-                                case "strict":
-                                    aSetStrictG = parts[CIX + 1] === "true";
-                                    CIX = CIX + 2;
-                                    break;
-                            }
-                        }
+                    case "armorSet"://armorSet:<setName|string>:<functionName|string>:<parts|num>
+                        aSetNameG = parts[currentIndex + 1];
+                        aSetPartsG = parts[currentIndex + 3];
+                        aSetFunctionG = parts[currentIndex + 2];
+                        currentIndex = currentIndex + 4;
                         break;
                 }
             }
@@ -175,12 +157,49 @@ function parseMSIFTags(tags) {
                 cooldownGroup: cooldownGroupG,
                 cooldownGroupName: cooldownGroupNameG,
                 icon: iconG,
-                aSetFunctions: aSetFunctionG,
-                aSetNames: aSetNameG,
-                aSetMain: aSetMainG,
-                aSetStrict: aSetStrictG
+                aSetFunction: aSetFunctionG,
+                aSetName: aSetNameG,
+                aSetParts: aSetPartsG
             };
         });
+}
+
+function parseArmorSetsTags(player) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        if (!equippable) {
+            throw new Error("Player does not have the 'minecraft:equippable' component.");
+        }
+
+        const getTagsFromSlot = (slotName) => {
+            try {
+                const item = equippable.getEquipment(slotName);
+                const tags = item?.getTags?.();
+                if (!Array.isArray(tags)) return [];
+                return tags
+                    .filter(tag => tag.startsWith("ArmorSet:"))
+                    .map(tag => tag.slice(9));
+            } catch (err) {
+                console.warn(`Failed to get tags from slot ${slotName}:`, err);
+                return [];
+            }
+        };
+
+        return {
+            Head: getTagsFromSlot(EquipmentSlot.Head),
+            Chest: getTagsFromSlot(EquipmentSlot.Chest),
+            Legs: getTagsFromSlot(EquipmentSlot.Legs),
+            Feet: getTagsFromSlot(EquipmentSlot.Feet)
+        };
+    } catch (err) {
+        console.error("Error in parseArmorSetsTags:", err);
+        return {
+            Head: [],
+            Chest: [],
+            Legs: [],
+            Feet: []
+        };
+    }
 }
 
 function taddsb(objectiveName, player) {
@@ -268,77 +287,45 @@ function changeSkill(player) {
     }
 }
 
-function getArmorSetParts(player) {
-    const equippable = player.getComponent("minecraft:equippable");
-    const armorSlots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
-    const armorSets = new Map();
-    
-    for (const slot of armorSlots) {
-        const itemStack = equippable?.getEquipment(slot);
-        if (itemStack?.typeId) {
-            const tags = itemStack.getTags();
-            const skills = parseMSIFTags(tags);
-            
-            for (const skill of skills) {
-                if (skill.aSetMain && skill.aSetMain !== "none") {
-                    if (!armorSets.has(skill.aSetMain)) {
-                        armorSets.set(skill.aSetMain, {
-                            parts: [],
-                            functions: {},
-                            names: {},
-                            strict: skill.aSetStrict
-                        });
-                    }
-                    
-                    const setData = armorSets.get(skill.aSetMain);
-                    setData.parts.push(slot);
-                    Object.assign(setData.functions, skill.aSetFunctions);
-                    Object.assign(setData.names, skill.aSetNames);
-                }
-            }
-        }
-    }
-    
-    return armorSets;
-}
-
-function executeArmorSetFunctions(player, armorSets) {
-    for (const [setName, setData] of armorSets) {
-        const partsCount = setData.parts.length;
-        const functionsToRun = [];
-        
-        if (setData.strict) {
-            // Strict mode: only run function for exact parts count
-            if (setData.functions[partsCount]) {
-                functionsToRun.push(setData.functions[partsCount]);
-            }
-        } else {
-            // Non-strict mode: run all functions from 1 to current parts count
-            for (let i = 1; i <= partsCount; i++) {
-                if (setData.functions[i]) {
-                    functionsToRun.push(setData.functions[i]);
-                }
-            }
-        }
-        
-        // Execute functions
-        for (const functionName of functionsToRun) {
-            try {
-                player.runCommand(`function ${functionName}`);
-            } catch (error) {
-                console.warn(`Error running armor set function ${functionName}:`, error);
-                player.runCommand("tell @s §cError: Armor set function failed or missing.");
-            }
-        }
-    }
-}
-
 function useSkillArmor(player, eSlot) {
     const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(eSlot);
     const itemId = itemStack?.typeId;
     if (!itemStack || !itemId) return;
-    const armorSets = getArmorSetParts(player);
-    executeArmorSetFunctions(player, armorSets);
+    
+    const tags = itemStack.getTags();
+    const skills = parseMSIFTags(tags);
+    if (skills.length === 0) return;
+    const armorData = skills[0];
+    const CDTEST = taddsbc(armorData.cooldown, armorData.cooldownGroup, player, armorData.cooldownGroupName);
+    if (CDTEST.state) {
+        try {
+            player.runCommand(`function ${armorData.functionName}`);
+        } catch (error) {
+            console.warn(`Error running function ${armorData.functionName}:`, error);
+            player.runCommand("tell @s §cError: Function failed or missing.");
+        }
+        const tagsData = parseArmorSetsTags(player);
+        let lookForTag = armorData.aSetName;
+        let counter = 0;
+        if (tagsData.Head.includes(lookForTag)) counter++;
+        if (tagsData.Chest.includes(lookForTag)) counter++;
+        if (tagsData.Legs.includes(lookForTag)) counter++;
+        if (tagsData.Feet.includes(lookForTag)) counter++;
+        
+        if (counter >= armorData.aSetParts) {
+            try {
+                player.runCommand(`function ${armorData.aSetFunction}`);
+            } catch (error) {
+                console.warn(`Error running function ${armorData.aSetFunction}:`, error);
+                player.runCommand("tell @s §cError: Function failed or missing.");
+            }
+        }
+    } else {
+        let timeLeft = (CDTEST.value * 0.1).toFixed(1);
+        player.runCommand(`title @s actionbar §6[${armorData.cooldownGroupName}] will be ready in ${timeLeft}s`);
+    }    
+    
+    
 }
 
 function useSkill(player, eSlot) {
@@ -366,22 +353,20 @@ function useSkill(player, eSlot) {
             console.warn(`Error running function ${skill.functionName}:`, error);
             player.runCommand("tell @s §cError: Function failed or missing.");
         }
+        const tagsData = parseArmorSetsTags(player);
+        let lookForTag = skill.aSetName;
+        let counter = 0;
+        if (tagsData.Head.includes(lookForTag)) counter++;
+        if (tagsData.Chest.includes(lookForTag)) counter++;
+        if (tagsData.Legs.includes(lookForTag)) counter++;
+        if (tagsData.Feet.includes(lookForTag)) counter++;
         
-        // Check for armor set functions if using mainhand or offhand
-        if (eSlot === EquipmentSlot.Mainhand || eSlot === EquipmentSlot.Offhand) {
-            // Check if the item has armor set definitions
-            for (const skillData of skills) {
-                if (skillData.aSetMain && skillData.aSetMain !== "none") {
-                    const armorSets = getArmorSetParts(player);
-                    
-                    // Only execute if this set is actually present
-                    if (armorSets.has(skillData.aSetMain)) {
-                        const setFunctions = new Map();
-                        setFunctions.set(skillData.aSetMain, armorSets.get(skillData.aSetMain));
-                        executeArmorSetFunctions(player, setFunctions);
-                    }
-                    break; // Only process first armor set found
-                }
+        if (counter >= skill.aSetParts) {
+            try {
+                player.runCommand(`function ${skill.aSetFunction}`);
+            } catch (error) {
+                console.warn(`Error running function ${skill.aSetFunction}:`, error);
+                player.runCommand("tell @s §cError: Function failed or missing.");
             }
         }
     } else {
