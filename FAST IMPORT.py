@@ -9,8 +9,10 @@ from tkinter import filedialog, messagebox
 from pathlib import Path
 
 class MinecraftManifestUpdater:
-    def __init__(self, base_directory=None, telegram_config=None):
+    def __init__(self, base_directory=None, telegram_config=None, addon_name=None, version_input=None):
         self.base_directory = Path(base_directory) if base_directory else None
+        self.addon_name = addon_name
+        self.version_input = version_input
         self.uuid_mapping = {}  # Store old UUID -> new UUID mapping
         self.updated_files = []
         self.errors = []
@@ -86,32 +88,51 @@ class MinecraftManifestUpdater:
                             dep['uuid'] = self.uuid_mapping[old_uuid]
                             updated = True
             
-            # Increment version and update name
+            # Update version and name with user input
             if 'header' in data and 'version' in data['header']:
                 version = data['header']['version']
                 new_version_number = None
                 
-                if isinstance(version, list) and len(version) >= 3:
-                    # Increment patch version (third element)
-                    version[2] += 1
-                    new_version_number = version[2]
-                    updated = True
-                elif isinstance(version, str):
-                    # Handle string versions like "1.0.0"
-                    version_parts = version.split('.')
-                    if len(version_parts) >= 3:
-                        try:
-                            version_parts[2] = str(int(version_parts[2]) + 1)
-                            data['header']['version'] = '.'.join(version_parts)
-                            new_version_number = int(version_parts[2])
+                # Use user input version if provided
+                if self.version_input is not None:
+                    try:
+                        new_version_number = int(self.version_input)
+                        if isinstance(version, list) and len(version) >= 3:
+                            version[2] = new_version_number
                             updated = True
-                        except ValueError:
-                            pass
+                        elif isinstance(version, str):
+                            version_parts = version.split('.')
+                            if len(version_parts) >= 3:
+                                version_parts[2] = str(new_version_number)
+                                data['header']['version'] = '.'.join(version_parts)
+                                updated = True
+                    except ValueError:
+                        # Fallback to increment logic if version_input is invalid
+                        pass
                 
-                # Update addon name with new version
+                # If no user input or invalid input, use increment logic
+                if new_version_number is None:
+                    if isinstance(version, list) and len(version) >= 3:
+                        # Increment patch version (third element)
+                        version[2] += 1
+                        new_version_number = version[2]
+                        updated = True
+                    elif isinstance(version, str):
+                        # Handle string versions like "1.0.0"
+                        version_parts = version.split('.')
+                        if len(version_parts) >= 3:
+                            try:
+                                version_parts[2] = str(int(version_parts[2]) + 1)
+                                data['header']['version'] = '.'.join(version_parts)
+                                new_version_number = int(version_parts[2])
+                                updated = True
+                            except ValueError:
+                                pass
+                
+                # Update addon name with new version using dynamic addon name
                 if new_version_number is not None and 'name' in data['header']:
-                    # Create new name with version template
-                    new_name = f"MSIFvAPI V{new_version_number}"
+                    # Create new name with version template using addon_name
+                    new_name = f"{self.addon_name} V{new_version_number}"
                     data['header']['name'] = new_name
                     updated = True
                     # Track the maximum version number
@@ -125,7 +146,7 @@ class MinecraftManifestUpdater:
                     if match:
                         current_version = int(match.group(1))
                         new_version = current_version + 1
-                        new_name = f"MSIFvAPI V{new_version}"
+                        new_name = f"{self.addon_name} V{new_version}"
                         data['header']['name'] = new_name
                         updated = True
                         # Track the maximum version number
@@ -133,7 +154,7 @@ class MinecraftManifestUpdater:
                         print(f"  └─ Updated name to: {new_name}")
                     else:
                         # Default to V1 if no version found
-                        new_name = "MSIFvAPI V1"
+                        new_name = f"{self.addon_name} V1"
                         data['header']['name'] = new_name
                         updated = True
                         # Track the maximum version number
@@ -200,8 +221,9 @@ class MinecraftManifestUpdater:
     def create_mcaddon_package(self):
         """Create a .mcaddon package from the updated addon"""
         try:
-            # Determine the output filename
-            output_name = f"ADDONS/MSIFvAPI/MSIFvAPI V{self.max_version}.mcaddon"
+            # Determine the output filename using dynamic addon name and version
+            version_to_use = self.version_input if self.version_input is not None else self.max_version
+            output_name = f"ADDONS/{self.addon_name}/{self.addon_name} V{version_to_use}.mcaddon"
             output_path = Path(output_name)
             
             # Remove existing file if it exists
@@ -300,7 +322,7 @@ class MinecraftManifestUpdater:
         try:
             # Send initial notification to Telegram
             if self.send_to_telegram:
-                initial_message = f"🔄 *MSIFvAPI Update Started*\n\n📁 Processing directory: `{self.base_directory.name}`\n⏰ Starting update process..."
+                initial_message = f"🔄 *{self.addon_name} Update Started*\n\n📁 Processing directory: `{self.base_directory.name}`\n⏰ Starting update process..."
                 self.send_telegram_message(initial_message)
             
             # Find all manifest files
@@ -336,8 +358,9 @@ class MinecraftManifestUpdater:
             print("Update Summary:")
             print(f"✓ Files updated: {len(self.updated_files)}")
             print(f"✓ UUIDs generated: {len(self.uuid_mapping)}")
-            print(f"✓ Addon names updated to MSIFvAPI V<x> format")
-            print(f"✓ Maximum version found: V{self.max_version}")
+            print(f"✓ Addon names updated to {self.addon_name} V<x> format")
+            version_to_display = self.version_input if self.version_input is not None else self.max_version
+            print(f"✓ Version: V{version_to_display}")
             if package_path:
                 print(f"✓ McAddon package created: {package_path}")
             print(f"✗ Errors: {len(self.errors)}")
@@ -345,11 +368,11 @@ class MinecraftManifestUpdater:
             # Send results to Telegram
             if self.send_to_telegram:
                 # Create summary message
-                summary_message = f"✅ *MSIFvAPI Update Complete*\n\n"
+                summary_message = f"✅ *{self.addon_name} Update Complete*\n\n"
                 summary_message += f"📊 **Summary:**\n"
                 summary_message += f"• Files updated: `{len(self.updated_files)}`\n"
                 summary_message += f"• UUIDs generated: `{len(self.uuid_mapping)}`\n"
-                summary_message += f"• Version: `MSIFvAPI V{self.max_version}`\n"
+                summary_message += f"• Version: `{self.addon_name} V{version_to_display}`\n"
                 
                 if self.errors:
                     summary_message += f"• Errors: `{len(self.errors)}`\n"
@@ -370,7 +393,7 @@ class MinecraftManifestUpdater:
                     self.send_telegram_message(summary_message)
                     
                     # Then send the file
-                    file_caption = f"📱 *MSIFvAPI V{self.max_version}*\n\n🔧 Updated with new UUIDs and version\n💾 Ready to install in Minecraft"
+                    file_caption = f"📱 *{self.addon_name} V{version_to_display}*\n\n🔧 Updated with new UUIDs and version\n💾 Ready to install in Minecraft"
                     
                     if self.send_telegram_file(package_path, file_caption):
                         print("✓ McAddon file sent to Telegram successfully!")
@@ -557,8 +580,8 @@ def create_telegram_config_template():
 
 def main():
     """Main function to run the script"""
-    print("MSIFvAPI Minecraft Addon Updater with Telegram Integration")
-    print("=" * 60)
+    print("Minecraft Addon Updater with Telegram Integration")
+    print("=" * 50)
     
     # Load Telegram configuration
     telegram_config = load_telegram_config()
@@ -606,10 +629,28 @@ def main():
     
     print()
     
+    # Get addon name
+    addon_name = input("Enter addon name: ").strip()
+    while not addon_name:
+        print("Addon name cannot be empty!")
+        addon_name = input("Enter addon name: ").strip()
+    
+    # Get version number
+    while True:
+        try:
+            version_input = int(input("Enter version number: ").strip())
+            if version_input > 0:
+                break
+            print("Version must be a positive number!")
+        except ValueError:
+            print("Please enter a valid number!")
+    
     # Run the updater with selected folder
     updater = MinecraftManifestUpdater(
         base_directory=selected_folder,
-        telegram_config=telegram_config
+        telegram_config=telegram_config,
+        addon_name=addon_name,
+        version_input=version_input
     )
     updater.run()
 
