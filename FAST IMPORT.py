@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERRORimport os
+import os
 import json
 import uuid
 import re
@@ -186,8 +186,9 @@ class MinecraftManifestUpdater:
     def create_mcaddon_package(self):
         """Create a .mcaddon package from the updated addon"""
         try:
-            # Determine the output filename
-            output_name = f"ADDONS/MSIFvAPI/MSIFvAPI V{self.max_version}.mcaddon"
+            # Determine the output filename using actual addon name
+            addon_name = self.addon_name if self.addon_name else "Addon"
+            output_name = f"ADDONS/{addon_name}/{addon_name} V{self.max_version}.mcaddon"
             output_path = Path(output_name)
             
             # Remove existing file if it exists
@@ -284,10 +285,12 @@ class MinecraftManifestUpdater:
         print("-" * 50)
         
         try:
-            # Send initial notification to Telegram
-            if self.send_to_telegram:
-                initial_message = f"🔄 *MSIFvAPI Update Started*\n\n📁 Processing directory: `{self.base_directory.name}`\n⏰ Starting update process..."
-                self.send_telegram_message(initial_message)
+            # Get version from user first
+            if self.get_version_from_user() is None:
+                print("Operation cancelled - no version provided.")
+                return
+            
+            print()
             
             # Find all manifest files
             manifest_files = self.find_manifest_files()
@@ -304,6 +307,12 @@ class MinecraftManifestUpdater:
             # Update each manifest file
             for manifest_file in manifest_files:
                 self.update_manifest_file(manifest_file)
+            
+            # Send initial notification to Telegram after we have addon name
+            if self.send_to_telegram and self.addon_name:
+                addon_display_name = self.addon_name
+                initial_message = f"🔄 *{addon_display_name} V{self.user_version} Update Started*\n\n📁 Processing directory: `{self.base_directory.name}`\n⏰ Processing manifest files..."
+                self.send_telegram_message(initial_message)
             
             print()
             print("Updating UUID references in other files...")
@@ -322,8 +331,9 @@ class MinecraftManifestUpdater:
             print("Update Summary:")
             print(f"✓ Files updated: {len(self.updated_files)}")
             print(f"✓ UUIDs generated: {len(self.uuid_mapping)}")
-            print(f"✓ Addon names updated to MSIFvAPI V<x> format")
-            print(f"✓ Maximum version found: V{self.max_version}")
+            addon_display_name = self.addon_name if self.addon_name else "Addon"
+            print(f"✓ Addon names updated to {addon_display_name} V<x> format")
+            print(f"✓ Version applied: V{self.max_version}")
             if package_path:
                 print(f"✓ McAddon package created: {package_path}")
             print(f"✗ Errors: {len(self.errors)}")
@@ -331,11 +341,12 @@ class MinecraftManifestUpdater:
             # Send results to Telegram
             if self.send_to_telegram:
                 # Create summary message
-                summary_message = f"✅ *MSIFvAPI Update Complete*\n\n"
+                addon_display_name = self.addon_name if self.addon_name else "Addon"
+                summary_message = f"✅ *{addon_display_name} Update Complete*\n\n"
                 summary_message += f"📊 **Summary:**\n"
                 summary_message += f"• Files updated: `{len(self.updated_files)}`\n"
                 summary_message += f"• UUIDs generated: `{len(self.uuid_mapping)}`\n"
-                summary_message += f"• Version: `MSIFvAPI V{self.max_version}`\n"
+                summary_message += f"• Version: `{addon_display_name} V{self.max_version}`\n"
                 
                 if self.errors:
                     summary_message += f"• Errors: `{len(self.errors)}`\n"
@@ -356,7 +367,7 @@ class MinecraftManifestUpdater:
                     self.send_telegram_message(summary_message)
                     
                     # Then send the file
-                    file_caption = f"📱 *MSIFvAPI V{self.max_version}*\n\n🔧 Updated with new UUIDs and version\n💾 Ready to install in Minecraft"
+                    file_caption = f"📱 *{addon_display_name} V{self.max_version}*\n\n🔧 Updated with new UUIDs and version\n💾 Ready to install in Minecraft"
                     
                     if self.send_telegram_file(package_path, file_caption):
                         print("✓ McAddon file sent to Telegram successfully!")
@@ -591,7 +602,7 @@ def create_telegram_config_template():
 
 def main():
     """Main function to run the script"""
-    print("MSIFvAPI Minecraft Addon Updater with Telegram Integration")
+    print("Minecraft Addon Updater with Telegram Integration")
     print("=" * 60)
     
     # Load Telegram configuration
