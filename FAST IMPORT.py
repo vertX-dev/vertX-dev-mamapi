@@ -1,53 +1,4 @@
-import os
-import json
-import uuid
-import re
-import zipfile
-import requests
-from pathlib import Path
 
-class MinecraftManifestUpdater:
-    def __init__(self, base_directory=None, telegram_config=None, addon_name=None, version_input=None):
-        self.base_directory = Path(base_directory) if base_directory else None
-        self.addon_name = addon_name
-        self.version_input = version_input
-        self.uuid_mapping = {}  # Store old UUID -> new UUID mapping
-        self.updated_files = []
-        self.errors = []
-        self.max_version = 0  # Track the highest version number found
-        
-        # Telegram configuration
-        self.telegram_config = telegram_config or {}
-        self.bot_token = self.telegram_config.get('bot_token')
-        self.chat_id = self.telegram_config.get('chat_id')
-        self.send_to_telegram = self.bot_token and self.chat_id
-        
-    def generate_new_uuid(self):
-        """Generate a new UUID in the format used by Minecraft"""
-        return str(uuid.uuid4())
-    
-    def is_valid_uuid(self, uuid_string):
-        """Check if a string is a valid UUID"""
-        try:
-            uuid.UUID(uuid_string)
-            return True
-        except ValueError:
-            return False
-    
-    def find_manifest_files(self):
-        """Find all manifest.json files in the directory structure"""
-        manifest_files = []
-        if not self.base_directory.exists():
-            raise FileNotFoundError(f"Directory {self.base_directory} does not exist")
-        
-        for root, dirs, files in os.walk(self.base_directory):
-            for file in files:
-                if file.lower() == 'manifest.json':
-                    manifest_files.append(Path(root) / file)
-        
-        return manifest_files
-    
-    def update_manifest_file(self, file_path):
         """Update a single manifest file with new UUID and incremented version"""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -97,7 +48,7 @@ class MinecraftManifestUpdater:
                         new_version_number = int(self.version_input)
                         if isinstance(version, list) and len(version) >= 3:
                             version[2] = new_version_number
-                            updated = True
+                            updated = Tru
                         elif isinstance(version, str):
                             version_parts = version.split('.')
                             if len(version_parts) >= 3:
@@ -106,7 +57,7 @@ class MinecraftManifestUpdater:
                                 updated = True
                     except ValueError:
                         # Fallback to increment logic if version_input is invalid
-                        pass
+                       
                 
                 # If no user input or invalid input, use increment logic
                 if new_version_number is None:
@@ -116,7 +67,7 @@ class MinecraftManifestUpdater:
                         new_version_number = version[2]
                         updated = True
                     elif isinstance(version, str):
-                        # Handle string versions like "1.0.0"
+                        # Handle string versions like "1.0.0
                         version_parts = version.split('.')
                         if len(version_parts) >= 3:
                             try:
@@ -125,7 +76,7 @@ class MinecraftManifestUpdater:
                                 new_version_number = int(version_parts[2])
                                 updated = True
                             except ValueError:
-                                pass
+                                pas
                 
                 # Update addon name with new version using dynamic addon name
                 if new_version_number is not None and 'name' in data['header']:
@@ -134,7 +85,7 @@ class MinecraftManifestUpdater:
                     data['header']['name'] = new_name
                     updated = True
                     # Track the maximum version number
-                    self.max_version = max(self.max_version, new_version_number)
+                    self.max_version = max(self.max_version, new_version_number
                     print(f"  └─ Updated name to: {new_name}")
                 elif 'name' in data['header']:
                     # If we can't determine version number, use a default pattern
@@ -143,7 +94,7 @@ class MinecraftManifestUpdater:
                     match = re.search(r'V(\d+)', current_name)
                     if match:
                         current_version = int(match.group(1))
-                        new_version = current_version + 1
+                        new_version = current_version + 
                         new_name = f"{self.addon_name} V{new_version}"
                         data['header']['name'] = new_name
                         updated = True
@@ -152,7 +103,7 @@ class MinecraftManifestUpdater:
                         print(f"  └─ Updated name to: {new_name}")
                     else:
                         # Default to V1 if no version found
-                        new_name = f"{self.addon_name} V1"
+                        new_name = f"{self.addon_name} V1
                         data['header']['name'] = new_name
                         updated = True
                         # Track the maximum version number
@@ -161,7 +112,7 @@ class MinecraftManifestUpdater:
             
             if updated:
                 # Write back to file with proper formatting
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, 'w', encoding='utf-8') as f
                     json.dump(data, f, indent=2, ensure_ascii=False)
                 
                 self.updated_files.append(str(file_path))
@@ -170,7 +121,7 @@ class MinecraftManifestUpdater:
                 print(f"- No changes needed: {file_path}")
                 
         except json.JSONDecodeError as e:
-            error_msg = f"JSON error in {file_path}: {str(e)}"
+            error_msg = f"JSON error in {file_path}: {str(e)}
             self.errors.append(error_msg)
             print(f"✗ {error_msg}")
         except Exception as e:
@@ -180,7 +131,7 @@ class MinecraftManifestUpdater:
     
     def update_other_files(self):
         """Update UUIDs in other files that might reference them"""
-        # Common file extensions that might contain UUIDs
+        # Common file extensions that might contain UUID
         extensions = ['.json', '.js', '.ts', '.mcfunction', '.txt']
         
         for root, dirs, files in os.walk(self.base_directory):
@@ -189,7 +140,7 @@ class MinecraftManifestUpdater:
                 
                 # Skip manifest files (already processed)
                 if file.lower() == 'manifest.json':
-                    continue
+                    continu
                 
                 # Only process files with relevant extensions
                 if file_path.suffix.lower() not in extensions:
@@ -198,7 +149,7 @@ class MinecraftManifestUpdater:
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
-                    
+                   
                     original_content = content
                     
                     # Replace all old UUIDs with new ones
@@ -207,7 +158,7 @@ class MinecraftManifestUpdater:
                     
                     # If content changed, write it back
                     if content != original_content:
-                        with open(file_path, 'w', encoding='utf-8') as f:
+                        with open(file_path, 'w', encoding='utf-8') as f
                             f.write(content)
                         print(f"✓ Updated references in: {file_path}")
                         
@@ -216,7 +167,7 @@ class MinecraftManifestUpdater:
                     self.errors.append(error_msg)
                     print(f"✗ {error_msg}")
     
-    def create_mcaddon_package(self):
+    def create_mcaddon_package(self)
         """Create a .mcaddon package from the updated addon"""
         try:
             # Determine the output filename using dynamic addon name and version
@@ -225,7 +176,7 @@ class MinecraftManifestUpdater:
             output_path = Path(output_name)
             
             # Create parent directories if they don't exist
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.parent.mkdir(parents=True, exist_ok=True
             
             # Remove existing file if it exists
             if output_path.exists():
@@ -234,7 +185,7 @@ class MinecraftManifestUpdater:
             
             print(f"Creating mcaddon package: {output_name}")
             
-            # Create zip file
+            # Create zip fil
             with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 # Walk through all files in the base directory
                 for root, dirs, files in os.walk(self.base_directory):
@@ -243,7 +194,7 @@ class MinecraftManifestUpdater:
                         # Calculate relative path from base directory
                         arcname = file_path.relative_to(self.base_directory)
                         zipf.write(file_path, arcname)
-                        
+                       
             print(f"✓ Successfully created: {output_name}")
             
             # Get file size for display
@@ -252,7 +203,7 @@ class MinecraftManifestUpdater:
                 size_str = f"{file_size / (1024 * 1024):.1f} MB"
             elif file_size > 1024:
                 size_str = f"{file_size / 1024:.1f} KB"
-            else:
+            els
                 size_str = f"{file_size} bytes"
             
             print(f"  └─ Package size: {size_str}")
@@ -262,7 +213,7 @@ class MinecraftManifestUpdater:
         except Exception as e:
             error_msg = f"Error creating mcaddon package: {str(e)}"
             self.errors.append(error_msg)
-            print(f"✗ {error_msg}")
+            print(f"✗ {error_msg}"
             return None
     
     def send_telegram_message(self, message):
@@ -271,7 +222,7 @@ class MinecraftManifestUpdater:
             return False
         
         try:
-            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage
             data = {
                 'chat_id': self.chat_id,
                 'text': message,
@@ -280,7 +231,7 @@ class MinecraftManifestUpdater:
             response = requests.post(url, data=data, timeout=10)
             return response.status_code == 200
         except Exception as e:
-            print(f"✗ Error sending Telegram message: {str(e)}")
+            print(f"✗ Error sending Telegram message: {str(e)}"
             return False
     
     def send_telegram_file(self, file_path, caption=None):
@@ -289,7 +240,7 @@ class MinecraftManifestUpdater:
             return False
         
         try:
-            url = f"https://api.telegram.org/bot{self.bot_token}/sendDocument"
+            url = f"https://api.telegram.org/bot{self.bot_token}/sendDocument
             
             with open(file_path, 'rb') as file:
                 files = {'document': file}
@@ -298,7 +249,7 @@ class MinecraftManifestUpdater:
                     'caption': caption or '',
                     'parse_mode': 'Markdown'
                 }
-                response = requests.post(url, files=files, data=data, timeout=30)
+                response = requests.post(url, files=files, data=data, timeout=30
                 return response.status_code == 200
         except Exception as e:
             print(f"✗ Error sending Telegram file: {str(e)}")
@@ -307,7 +258,7 @@ class MinecraftManifestUpdater:
     def run(self):
         """Run the complete update process"""
         if not self.base_directory:
-            print("Error: No base directory selected!")
+            print("Error: No base directory selected!"
             return
             
         print(f"Starting Minecraft manifest update process...")
@@ -316,7 +267,7 @@ class MinecraftManifestUpdater:
         if self.send_to_telegram:
             print(f"Telegram bot enabled - will send to chat ID: {self.chat_id}")
         else:
-            print("Telegram bot disabled")
+            print("Telegram bot disabled"
         
         print("-" * 50)
         
@@ -325,7 +276,7 @@ class MinecraftManifestUpdater:
             if self.send_to_telegram:
                 initial_message = f"🔄 *{self.addon_name} Update Started*\n\n📁 Processing directory: `{self.base_directory.name}`\n⏰ Starting update process..."
                 self.send_telegram_message(initial_message)
-            
+           
             # Find all manifest files
             manifest_files = self.find_manifest_files()
             
@@ -334,7 +285,7 @@ class MinecraftManifestUpdater:
                 if self.send_to_telegram:
                     self.send_telegram_message("❌ *Update Failed*\n\nNo manifest.json files found in the directory.")
                 return
-            
+           
             print(f"Found {len(manifest_files)} manifest file(s)")
             print()
             
@@ -634,4 +585,4 @@ def main():
     updater.run()
 
 if __name__ == "__main__":
-    main()
+    main(>>>>>>> mai
