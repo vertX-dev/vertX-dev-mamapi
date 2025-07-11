@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERRORimport os
+import os
 import json
 import uuid
 import re
@@ -15,8 +15,6 @@ class MinecraftManifestUpdater:
         self.updated_files = []
         self.errors = []
         self.max_version = 0  # Track the highest version number found
-        self.user_version = None  # Store user-provided version
-        self.addon_name = None  # Store the addon name
         
         # Telegram configuration
         self.telegram_config = telegram_config or {}
@@ -88,43 +86,59 @@ class MinecraftManifestUpdater:
                             dep['uuid'] = self.uuid_mapping[old_uuid]
                             updated = True
             
-            # Update addon name with user-provided version
-            if 'name' in data['header'] and self.user_version is not None:
-                original_name = data['header']['name']
-                
-                # Store the first addon name we encounter (for file naming)
-                if self.addon_name is None:
-                    # Extract base name without version for file naming
-                    base_name = re.sub(r'\s*V\d+\s*$', '', original_name).strip()
-                    self.addon_name = base_name if base_name else original_name
-                
-                # Update name with user-provided version
-                new_name = self.update_addon_name_with_version(original_name, self.user_version)
-                data['header']['name'] = new_name
-                updated = True
-                
-                # Track the version number
-                self.max_version = max(self.max_version, self.user_version)
-                print(f"  └─ Updated name from '{original_name}' to '{new_name}'")
-            
-            # Update version in manifest
-            if 'header' in data and 'version' in data['header'] and self.user_version is not None:
+            # Increment version and update name
+            if 'header' in data and 'version' in data['header']:
                 version = data['header']['version']
+                new_version_number = None
                 
                 if isinstance(version, list) and len(version) >= 3:
-                    # Update patch version (third element) with user version
-                    version[2] = self.user_version
+                    # Increment patch version (third element)
+                    version[2] += 1
+                    new_version_number = version[2]
                     updated = True
                 elif isinstance(version, str):
                     # Handle string versions like "1.0.0"
                     version_parts = version.split('.')
                     if len(version_parts) >= 3:
                         try:
-                            version_parts[2] = str(self.user_version)
+                            version_parts[2] = str(int(version_parts[2]) + 1)
                             data['header']['version'] = '.'.join(version_parts)
+                            new_version_number = int(version_parts[2])
                             updated = True
                         except ValueError:
                             pass
+                
+                # Update addon name with new version
+                if new_version_number is not None and 'name' in data['header']:
+                    # Create new name with version template
+                    new_name = f"MSIFvAPI V{new_version_number}"
+                    data['header']['name'] = new_name
+                    updated = True
+                    # Track the maximum version number
+                    self.max_version = max(self.max_version, new_version_number)
+                    print(f"  └─ Updated name to: {new_name}")
+                elif 'name' in data['header']:
+                    # If we can't determine version number, use a default pattern
+                    current_name = data['header']['name']
+                    # Extract version number from current name if possible
+                    match = re.search(r'V(\d+)', current_name)
+                    if match:
+                        current_version = int(match.group(1))
+                        new_version = current_version + 1
+                        new_name = f"MSIFvAPI V{new_version}"
+                        data['header']['name'] = new_name
+                        updated = True
+                        # Track the maximum version number
+                        self.max_version = max(self.max_version, new_version)
+                        print(f"  └─ Updated name to: {new_name}")
+                    else:
+                        # Default to V1 if no version found
+                        new_name = "MSIFvAPI V1"
+                        data['header']['name'] = new_name
+                        updated = True
+                        # Track the maximum version number
+                        self.max_version = max(self.max_version, 1)
+                        print(f"  └─ Updated name to: {new_name}")
             
             if updated:
                 # Write back to file with proper formatting
@@ -391,54 +405,6 @@ class MinecraftManifestUpdater:
             if self.send_to_telegram:
                 error_message = f"💥 *Fatal Error*\n\n`{str(e)}`\n\nUpdate process failed."
                 self.send_telegram_message(error_message)
-
-    def get_version_from_user(self):
-        """Get version number from user input"""
-        print("\nAddon Version Configuration")
-        print("-" * 30)
-        
-        while True:
-            try:
-                version_input = input("Enter the version number for this addon (e.g., 1, 2, 3): ").strip()
-                
-                if not version_input:
-                    print("Please enter a version number.")
-                    continue
-                
-                # Try to convert to integer
-                version_number = int(version_input)
-                
-                if version_number <= 0:
-                    print("Please enter a positive version number.")
-                    continue
-                
-                self.user_version = version_number
-                print(f"Version set to: V{version_number}")
-                return version_number
-                
-            except ValueError:
-                print("Please enter a valid number.")
-                continue
-            except KeyboardInterrupt:
-                print("\nOperation cancelled.")
-                return None
-    
-    def update_addon_name_with_version(self, original_name, version_number):
-        """Update addon name with version, preserving the original name"""
-        if not original_name:
-            return f"Addon V{version_number}"
-        
-        # Check if the name already has a version pattern (V followed by number)
-        version_pattern = r'\s*V\d+\s*$'
-        
-        if re.search(version_pattern, original_name):
-            # Replace existing version with new one
-            new_name = re.sub(version_pattern, f" V{version_number}", original_name)
-        else:
-            # Add version to the end of the name
-            new_name = f"{original_name} V{version_number}"
-        
-        return new_name.strip()
 
 def select_folder():
     """Open a folder selection dialog and return the selected path"""
