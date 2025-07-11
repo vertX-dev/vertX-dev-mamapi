@@ -226,6 +226,9 @@ class MinecraftManifestUpdater:
             output_name = f"ADDONS/{self.addon_name}/{self.addon_name} V{version_to_use}.mcaddon"
             output_path = Path(output_name)
             
+            # Create parent directories if they don't exist
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
             # Remove existing file if it exists
             if output_path.exists():
                 output_path.unlink()
