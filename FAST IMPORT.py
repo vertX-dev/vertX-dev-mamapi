@@ -4,8 +4,6 @@ import uuid
 import re
 import zipfile
 import requests
-import tkinter as tk
-from tkinter import filedialog, messagebox
 from pathlib import Path
 
 class MinecraftManifestUpdater:
@@ -452,29 +450,12 @@ class MinecraftManifestUpdater:
         return new_name.strip()
 
 def select_folder():
-    """Open a folder selection dialog and return the selected path"""
-    try:
-        # Try to create a GUI dialog
-        root = tk.Tk()
-        root.withdraw()
-        
-        # Open folder selection dialog
-        folder_path = filedialog.askdirectory(
-            title="Select Minecraft Addon Folder",
-            initialdir=os.getcwd()
-        )
-        
-        # Destroy the root window
-        root.destroy()
-        
-        return folder_path
-    except Exception as e:
-        print(f"GUI not available ({e})")
-        return select_folder_manual()
+    """Manual folder selection"""
+    return select_folder_manual()
 
 def select_folder_manual():
-    """Manual folder selection when GUI is not available"""
-    print("\nGUI folder selection not available. Please enter the folder path manually.")
+    """Manual folder selection"""
+    print("\nPlease enter the folder path manually.")
     print("Current directory:", os.getcwd())
     print("\nAvailable folders in current directory:")
     
@@ -627,8 +608,8 @@ def main():
     
     print()
     
-    # Select folder using GUI
-    print("Opening folder selection dialog...")
+    # Select folder manually
+    print("Please select the addon folder...")
     selected_folder = select_folder()
     
     if not selected_folder:
