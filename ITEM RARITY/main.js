@@ -20,7 +20,7 @@ const PREDEFINED_SCOREBOARDS = [
     { name: "lifesteal", displayName: "Lifesteal" }
 ];
 
-// Initialize all scoreboards early
+// Initialize all scoreboards after world is ready
 function initializeScoreboards() {
     console.log("Initializing static scoreboards...");
     for (const scoreboard of PREDEFINED_SCOREBOARDS) {
@@ -37,8 +37,10 @@ function initializeScoreboards() {
     console.log("Static scoreboards initialization complete.");
 }
 
-// Initialize scoreboards immediately when the script loads
-initializeScoreboards();
+// Subscribe to world initialization event to ensure world is ready
+world.afterEvents.worldInitialize.subscribe(() => {
+    initializeScoreboards();
+});
 
 function rarityItemTest(itemStack, player) {
     if (!itemStack || !player) return;
