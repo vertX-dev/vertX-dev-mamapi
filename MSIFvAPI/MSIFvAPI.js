@@ -224,12 +224,19 @@ function taddsbc(value, objectiveNameA, player, groupName) {
         console.warn(`Error creating objective ${objectiveName}:`, error);
     }
     let time = getScoreboardValue(objectiveName, player);
+    
+    // Ensure time is a valid number
+    if (typeof time !== 'number' || isNaN(time)) {
+        time = 0;
+    }
+    
     if (time > 0) {
         return {
             value: time,
             state: false
         };
-    } else if (time <= 0) {
+    } else {
+        // time <= 0 or any other case
         setscoreb(player, objectiveName, value);
         return {
             value: value,
