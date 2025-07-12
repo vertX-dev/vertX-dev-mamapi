@@ -120,6 +120,14 @@ function parseTags(itemId) {
     }
 }
 
+function sanitizeScoreboardName(name) {
+    // Sanitize objective name for Minecraft compatibility
+    // Scoreboard objectives should be lowercase, alphanumeric, and under 16 characters
+    return name.toLowerCase()
+        .replace(/[^a-z0-9]/g, '') // Remove non-alphanumeric characters
+        .substring(0, 15); // Limit to 15 characters
+}
+
 system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
@@ -162,10 +170,13 @@ function compileBuffs(player) {
     // Summing values by scoreboardTracker
     const summedStats = {};
     for (const entry of scoreboardStats) {
-        if (!summedStats[entry.sbObj]) {
-            summedStats[entry.sbObj] = 0;
+        // Sanitize the scoreboard name to match what was created in loadScoreboards
+        const sanitizedName = sanitizeScoreboardName(entry.sbObj);
+            
+        if (!summedStats[sanitizedName]) {
+            summedStats[sanitizedName] = 0;
         }
-        summedStats[entry.sbObj] += entry.valueToAdd;
+        summedStats[sanitizedName] += entry.valueToAdd;
     }
 
     // Set score to player
@@ -180,14 +191,18 @@ function compileBuffs(player) {
 function loadScoreboards(Objs) {
     for (const Obj of Objs) {
         try {
+            // Sanitize objective name for Minecraft compatibility
+            // Scoreboard objectives should be lowercase, alphanumeric, and under 16 characters
+            let sanitizedName = sanitizeScoreboardName(Obj);
+            
             // Check if the objective already exists
-            const existing = world.scoreboard.getObjective(Obj);
+            const existing = world.scoreboard.getObjective(sanitizedName);
             if (!existing) {
-                world.scoreboard.addObjective(Obj, Obj);
-                console.log(`Scoreboard '${Obj}' added.`);
+                world.scoreboard.addObjective(sanitizedName, Obj);
+                console.log(`Scoreboard '${sanitizedName}' (${Obj}) added.`);
             }
         } catch (e) {
-            console.warn(`Failed to add scoreboard '${Obj}':`, e);
+            console.warn(`Failed to add scoreboard '${Obj}':`, e.message);
         }
     }
 }
@@ -195,7 +210,7 @@ function loadScoreboards(Objs) {
 function parseLoreToStats(equipment, slot) {
     const loreArray = equipment.getEquipment(slot)?.getLore() ?? [];
     const arraySize = loreArray.length;
-    if (!arraySize || arraySize != 0 || !loreArray) return [];
+    if (!arraySize || arraySize === 0 || !loreArray) return [];
     
     let attributes = [];
     let ix = 0;
@@ -210,6 +225,7 @@ function parseLoreToStats(equipment, slot) {
             }
             addATB = false;
         }
+        ix++;
     }
     return attributes;
 }
