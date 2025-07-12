@@ -58,47 +58,47 @@ export const RARITY = {
         sid: "Common",
         dName: "§7Common",
         minStats: 0,
-        maxStats: 1
+        maxStats: 2
     },
     UNCOMMON: {
         id: 2,
-        chance: 0.4,
+        chance: 0.7,
         sid: "Uncommon",
         dName: "§aUncommon",
-        minStats: 1,
-        maxStats: 2
+        minStats: 2,
+        maxStats: 4
     },
     RARE: {
         id: 3,
-        chance: 0.3,
+        chance: 0.5,
         sid: "Rare",
         dName: "§9Rare",
-        minStats: 2,
-        maxStats: 3
-    },
-    EPIC: {
-        id: 4,
-        chance: 0.2,
-        sid: "Epic",
-        dName: "§5Epic",
         minStats: 3,
         maxStats: 4
     },
+    EPIC: {
+        id: 4,
+        chance: 0.4,
+        sid: "Epic",
+        dName: "§5Epic",
+        minStats: 3,
+        maxStats: 5
+    },
     LEGENDARY: {
         id: 5,
-        chance: 0.15,
+        chance: 0.4,
         sid: "Legendary",
         dName: "§6Legendary",
         minStats: 4,
-        maxStats: 5
+        maxStats: 6
     },
     MYTHIC: {
         id: 6,
-        chance: 0.2,
+        chance: 0.5,
         sid: "Mythic",
         dName: "§dMythic",
         minStats: 5,
-        maxStats: 6
+        maxStats: 7
     }
 };
 
@@ -131,300 +131,248 @@ export const blackList = [
 ];
 
 
-export const skills = {
-  spin_attack: {
-    rarity: "Rare",
-    description: "Damage enemies in {x} block radius for 10 damage",
-    displayName: "Damage Spin",
-    effect: {
-      "Common": { MIN: 1, MAX: 2 },
-      "Uncommon": { MIN: 2, MAX: 3 },
-      "Rare": { MIN: 3, MAX: 4 },
-      "Epic": { MIN: 4, MAX: 5 },
-      "Legendary": { MIN: 5, MAX: 6 },
-      "Mythic": { MIN: 6, MAX: 7 }
-    },
-    type: ["melee", "weapon"]
-  },
-
-  sprint_speed: {
-    rarity: "Uncommon",
-    description: "Increases movement speed while sprinting by {x}%",
-    displayName: "Sprinter's Boost",
-    effect: {
-      "Common": { MIN: 5, MAX: 7 },
-      "Uncommon": { MIN: 7, MAX: 10 },
-      "Rare": { MIN: 10, MAX: 15 },
-      "Epic": { MIN: 15, MAX: 20 },
-      "Legendary": { MIN: 20, MAX: 25 },
-      "Mythic": { MIN: 25, MAX: 30 }
-    },
-    type: ["boots", "armor", "passive"]
-  },
-
-  health_regen: {
-    rarity: "Rare",
-    description: "Regenerate {x} HP every 5 seconds when not in combat",
-    displayName: "Regenerative Aura",
-    effect: {
-      "Common": { MIN: 1, MAX: 1 },
-      "Uncommon": { MIN: 1, MAX: 2 },
-      "Rare": { MIN: 2, MAX: 3 },
-      "Epic": { MIN: 3, MAX: 4 },
-      "Legendary": { MIN: 4, MAX: 5 },
-      "Mythic": { MIN: 5, MAX: 6 }
-    },
-    type: ["armor", "passive"]
-  },
-
-  critical_chance: {
-    rarity: "Epic",
-    description: "Grants {x}% chance to deal double damage on hit",
-    displayName: "Critical Strike",
-    effect: {
-      "Common": { MIN: 2, MAX: 4 },
-      "Uncommon": { MIN: 4, MAX: 6 },
-      "Rare": { MIN: 6, MAX: 8 },
-      "Epic": { MIN: 8, MAX: 10 },
-      "Legendary": { MIN: 10, MAX: 12 },
-      "Mythic": { MIN: 12, MAX: 15 }
-    },
-    type: ["weapon", "passive"]
-  },
-
-  shield_bash: {
-    rarity: "Uncommon",
-    description: "Bash enemies in front of you for {x} damage when sneaking with shield",
-    displayName: "Shield Bash",
-    effect: {
-      "Common": { MIN: 2, MAX: 3 },
-      "Uncommon": { MIN: 3, MAX: 4 },
-      "Rare": { MIN: 4, MAX: 5 },
-      "Epic": { MIN: 5, MAX: 6 },
-      "Legendary": { MIN: 6, MAX: 8 },
-      "Mythic": { MIN: 8, MAX: 10 }
-    },
-    type: ["shield", "active"]
-  },
-
-  charge_dash: {
-    rarity: "Legendary",
-    description: "Dash forward {x} blocks and knock back enemies",
-    displayName: "Charge Dash",
-    effect: {
-      "Common": { MIN: 2, MAX: 3 },
-      "Uncommon": { MIN: 3, MAX: 4 },
-      "Rare": { MIN: 4, MAX: 5 },
-      "Epic": { MIN: 5, MAX: 6 },
-      "Legendary": { MIN: 6, MAX: 7 },
-      "Mythic": { MIN: 7, MAX: 8 }
-    },
-    type: ["boots", "active"]
-  },
-
-  jump_boost: {
-    rarity: "Uncommon",
-    description: "Increases jump height by {x} blocks",
-    displayName: "Leap Legs",
-    effect: {
-      "Common": { MIN: 0.5, MAX: 1 },
-      "Uncommon": { MIN: 1, MAX: 1.5 },
-      "Rare": { MIN: 1.5, MAX: 2 },
-      "Epic": { MIN: 2, MAX: 2.5 },
-      "Legendary": { MIN: 2.5, MAX: 3 },
-      "Mythic": { MIN: 3, MAX: 3.5 }
-    },
-    type: ["boots", "passive"]
-  },
-
-  ranged_power: {
-    rarity: "Rare",
-    description: "Increases ranged damage by {x}%",
-    displayName: "Sharpshooter",
-    effect: {
-      "Common": { MIN: 5, MAX: 7 },
-      "Uncommon": { MIN: 7, MAX: 10 },
-      "Rare": { MIN: 10, MAX: 13 },
-      "Epic": { MIN: 13, MAX: 16 },
-      "Legendary": { MIN: 16, MAX: 20 },
-      "Mythic": { MIN: 20, MAX: 25 }
-    },
-    type: ["bow", "crossbow", "passive"]
-  }
-};
-
-//need rework
-
 export const stats = {
     DAMAGE: {
         name: "§8Damage",
         type: ["sword", "axe", "bow", "crossbow", "trident"],
-        rarity: ["Common", "Uncommon", "Rare", "Epic"],
-        values: {
-            "Common": {min: 0, max: 2},
-            "Uncommon": {min: 1, max: 4},
-            "Rare": {min: 3, max: 6},
-            "Epic": {min: 5, max: 10}
-        }
+        rarity: "Uncommon",
+        min: 2,
+        max: 4
+        //measure: "%" can be used if it need specification, e.g., if damage boost in percents
     },
-    ATTACK_SPEED: {
-        name: "§9Attack Speed",
-        type: ["sword", "axe"],
-        rarity: ["Common", "Uncommon", "Rare"],
-        values: {
-            "Common": {min: 0.1, max: 0.3},
-            "Uncommon": {min: 0.2, max: 0.5},
-            "Rare": {min: 0.4, max: 0.8}
-        }
+    
+    STRENGTH: {
+        name: "§cStrength",
+        type: ["sword", "axe", "bow", "crossbow", "trident", "gauntlets"],
+        rarity: "Common",
+        min: 1,
+        max: 3
     },
+    
     CRITICAL_CHANCE: {
-        name: "§eCritical Chance",
+        name: "§6Critical Chance",
         type: ["sword", "axe", "bow", "crossbow"],
-        rarity: ["Uncommon", "Rare", "Epic", "Legendary"],
-        values: {
-            "Uncommon": {min: 1, max: 3},
-            "Rare": {min: 2, max: 5},
-            "Epic": {min: 4, max: 8},
-            "Legendary": {min: 6, max: 12}
-        },
+        rarity: "Rare",
+        min: 5,
+        max: 15,
         measure: "%"
     },
+    
     CRITICAL_DAMAGE: {
         name: "§6Critical Damage",
         type: ["sword", "axe", "bow", "crossbow"],
-        rarity: ["Rare", "Epic", "Legendary", "Mythic"],
-        values: {
-            "Rare": {min: 5, max: 15},
-            "Epic": {min: 10, max: 25},
-            "Legendary": {min: 20, max: 40},
-            "Mythic": {min: 35, max: 60}
-        },
+        rarity: "Rare",
+        min: 10,
+        max: 25,
         measure: "%"
     },
-    HEALTH: {
-        name: "§cHealth",
-        type: ["helmet", "chestplate", "leggings", "boots", "sword", "axe"],
-        rarity: ["Common", "Uncommon", "Rare", "Epic"],
-        values: {
-            "Common": {min: 1, max: 5},
-            "Uncommon": {min: 3, max: 10},
-            "Rare": {min: 8, max: 20},
-            "Epic": {min: 15, max: 35}
-        }
+    
+    ATTACK_SPEED: {
+        name: "§eAttack Speed",
+        type: ["sword", "axe", "dagger"],
+        rarity: "Uncommon",
+        min: 3,
+        max: 8,
+        measure: "%"
     },
+    
     DEFENSE: {
         name: "§aDefense",
         type: ["helmet", "chestplate", "leggings", "boots", "shield"],
-        rarity: ["Common", "Uncommon", "Rare", "Epic", "Legendary"],
-        values: {
-            "Common": {min: 1, max: 3},
-            "Uncommon": {min: 2, max: 6},
-            "Rare": {min: 4, max: 10},
-            "Epic": {min: 8, max: 18},
-            "Legendary": {min: 15, max: 30}
-        }
+        rarity: "Common",
+        min: 2,
+        max: 6
     },
+    
+    HEALTH: {
+        name: "§4Health",
+        type: ["helmet", "chestplate", "leggings", "boots", "ring", "amulet"],
+        rarity: "Common",
+        min: 5,
+        max: 15
+    },
+    
     SPEED: {
-        name: "§fSpeed",
-        type: ["boots", "leggings"],
-        rarity: ["Uncommon", "Rare", "Epic", "Legendary"],
-        values: {
-            "Uncommon": {min: 1, max: 3},
-            "Rare": {min: 2, max: 5},
-            "Epic": {min: 4, max: 8},
-            "Legendary": {min: 6, max: 12}
-        },
+        name: "§bSpeed",
+        type: ["boots", "leggings", "ring"],
+        rarity: "Uncommon",
+        min: 2,
+        max: 5,
         measure: "%"
     },
-    MANA: {
-        name: "§bMana",
-        type: ["helmet", "chestplate", "leggings", "boots", "wand", "staff"],
-        rarity: ["Common", "Uncommon", "Rare", "Epic", "Legendary"],
-        values: {
-            "Common": {min: 2, max: 8},
-            "Uncommon": {min: 5, max: 15},
-            "Rare": {min: 10, max: 25},
-            "Epic": {min: 20, max: 45},
-            "Legendary": {min: 35, max: 70}
-        }
-    },
+    
     MAGIC_DAMAGE: {
-        name: "§dMagic Damage",
-        type: ["wand", "staff", "helmet", "chestplate"],
-        rarity: ["Uncommon", "Rare", "Epic", "Legendary", "Mythic"],
-        values: {
-            "Uncommon": {min: 1, max: 4},
-            "Rare": {min: 3, max: 8},
-            "Epic": {min: 6, max: 15},
-            "Legendary": {min: 12, max: 25},
-            "Mythic": {min: 20, max: 40}
-        }
+        name: "§5Magic Damage",
+        type: ["wand", "staff", "orb", "amulet"],
+        rarity: "Rare",
+        min: 3,
+        max: 7
     },
+    
+    MANA: {
+        name: "§9Mana",
+        type: ["helmet", "chestplate", "wand", "staff", "orb", "ring"],
+        rarity: "Common",
+        min: 10,
+        max: 30
+    },
+    
+    MANA_REGENERATION: {
+        name: "§9Mana Regeneration",
+        type: ["helmet", "chestplate", "ring", "amulet"],
+        rarity: "Uncommon",
+        min: 1,
+        max: 3
+    },
+    
     LUCK: {
-        name: "§2Luck",
-        type: ["helmet", "chestplate", "leggings", "boots", "sword", "axe", "pickaxe"],
-        rarity: ["Rare", "Epic", "Legendary", "Mythic"],
-        values: {
-            "Rare": {min: 1, max: 3},
-            "Epic": {min: 2, max: 6},
-            "Legendary": {min: 4, max: 10},
-            "Mythic": {min: 8, max: 18}
-        }
+        name: "§dLuck",
+        type: ["ring", "amulet", "charm"],
+        rarity: "Epic",
+        min: 1,
+        max: 2
     },
+    
     FIRE_RESISTANCE: {
-        name: "§4Fire Resistance",
-        type: ["helmet", "chestplate", "leggings", "boots"],
-        rarity: ["Uncommon", "Rare", "Epic"],
-        values: {
-            "Uncommon": {min: 5, max: 15},
-            "Rare": {min: 10, max: 25},
-            "Epic": {min: 20, max: 40}
-        },
+        name: "§cFire Resistance",
+        type: ["helmet", "chestplate", "leggings", "boots", "amulet"],
+        rarity: "Rare",
+        min: 5,
+        max: 20,
         measure: "%"
     },
-    KNOCKBACK_RESISTANCE: {
-        name: "§7Knockback Resistance",
-        type: ["helmet", "chestplate", "leggings", "boots"],
-        rarity: ["Rare", "Epic", "Legendary"],
-        values: {
-            "Rare": {min: 10, max: 25},
-            "Epic": {min: 20, max: 45},
-            "Legendary": {min: 35, max: 65}
-        },
+    
+    WATER_RESISTANCE: {
+        name: "§bWater Resistance",
+        type: ["helmet", "chestplate", "leggings", "boots", "amulet"],
+        rarity: "Rare",
+        min: 5,
+        max: 20,
         measure: "%"
     },
-    MINING_SPEED: {
-        name: "§eMining Speed",
-        type: ["pickaxe", "shovel", "axe"],
-        rarity: ["Common", "Uncommon", "Rare", "Epic"],
-        values: {
-            "Common": {min: 5, max: 15},
-            "Uncommon": {min: 10, max: 25},
-            "Rare": {min: 20, max: 40},
-            "Epic": {min: 30, max: 60}
-        },
+    
+    POISON_RESISTANCE: {
+        name: "§2Poison Resistance",
+        type: ["helmet", "chestplate", "amulet"],
+        rarity: "Rare",
+        min: 10,
+        max: 30,
         measure: "%"
     },
-    VAMPIRISM: {
-        name: "§5Vampirism",
-        type: ["sword", "axe"],
-        rarity: ["Epic", "Legendary", "Mythic"],
-        values: {
-            "Epic": {min: 1, max: 3},
-            "Legendary": {min: 2, max: 5},
-            "Mythic": {min: 4, max: 8}
-        },
-        measure: "%"
-    },
+    
     THORNS: {
-        name: "§cThorns",
+        name: "§7Thorns",
         type: ["helmet", "chestplate", "leggings", "boots"],
-        rarity: ["Rare", "Epic", "Legendary"],
-        values: {
-            "Rare": {min: 5, max: 15},
-            "Epic": {min: 10, max: 25},
-            "Legendary": {min: 20, max: 40}
-        },
+        rarity: "Rare",
+        min: 2,
+        max: 5,
         measure: "%"
+    },
+    
+    LIFE_STEAL: {
+        name: "§4Life Steal",
+        type: ["sword", "axe", "dagger"],
+        rarity: "Epic",
+        min: 1,
+        max: 3,
+        measure: "%"
+    },
+    
+    KNOCKBACK: {
+        name: "§7Knockback",
+        type: ["sword", "axe", "bow", "crossbow"],
+        rarity: "Uncommon",
+        min: 1,
+        max: 2
+    },
+    
+    PIERCING: {
+        name: "§fPiercing",
+        type: ["bow", "crossbow", "trident"],
+        rarity: "Rare",
+        min: 1,
+        max: 3
+    },
+    
+    DURABILITY: {
+        name: "§6Durability",
+        type: ["sword", "axe", "bow", "crossbow", "helmet", "chestplate", "leggings", "boots", "shield"],
+        rarity: "Common",
+        min: 50,
+        max: 200
+    },
+    
+    EXPERIENCE_BOOST: {
+        name: "§bExperience Boost",
+        type: ["helmet", "ring", "amulet"],
+        rarity: "Epic",
+        min: 5,
+        max: 15,
+        measure: "%"
+    },
+    
+    MINING_SPEED: {
+        name: "§emining Speed",
+        type: ["pickaxe", "shovel", "axe", "hoe"],
+        rarity: "Uncommon",
+        min: 10,
+        max: 25,
+        measure: "%"
+    },
+    
+    FORTUNE: {
+        name: "§aFortune",
+        type: ["pickaxe", "shovel", "axe", "hoe"],
+        rarity: "Rare",
+        min: 1,
+        max: 3
+    },
+    
+    SILK_TOUCH: {
+        name: "§fSilk Touch",
+        type: ["pickaxe", "shovel", "axe", "hoe"],
+        rarity: "Epic",
+        min: 1,
+        max: 1
+    },
+    
+    NIGHT_VISION: {
+        name: "§eNight Vision",
+        type: ["helmet", "amulet"],
+        rarity: "Rare",
+        min: 1,
+        max: 1
+    },
+    
+    WATER_BREATHING: {
+        name: "§bWater Breathing",
+        type: ["helmet", "amulet"],
+        rarity: "Rare",
+        min: 1,
+        max: 1
+    },
+    
+    FEATHER_FALLING: {
+        name: "§fFeather Falling",
+        type: ["boots"],
+        rarity: "Uncommon",
+        min: 1,
+        max: 4
+    },
+    
+    FROST_WALKER: {
+        name: "§bFrost Walker",
+        type: ["boots"],
+        rarity: "Epic",
+        min: 1,
+        max: 2
+    },
+    
+    SOUL_SPEED: {
+        name: "§8Soul Speed",
+        type: ["boots"],
+        rarity: "Rare",
+        min: 1,
+        max: 3
     }
 };
