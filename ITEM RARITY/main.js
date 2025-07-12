@@ -130,7 +130,11 @@ system.runInterval(() => {
 
 function compileBuffs(player) {
     const equipment = player.getComponent("minecraft:equippable");
-    const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
+    const slots = [
+        EquipmentSlot.Mainhand, EquipmentSlot.Offhand,
+        EquipmentSlot.Head, EquipmentSlot.Chest,
+        EquipmentSlot.Legs, EquipmentSlot.Feet
+    ];
     
     let scoreboardObjs = [];
     let scoreboardStats = [];
@@ -139,21 +143,52 @@ function compileBuffs(player) {
         const attributes = parseLoreToStats(equipment, slot);
         for (let attribute of attributes) {
             const values = attribute.split("§w");
-            const StatObj = Object.values(stats).find(d => d.name == values[0]);
+            const StatObj = Object.values(stats).find(d => d.name === values[0]);
+            if (!StatObj) continue;
+
             if (!scoreboardObjs.includes(StatObj.scoreboardTracker)) {
                 scoreboardObjs.push(StatObj.scoreboardTracker);
             }
             
-            scoreboardStats.push({sbObj: StatObj.scoreboardTracker, valueToAdd: Number(values[1])});
-            loadScoreboards(scoreboardObjs);
-            
+            scoreboardStats.push({
+                sbObj: StatObj.scoreboardTracker,
+                valueToAdd: Number(values[1])
+            });
+        }
+    }
+
+    loadScoreboards(scoreboardObjs);
+
+    // Summing values by scoreboardTracker
+    const summedStats = {};
+    for (const entry of scoreboardStats) {
+        if (!summedStats[entry.sbObj]) {
+            summedStats[entry.sbObj] = 0;
+        }
+        summedStats[entry.sbObj] += entry.valueToAdd;
+    }
+
+    // Set score to player
+    for (const sbObj in summedStats) {
+        const objective = world.scoreboard.getObjective(sbObj);
+        if (objective) {
+            objective.setScore(player, Math.floor(summedStats[sbObj]));
         }
     }
 }
 
 function loadScoreboards(Objs) {
     for (const Obj of Objs) {
-        
+        try {
+            // Check if the objective already exists
+            const existing = world.scoreboard.getObjective(9bj);
+            if (!existing) {
+                world.scoreboard.addObjective(Obj, Obj);
+                console.log(`Scoreboard '${Obj}' added.`);
+            }
+        } catch (e) {
+            console.warn(`Failed to add scoreboard '${Obj}':`, e);
+        }
     }
 }
 
