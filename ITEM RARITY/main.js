@@ -52,11 +52,11 @@ function randomStats(rarity, type) {
         
         let addedStats = 0;
         let attempts = 0;
-        const maxAttempts = 30; // Prevent infinite loops
+        const maxAttempts = 20; // Prevent infinite loops
         
         while (addedStats < StatsCounter && attempts < maxAttempts) {
             // Calculate rarity level for this stat
-            let statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 3)));
+            let statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 2)));
             let RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
             
             if (!RR) continue;
@@ -181,7 +181,7 @@ function loadScoreboards(Objs) {
     for (const Obj of Objs) {
         try {
             // Check if the objective already exists
-            const existing = world.scoreboard.getObjective(9bj);
+            const existing = world.scoreboard.getObjective(Obj);
             if (!existing) {
                 world.scoreboard.addObjective(Obj, Obj);
                 console.log(`Scoreboard '${Obj}' added.`);
@@ -193,7 +193,7 @@ function loadScoreboards(Objs) {
 }
 
 function parseLoreToStats(equipment, slot) {
-    const loreArray = equipment.getEquipment(slot)?.getLore();
+    const loreArray = equipment.getEquipment(slot)?.getLore() ?? [];
     const arraySize = loreArray.length;
     if (!arraySize || arraySize != 0 || !loreArray) return [];
     
