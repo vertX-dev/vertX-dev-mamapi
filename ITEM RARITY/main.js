@@ -71,12 +71,13 @@ function randomStats(rarity, type) {
                 const measure = newStat.measure ?? "";
                 const sign = newStatValue >= 0 ? "+" : "";
                 
-                result.push(`${newStat.name} ${sign}${newStatValue}${measure}`);
+                result.push(`${newStat.name} ${sign}§w${newStatValue}§w${measure}`);
                 addedStats++;
             }
             
             attempts++;
         }
+        result.push("§a§t§b§e§n§d§r");
     }
     return result;
 }
@@ -123,13 +124,58 @@ system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
         rarityItemTest(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand), player);
+        compileBuffs(player);
     }
 }, 20)
 
+function compileBuffs(player) {
+    const equipment = player.getComponent("minecraft:equippable");
+    const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
+    
+    let scoreboardObjs = [];
+    let scoreboardStats = [];
+    
+    for (const slot of slots) {
+        const attributes = parseLoreToStats(equipment, slot);
+        for (let attribute of attributes) {
+            const values = attribute.split("§w");
+            const StatObj = Object.values(stats).find(d => d.name == values[0]);
+            if (!scoreboardObjs.includes(StatObj.scoreboardTracker)) {
+                scoreboardObjs.push(StatObj.scoreboardTracker);
+            }
+            
+            scoreboardStats.push({sbObj: StatObj.scoreboardTracker, valueToAdd: Number(values[1])});
+            loadScoreboards(scoreboardObjs);
+            
+        }
+    }
+}
 
-//Events
+function loadScoreboards(Objs) {
+    for (const Obj of Objs) {
+        
+    }
+}
 
-
-
-
+function parseLoreToStats(equipment, slot) {
+    const loreArray = equipment.getEquipment(slot)?.getLore();
+    const arraySize = loreArray.length;
+    if (!arraySize || arraySize != 0 || !loreArray) return [];
+    
+    let attributes = [];
+    let ix = 0;
+    let addATB = false;
+    while (ix < arraySize && !addATB) {
+        if (loreArray[ix] == "§8Attributes") {
+            addATB = true;
+            ix++;
+            while (ix < arraySize && addATB && loreArray[ix] != "§a§t§b§e§n§d§r") {
+                attributes.push(loreArray[ix]);
+                ix++;
+            }
+            addATB = false;
+        }
+    }
+    return attributes;
+}
 
