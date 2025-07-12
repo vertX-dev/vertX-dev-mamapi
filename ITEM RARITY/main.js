@@ -1,6 +1,45 @@
 import { world, system, EquipmentSlot } from "@minecraft/server";
 import { stats, TagMapping, RARITY, blackList } from './dataLib.js';
 
+// Static predefined scoreboards - load early to prevent timing issues
+const PREDEFINED_SCOREBOARDS = [
+    { name: "damage", displayName: "Damage" },
+    { name: "defense", displayName: "Defense" },
+    { name: "health", displayName: "Health" },
+    { name: "speed", displayName: "Speed" },
+    { name: "critchance", displayName: "Crit Chance" },
+    { name: "critdamage", displayName: "Crit Damage" },
+    { name: "attackspeed", displayName: "Attack Speed" },
+    { name: "miningspeed", displayName: "Mining Speed" },
+    { name: "luck", displayName: "Luck" },
+    { name: "regen", displayName: "Regeneration" },
+    { name: "magicfind", displayName: "Magic Find" },
+    { name: "knockbackres", displayName: "Knockback Resistance" },
+    { name: "fireres", displayName: "Fire Resistance" },
+    { name: "flightspeed", displayName: "Flight Speed" },
+    { name: "lifesteal", displayName: "Lifesteal" }
+];
+
+// Initialize all scoreboards early
+function initializeScoreboards() {
+    console.log("Initializing static scoreboards...");
+    for (const scoreboard of PREDEFINED_SCOREBOARDS) {
+        try {
+            const existing = world.scoreboard.getObjective(scoreboard.name);
+            if (!existing) {
+                world.scoreboard.addObjective(scoreboard.name, scoreboard.displayName);
+                console.log(`Scoreboard '${scoreboard.name}' (${scoreboard.displayName}) added.`);
+            }
+        } catch (e) {
+            console.warn(`Failed to add scoreboard '${scoreboard.name}':`, e.message);
+        }
+    }
+    console.log("Static scoreboards initialization complete.");
+}
+
+// Initialize scoreboards immediately when the script loads
+initializeScoreboards();
+
 function rarityItemTest(itemStack, player) {
     if (!itemStack || !player) return;
 
@@ -144,7 +183,6 @@ function compileBuffs(player) {
         EquipmentSlot.Legs, EquipmentSlot.Feet
     ];
     
-    let scoreboardObjs = [];
     let scoreboardStats = [];
     
     for (const slot of slots) {
@@ -153,10 +191,6 @@ function compileBuffs(player) {
             const values = attribute.split("§w");
             const StatObj = Object.values(stats).find(d => d.name === values[0]);
             if (!StatObj) continue;
-
-            if (!scoreboardObjs.includes(StatObj.scoreboardTracker)) {
-                scoreboardObjs.push(StatObj.scoreboardTracker);
-            }
             
             scoreboardStats.push({
                 sbObj: StatObj.scoreboardTracker,
@@ -165,47 +199,29 @@ function compileBuffs(player) {
         }
     }
 
-    loadScoreboards(scoreboardObjs);
-
     // Summing values by scoreboardTracker
     const summedStats = {};
     for (const entry of scoreboardStats) {
-        // Sanitize the scoreboard name to match what was created in loadScoreboards
-        const sanitizedName = sanitizeScoreboardName(entry.sbObj);
+        // Use the scoreboard name directly since we have predefined static scoreboards
+        const scoreboardName = sanitizeScoreboardName(entry.sbObj);
             
-        if (!summedStats[sanitizedName]) {
-            summedStats[sanitizedName] = 0;
+        if (!summedStats[scoreboardName]) {
+            summedStats[scoreboardName] = 0;
         }
-        summedStats[sanitizedName] += entry.valueToAdd;
+        summedStats[scoreboardName] += entry.valueToAdd;
     }
 
-    // Set score to player
-    for (const sbObj in summedStats) {
-        const objective = world.scoreboard.getObjective(sbObj);
+    // Set score to player for each predefined scoreboard
+    for (const scoreboardDef of PREDEFINED_SCOREBOARDS) {
+        const scoreValue = summedStats[scoreboardDef.name] || 0;
+        const objective = world.scoreboard.getObjective(scoreboardDef.name);
         if (objective) {
-            objective.setScore(player, Math.floor(summedStats[sbObj]));
+            objective.setScore(player, Math.floor(scoreValue));
         }
     }
 }
 
-function loadScoreboards(Objs) {
-    for (const Obj of Objs) {
-        try {
-            // Sanitize objective name for Minecraft compatibility
-            // Scoreboard objectives should be lowercase, alphanumeric, and under 16 characters
-            let sanitizedName = sanitizeScoreboardName(Obj);
-            
-            // Check if the objective already exists
-            const existing = world.scoreboard.getObjective(sanitizedName);
-            if (!existing) {
-                world.scoreboard.addObjective(sanitizedName, Obj);
-                console.log(`Scoreboard '${sanitizedName}' (${Obj}) added.`);
-            }
-        } catch (e) {
-            console.warn(`Failed to add scoreboard '${Obj}':`, e.message);
-        }
-    }
-}
+
 
 function parseLoreToStats(equipment, slot) {
     const loreArray = equipment.getEquipment(slot)?.getLore() ?? [];
