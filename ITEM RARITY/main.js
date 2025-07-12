@@ -2,7 +2,7 @@ import { world, system, EquipmentSlot } from "@minecraft/server";
 import { stats, TagMapping, RARITY, blackList } from './dataLib.js';
 
 function rarityItemTest(itemStack, player) {
-    if (!itemStack) return;
+    if (!itemStack || !player) return;
 
     const lore = itemStack.getLore() ?? [];
 
@@ -11,7 +11,6 @@ function rarityItemTest(itemStack, player) {
 
         if (Tags && Tags.rarity) {
             const rarity = randomRarity();
-            
             const stats = randomStats(rarity.sid, Tags.data);
             
             
@@ -20,11 +19,15 @@ function rarityItemTest(itemStack, player) {
             
             const newLore = [rarity.dName, ...stats];
           
-            let newItem = itemStack.clone();
-            newItem.setLore(newLore);
-            const equippable = player.getComponent("minecraft:equippable");
-            if (equippable) {
-                equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+            try {
+                let newItem = itemStack.clone();
+                newItem.setLore(newLore);
+                const equippable = player.getComponent("minecraft:equippable");
+                if (equippable) {
+                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                }
+            } catch (error) {
+                console.warn("Error applying rarity:", error);
             }
         }
     }
@@ -32,56 +35,55 @@ function rarityItemTest(itemStack, player) {
 
 
 function randomStats(rarity, type) {
-    // Type filtered
-    const availableStats = Object.values(stats).filter(r => r.type.includes(type));
+    // Filter available stats that match the item type
+    const availableStats = Object.values(stats).filter(stat => stat.type.includes(type));
     let srr = Object.values(RARITY).find(r => r.sid === rarity);
     
+    if (!availableStats.length) {
+        return [];
+    }
+    // Calculate number of stats to add
     let StatsCounter = Math.floor(Math.random() * (srr.maxStats - srr.minStats + 1) + srr.minStats);
     
     let result = [];
     
     if (StatsCounter > 0) {
-        result.push("Attributes");
+        result.push("§8Attributes");
         
         let addedStats = 0;
-        let totalAttempts = 0;
-        const maxTotalAttempts = 50; // Prevent infinite loops
+        let attempts = 0;
+        const maxAttempts = 30; // Prevent infinite loops
         
-        while (addedStats < StatsCounter && totalAttempts < maxTotalAttempts) {
-            let attempts = 0;
-            let foundStat = false;
+        while (addedStats < StatsCounter && attempts < maxAttempts) {
+            // Calculate rarity level for this stat
+            let statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 3)));
+            let RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
             
-            while (!foundStat && attempts < 10) {
-                let RR = randomRarity(Math.min(6, Math.max(1, (srr.id - Math.floor((Math.random() * 3) - 1)))));
-                const RarityStats = availableStats.filter(s => s.rarity.includes(RR.sid));
+            if (!RR) continue;
+            
+            // Filter stats by rarity
+            const validStats = availableStats.filter(s => s.rarity == RR.sid);
+            
+            if (validStats.length > 0) {
+                const newStat = validStats[Math.floor(Math.random() * validStats.length)];
+
+                const newStatValue = Math.floor(Math.random() * (newStat.max - newStat.min + 1) + newStat.min);
+                const measure = newStat.measure ?? "";
+                const sign = newStatValue >= 0 ? "+" : "";
                 
-                if (RarityStats.length > 0) {
-                    const newStat = RarityStats[Math.floor((Math.random()) * RarityStats.length)];
-                    const newStatValue = +(Math.random() * (newStat.values[RR.sid].max - newStat.values[RR.sid].min) + newStat.values[RR.sid].min).toFixed(1);
-                    const measure = newStat.measure ?? "";
-                    const sign = newStatValue >= 0 ? "+" : "";
-                    result.push(`${newStat.name} ${sign}${newStatValue}${measure}`);
-                    foundStat = true;
-                    addedStats++;
-                } else {
-                    attempts++;
-                }
+                result.push(`${newStat.name} ${sign}${newStatValue}${measure}`);
+                addedStats++;
             }
             
-            totalAttempts++;
-            
-            // If we couldn't find a stat after 10 attempts, break to avoid infinite loop
-            if (!foundStat) {
-                break;
-            }
+            attempts++;
         }
     }
     return result;
 }
 
 
-function randomRarity(SRR = 1) {
-    let rarity = Object.values(RARITY).find(r => r.id === SRR);
+function randomRarity() {
+    let rarity = RARITY.COMMON;
     let currentId = rarity.id;
 
     while (true) {
