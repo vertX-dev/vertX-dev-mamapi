@@ -279,7 +279,7 @@ function calculateDamage(player, damage = 0) {
     const critChance = getScoreboardValue("critchance", player);
     if ((Math.random() * 100) <= critChance + 5) {
         damage = damage * (1 + (getScoreboardValue("critdamage", player) / 100));
-        player.runCommand("title @s actionbar §cCRIT " + damage);
+        player.runCommand("title @s actionbar §cCRIT " + damage.toFixed(1));
     }
     
     return Math.floor(damage);
@@ -291,8 +291,8 @@ world.afterEvents.entityHurt.subscribe((ev) => {
     const mob = ev.hurtEntity;
     let damage = calculateDamage(player, ev.damage);
     
-    let range = ["bow", "crossbow"];
-    if (!range.includes(parseTags(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand)?.typeId).data)) {
+    let range = ["sword", "axe", "pickaxe", "trident", "mace"];
+    if (range.includes(parseTags(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand)?.typeId).data)) {
         
         mob.applyDamage(damage);
         
@@ -352,14 +352,20 @@ function giveItem(player, itemStack, rarity) {
 */
 
 world.afterEvents.projectileHitEntity.subscribe((ev) => {
-    if (!ev.source || ev.source.typeId != "minecraft:player") return;
+    if (!ev.source || ev.source.typeId !== "minecraft:player") return;
+
     const player = ev.source;
-    const mob = ev.getEntityHit();
-    if (mob.typeId != "minecraft:enderman") {
+    const entityHit = ev.getEntityHit();
+
+    if (!entityHit || !entityHit.entity) return;
+
+    const mob = entityHit.entity;
+
+    if (mob.typeId !== "minecraft:enderman") {
         let damage = calculateDamage(player, 6);
-        
+
         mob.applyDamage(damage);
-        
+
         healEntity(player, ((getScoreboardValue("lifesteal", player) / 100) * damage) / 2);
     }
 });
