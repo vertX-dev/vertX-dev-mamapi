@@ -8,56 +8,10 @@ const PREDEFINED_SCOREBOARDS = [
     { name: "health", displayName: "Health" },
     { name: "speed", displayName: "Speed" },
     { name: "critchance", displayName: "Crit Chance" },
-    { name: "critdamage", displayName: "Crit Damage" },
-    { name: "attackspeed", displayName: "Attack Speed" },
-    { name: "miningspeed", displayName: "Mining Speed" },
-    { name: "luck", displayName: "Luck" },
-    { name: "regen", displayName: "Regeneration" },
-    { name: "magicfind", displayName: "Magic Find" },
-    { name: "knockbackres", displayName: "Knockback Resistance" },
-    { name: "fireres", displayName: "Fire Resistance" },
-    { name: "flightspeed", displayName: "Flight Speed" },
-    { name: "lifesteal", displayName: "Lifesteal" }
+    { name: "critdamage", displayName: "Crit Damage" }
 ];
 
-// Optimized mappings for efficient lookup
-let STAT_NAME_LOOKUP = {};
-let SCOREBOARD_TRACKER_MAP = {};
-let PLAYER_SCOREBOARD_CACHE = new Map();
-
-// Initialize optimized mappings after stats are loaded
-function initializeOptimizedMappings() {
-    console.log("Initializing optimized stat mappings...");
-    
-    // Create reverse lookup for stat names to stat objects
-    STAT_NAME_LOOKUP = {};
-    for (const [key, stat] of Object.entries(stats)) {
-        STAT_NAME_LOOKUP[stat.name] = stat;
-    }
-    
-    // Create mapping from scoreboardTracker to sanitized scoreboard name
-    SCOREBOARD_TRACKER_MAP = {
-        "damage": "damage",
-        "defense": "defense", 
-        "health": "health",
-        "speed": "speed",
-        "critChance": "critchance",
-        "critDamage": "critdamage",
-        "attackSpeed": "attackspeed",
-        "miningSpeed": "miningspeed",
-        "luck": "luck",
-        "regen": "regen",
-        "magicFind": "magicfind",
-        "knockbackRes": "knockbackres",
-        "fireRes": "fireres",
-        "flightSpeed": "flightspeed",
-        "lifesteal": "lifesteal"
-    };
-    
-    console.log("Optimized mappings initialized.");
-}
-
-// Initialize all scoreboards after world is ready
+// Initialize all scoreboards early
 function initializeScoreboards() {
     console.log("Initializing static scoreboards...");
     for (const scoreboard of PREDEFINED_SCOREBOARDS) {
@@ -74,16 +28,8 @@ function initializeScoreboards() {
     console.log("Static scoreboards initialization complete.");
 }
 
-// Subscribe to world initialization event to ensure world is ready
-world.afterEvents.worldInitialize.subscribe(() => {
-    initializeScoreboards();
-    initializeOptimizedMappings();
-});
-
-// Clean up cache when players leave to prevent memory leaks
-world.afterEvents.playerLeave.subscribe((event) => {
-    PLAYER_SCOREBOARD_CACHE.delete(event.playerId);
-});
+// Initialize scoreboards immediately when the script loads
+initializeScoreboards();
 
 function rarityItemTest(itemStack, player) {
     if (!itemStack || !player) return;
@@ -204,8 +150,6 @@ function parseTags(itemId) {
     }
 }
 
-
-
 system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
@@ -222,54 +166,41 @@ function compileBuffs(player) {
         EquipmentSlot.Legs, EquipmentSlot.Feet
     ];
     
-    // Initialize stats accumulator with all scoreboards set to 0
-    const currentStats = {};
-    for (const scoreboardDef of PREDEFINED_SCOREBOARDS) {
-        currentStats[scoreboardDef.name] = 0;
-    }
+    let scoreboardStats = [];
     
-    // Parse and accumulate stats from all equipment slots
     for (const slot of slots) {
         const attributes = parseLoreToStats(equipment, slot);
         for (let attribute of attributes) {
             const values = attribute.split("§w");
-            const statName = values[0];
-            const statValue = Number(values[1]);
-            
-            // Use optimized lookup instead of Object.values().find()
-            const StatObj = STAT_NAME_LOOKUP[statName];
+            const StatObj = Object.values(stats).find(d => d.name === values[0]);
             if (!StatObj) continue;
             
-            // Use direct mapping instead of sanitizeScoreboardName()
-            const scoreboardName = SCOREBOARD_TRACKER_MAP[StatObj.scoreboardTracker];
-            if (scoreboardName && currentStats.hasOwnProperty(scoreboardName)) {
-                currentStats[scoreboardName] += statValue;
-            }
+            scoreboardStats.push({
+                sbObj: StatObj.scoreboardTracker,
+                valueToAdd: Number(values[1])
+            });
         }
     }
 
-    // Get cached values for this player
-    const playerId = player.id;
-    const cachedStats = PLAYER_SCOREBOARD_CACHE.get(playerId) || {};
-    
-    // Only update scoreboards that have changed values
-    let hasChanges = false;
-    for (const scoreboardName in currentStats) {
-        const newValue = Math.floor(currentStats[scoreboardName]);
-        const oldValue = cachedStats[scoreboardName] || 0;
-        
-        if (newValue !== oldValue) {
-            hasChanges = true;
-            const objective = world.scoreboard.getObjective(scoreboardName);
-            if (objective) {
-                objective.setScore(player, newValue);
-            }
+    // Summing values by scoreboardTracker
+    const summedStats = {};
+    for (const entry of scoreboardStats) {
+        // Use the scoreboard name directly since we have predefined static scoreboards
+        const scoreboardName = entry.sbObj;
+            
+        if (!summedStats[scoreboardName]) {
+            summedStats[scoreboardName] = 0;
         }
+        summedStats[scoreboardName] += entry.valueToAdd;
     }
-    
-    // Update cache only if there were changes
-    if (hasChanges) {
-        PLAYER_SCOREBOARD_CACHE.set(playerId, { ...currentStats });
+
+    // Set score to player for each predefined scoreboard
+    for (const scoreboardDef of PREDEFINED_SCOREBOARDS) {
+        const scoreValue = summedStats[scoreboardDef.name] || 0;
+        const objective = world.scoreboard.getObjective(scoreboardDef.name);
+        if (objective) {
+            objective.setScore(player, Math.floor(scoreValue));
+        }
     }
 }
 
@@ -297,4 +228,3 @@ function parseLoreToStats(equipment, slot) {
     }
     return attributes;
 }
-
