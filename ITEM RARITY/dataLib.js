@@ -113,6 +113,7 @@ export const TagMapping = [
     "axe",
     "shovel",
     "hoe",
+    "mace",
 
     "helmet",
     "chestplate",
@@ -188,7 +189,15 @@ export const stats = {
     DAMAGE_PERCENT_EPIC: { name: "§5Damage§x", type: TagMapping, rarity: "Epic", min: 5, max: 10, scoreboardTracker: "damagepercent", measure: "%" },
     DAMAGE_PERCENT_LEGENDARY: { name: "§6Damage§x", type: TagMapping, rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "damagepercent", measure: "%" },
     DAMAGE_PERCENT_MYTHIC: { name: "§cDamage§x", type: TagMapping, rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "damagepercent", measure: "%" },
-
+    
+    // LIFESTEAL - All items
+    LIFESTEAL_COMMON:    { name: "§8Lifesteal",     type: TagMapping, rarity: "Common",    min: 1,  max: 2,  scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_UNCOMMON:  { name: "§aLifesteal",     type: TagMapping, rarity: "Uncommon",  min: 2,  max: 4,  scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_RARE:      { name: "§1Lifesteal",     type: TagMapping, rarity: "Rare",      min: 3,  max: 5,  scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_EPIC:      { name: "§5Lifesteal",     type: TagMapping, rarity: "Epic",      min: 4,  max: 7,  scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_LEGENDARY: { name: "§6Lifesteal",     type: TagMapping, rarity: "Legendary", min: 6,  max: 9,  scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_MYTHIC:    { name: "§cLifesteal",     type: TagMapping, rarity: "Mythic",    min: 8,  max: 12, scoreboardTracker: "lifesteal", measure: "%" }
+    
 };
 
 
