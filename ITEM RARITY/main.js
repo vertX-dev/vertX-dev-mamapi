@@ -101,7 +101,7 @@ function randomStats(rarity, type) {
                 const measure = newStat.measure ?? "";
                 const sign = newStatValue >= 0 ? "+" : "";
                 
-                result.push(`${newStat.name} ${sign}§w${newStatValue}§w${measure}`);
+                result.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${measure}`);
                 addedStats++;
             }
             
@@ -177,7 +177,7 @@ function compileBuffs(player) {
             
             scoreboardStats.push({
                 sbObj: StatObj.scoreboardTracker,
-                valueToAdd: Number(values[1])
+                valueToAdd: Number(values[2])
             });
         }
     }
@@ -207,24 +207,28 @@ function compileBuffs(player) {
 
 
 function parseLoreToStats(equipment, slot) {
-    const loreArray = equipment.getEquipment(slot)?.getLore() ?? [];
-    const arraySize = loreArray.length;
-    if (!arraySize || arraySize === 0 || !loreArray) return [];
+    const itemStack = equipment.getEquipment(slot);
+    if (!itemStack) return [];
+    
+    const loreArray = itemStack.getLore();
+    if (!loreArray || loreArray.length === 0) return [];
     
     let attributes = [];
     let ix = 0;
     let addATB = false;
-    while (ix < arraySize && !addATB) {
-        if (loreArray[ix] == "§8Attributes") {
+    
+    while (ix < loreArray.length) {
+        if (loreArray[ix] === "§8Attributes") {
             addATB = true;
             ix++;
-            while (ix < arraySize && addATB && loreArray[ix] != "§a§t§b§e§n§d§r") {
+            while (ix < loreArray.length && loreArray[ix] !== "§a§t§b§e§n§d§r") {
                 attributes.push(loreArray[ix]);
                 ix++;
             }
-            addATB = false;
+            break;
         }
         ix++;
     }
+    
     return attributes;
 }
