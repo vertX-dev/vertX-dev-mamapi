@@ -10,43 +10,43 @@ export const RARITY = {
     },
     UNCOMMON: {
         id: 2,
-        chance: 0.45,
+        chance: 0.7,
         sid: "Uncommon",
         dName: "\n\n",
-        minStats: 1,
+        minStats: 0,
         maxStats: 2
     },
     RARE: {
         id: 3,
-        chance: 0.3,
+        chance: 0.5,
         sid: "Rare",
         dName: "\n\n",
-        minStats: 2,
-        maxStats: 3
+        minStats: 1,
+        maxStats: 2
     },
     EPIC: {
         id: 4,
-        chance: 0.2,
+        chance: 0.4,
         sid: "Epic",
         dName: "\n\n",
-        minStats: 3,
-        maxStats: 4
+        minStats: 1,
+        maxStats: 3
     },
     LEGENDARY: {
         id: 5,
-        chance: 0.15,
+        chance: 0.4,
         sid: "Legendary",
         dName: "\n\n",
-        minStats: 4,
-        maxStats: 5
+        minStats: 2,
+        maxStats: 3
     },
     MYTHIC: {
         id: 6,
-        chance: 0.2,
+        chance: 0.5,
         sid: "Mythic",
         dName: "\n\n",
-        minStats: 5,
-        maxStats: 6
+        minStats: 3,
+        maxStats: 4
     }
 };
 */
@@ -128,52 +128,79 @@ export const TagMapping = [
 ];
 
 export const stats = {
-    // DAMAGE - Weapons
-    DAMAGE_COMMON: { name: "§8Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Common", min: 1, max: 2, scoreboardTracker: "damage" },
-    DAMAGE_UNCOMMON: { name: "§aDamage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Uncommon", min: 1, max: 3, scoreboardTracker: "damage" },
-    DAMAGE_RARE: { name: "§1Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Rare", min: 2, max: 4, scoreboardTracker: "damage" },
-    DAMAGE_EPIC: { name: "§5Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Epic", min: 3, max: 4, scoreboardTracker: "damage" },
-    DAMAGE_LEGENDARY: { name: "§6Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Legendary", min: 3, max: 5, scoreboardTracker: "damage" },
-    DAMAGE_MYTHIC: { name: "§cDamage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Mythic", min: 4, max: 6, scoreboardTracker: "damage" },
+    // DAMAGE - All items
+    DAMAGE_COMMON: { name: "§8Damage", type: TagMapping, rarity: "Common", min: 1, max: 2, scoreboardTracker: "damage" },
+    DAMAGE_UNCOMMON: { name: "§aDamage", type: TagMapping, rarity: "Uncommon", min: 1, max: 3, scoreboardTracker: "damage" },
+    DAMAGE_RARE: { name: "§1Damage", type: TagMapping, rarity: "Rare", min: 2, max: 4, scoreboardTracker: "damage" },
+    DAMAGE_EPIC: { name: "§5Damage", type: TagMapping, rarity: "Epic", min: 3, max: 5, scoreboardTracker: "damage" },
+    DAMAGE_LEGENDARY: { name: "§6Damage", type: TagMapping, rarity: "Legendary", min: 4, max: 7, scoreboardTracker: "damage" },
+    DAMAGE_MYTHIC: { name: "§cDamage", type: TagMapping, rarity: "Mythic", min: 5, max: 8, scoreboardTracker: "damage" },
 
-    // DEFENSE - Armor
-    DEFENSE_COMMON: { name: "§8Defense", type: ["helmet", "chestplate", "leggings", "boots", "shield"], rarity: "Common", min: 1, max: 3, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_UNCOMMON: { name: "§aDefense", type: ["helmet", "chestplate", "leggings", "boots", "shield"], rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_RARE: { name: "§1Defense", type: ["helmet", "chestplate", "leggings", "boots", "shield"], rarity: "Rare", min: 3, max: 6, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_EPIC: { name: "§5Defense", type: ["helmet", "chestplate", "leggings", "boots", "shield"], rarity: "Epic", min: 5, max: 8, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_LEGENDARY: { name: "§6Defense", type: ["helmet", "chestplate", "leggings", "boots", "shield"], rarity: "Legendary", min: 7, max: 10, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_MYTHIC: { name: "§cDefense", type: ["helmet", "chestplate", "leggings", "boots", "shield"], rarity: "Mythic", min: 10, max: 15, scoreboardTracker: "defense", measure: "%" },
+    // DEFENSE - All items
+    DEFENSE_COMMON: { name: "§8Defense", type: TagMapping, rarity: "Common", min: 1, max: 3, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_UNCOMMON: { name: "§aDefense", type: TagMapping, rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_RARE: { name: "§1Defense", type: TagMapping, rarity: "Rare", min: 3, max: 6, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_EPIC: { name: "§5Defense", type: TagMapping, rarity: "Epic", min: 5, max: 8, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_LEGENDARY: { name: "§6Defense", type: TagMapping, rarity: "Legendary", min: 7, max: 10, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_MYTHIC: { name: "§cDefense", type: TagMapping, rarity: "Mythic", min: 10, max: 15, scoreboardTracker: "defense", measure: "%" },
 
+    // SPEED - All items
+    SPEED_COMMON:    { name: "§8Speed",     type: TagMapping, rarity: "Common",    min: 1,  max: 3,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_UNCOMMON:  { name: "§aSpeed",     type: TagMapping, rarity: "Uncommon",  min: 2,  max: 5,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_RARE:      { name: "§1Speed",     type: TagMapping, rarity: "Rare",      min: 3,  max: 6,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_EPIC:      { name: "§5Speed",     type: TagMapping, rarity: "Epic",      min: 5,  max: 8,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_LEGENDARY: { name: "§6Speed",     type: TagMapping, rarity: "Legendary", min: 7,  max: 10, scoreboardTracker: "speed", measure: "%" },
+    SPEED_MYTHIC:    { name: "§cSpeed",     type: TagMapping, rarity: "Mythic",    min: 10, max: 15, scoreboardTracker: "speed", measure: "%" },
+    
     // HEALTH - All items
-    HEALTH_COMMON: { name: "§8Health", type: TagMapping, rarity: "Common", min: 2, max: 5, scoreboardTracker: "health" },
-    HEALTH_UNCOMMON: { name: "§aHealth", type: TagMapping, rarity: "Uncommon", min: 3, max: 8, scoreboardTracker: "health" },
-    HEALTH_RARE: { name: "§1Health", type: TagMapping, rarity: "Rare", min: 5, max: 12, scoreboardTracker: "health" },
-    HEALTH_EPIC: { name: "§5Health", type: TagMapping, rarity: "Epic", min: 8, max: 18, scoreboardTracker: "health" },
-    HEALTH_LEGENDARY: { name: "§6Health", type: TagMapping, rarity: "Legendary", min: 12, max: 25, scoreboardTracker: "health" },
-    HEALTH_MYTHIC: { name: "§cHealth", type: TagMapping, rarity: "Mythic", min: 20, max: 35, scoreboardTracker: "health" },
+    HEALTH_COMMON: { name: "§8Health", type: TagMapping, rarity: "Common", min: 1, max: 2, scoreboardTracker: "health" },
+    HEALTH_UNCOMMON: { name: "§aHealth", type: TagMapping, rarity: "Uncommon", min: 1, max: 4, scoreboardTracker: "health" },
+    HEALTH_RARE: { name: "§1Health", type: TagMapping, rarity: "Rare", min: 2, max: 5, scoreboardTracker: "health" },
+    HEALTH_EPIC: { name: "§5Health", type: TagMapping, rarity: "Epic", min: 4, max: 7, scoreboardTracker: "health" },
+    HEALTH_LEGENDARY: { name: "§6Health", type: TagMapping, rarity: "Legendary", min: 5, max: 8, scoreboardTracker: "health" },
+    HEALTH_MYTHIC: { name: "§cHealth", type: TagMapping, rarity: "Mythic", min: 6, max: 10, scoreboardTracker: "health" },
+    
+    // CRITICAL CHANCE - All items
+    CRIT_CHANCE_COMMON: { name: "§8Crit Chance", type: TagMapping, rarity: "Common", min: 1, max: 3, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_UNCOMMON: { name: "§aCrit Chance", type: TagMapping, rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_RARE: { name: "§1Crit Chance", type: TagMapping, rarity: "Rare", min: 3, max: 7, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_EPIC: { name: "§5Crit Chance", type: TagMapping, rarity: "Epic", min: 5, max: 10, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_LEGENDARY: { name: "§6Crit Chance", type: TagMapping, rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_MYTHIC: { name: "§cCrit Chance", type: TagMapping, rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "critchance", measure: "%" },
 
-    // SPEED - Boots, Elytra, Weapons
-    SPEED_COMMON: { name: "§8Speed", type: ["boots", "elytra", "sword", "bow"], rarity: "Common", min: 1, max: 2, scoreboardTracker: "speed" },
-    SPEED_UNCOMMON: { name: "§aSpeed", type: ["boots", "elytra", "sword", "bow"], rarity: "Uncommon", min: 1, max: 3, scoreboardTracker: "speed" },
-    SPEED_RARE: { name: "§1Speed", type: ["boots", "elytra", "sword", "bow"], rarity: "Rare", min: 2, max: 4, scoreboardTracker: "speed" },
-    SPEED_EPIC: { name: "§5Speed", type: ["boots", "elytra", "sword", "bow"], rarity: "Epic", min: 3, max: 6, scoreboardTracker: "speed" },
-    SPEED_LEGENDARY: { name: "§6Speed", type: ["boots", "elytra", "sword", "bow"], rarity: "Legendary", min: 4, max: 8, scoreboardTracker: "speed" },
-    SPEED_MYTHIC: { name: "§cSpeed", type: ["boots", "elytra", "sword", "bow"], rarity: "Mythic", min: 6, max: 12, scoreboardTracker: "speed" },
+    // CRITICAL DAMAGE - All items
+    CRIT_DAMAGE_COMMON: { name: "§8Crit Damage", type: TagMapping, rarity: "Common", min: 1, max: 5, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_UNCOMMON: { name: "§aCrit Damage", type: TagMapping, rarity: "Uncommon", min: 4, max: 10, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_RARE: { name: "§1Crit Damage", type: TagMapping, rarity: "Rare", min: 9, max: 15, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_EPIC: { name: "§5Crit Damage", type: TagMapping, rarity: "Epic", min: 15, max: 22, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_LEGENDARY: { name: "§6Crit Damage", type: TagMapping, rarity: "Legendary", min: 21, max: 33, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_MYTHIC: { name: "§cCrit Damage", type: TagMapping, rarity: "Mythic", min: 33, max: 45, scoreboardTracker: "critdamage", measure: "%" },
 
-    // CRITICAL CHANCE - Weapons
-    CRIT_CHANCE_COMMON: { name: "§8Crit Chance", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Common", min: 1, max: 3, scoreboardTracker: "critchance" },
-    CRIT_CHANCE_UNCOMMON: { name: "§aCrit Chance", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "critchance" },
-    CRIT_CHANCE_RARE: { name: "§1Crit Chance", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Rare", min: 3, max: 7, scoreboardTracker: "critchance" },
-    CRIT_CHANCE_EPIC: { name: "§5Crit Chance", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Epic", min: 5, max: 10, scoreboardTracker: "critchance" },
-    CRIT_CHANCE_LEGENDARY: { name: "§6Crit Chance", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "critchance" },
-    CRIT_CHANCE_MYTHIC: { name: "§cCrit Chance", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "critchance" },
+    // REGENERATION - All items
+    REGENERATION_EPIC: { name: "§5Regeneration", type: TagMapping, rarity: "Epic", min: 1, max: 2, scoreboardTracker: "regeneration", measure: "/10s" },
+    REGENERATION_LEGENDARY: { name: "§6Regeneration", type: TagMapping, rarity: "Legendary", min: 1, max: 3, scoreboardTracker: "regeneration", measure: "/10s" },
+    REGENERATION_MYTHIC: { name: "§cRegeneration", type: TagMapping, rarity: "Mythic", min: 3, max: 4, scoreboardTracker: "regeneration", measure: "/10s" },
 
-    // CRITICAL DAMAGE - Weapons
-    CRIT_DAMAGE_COMMON: { name: "§8Crit Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Common", min: 5, max: 10, scoreboardTracker: "critdamage" },
-    CRIT_DAMAGE_UNCOMMON: { name: "§aCrit Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Uncommon", min: 8, max: 15, scoreboardTracker: "critdamage" },
-    CRIT_DAMAGE_RARE: { name: "§1Crit Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Rare", min: 12, max: 25, scoreboardTracker: "critdamage" },
-    CRIT_DAMAGE_EPIC: { name: "§5Crit Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Epic", min: 20, max: 35, scoreboardTracker: "critdamage" },
-    CRIT_DAMAGE_LEGENDARY: { name: "§6Crit Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Legendary", min: 30, max: 50, scoreboardTracker: "critdamage" },
-    CRIT_DAMAGE_MYTHIC: { name: "§cCrit Damage", type: ["sword", "axe", "bow", "crossbow", "trident"], rarity: "Mythic", min: 45, max: 75, scoreboardTracker: "critdamage" },
+    // DAMAGE PERCENT - All items
+    DAMAGE_PERCENT_COMMON: { name: "§8Damage§x", type: TagMapping, rarity: "Common", min: 1, max: 3, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_UNCOMMON: { name: "§aDamage§x", type: TagMapping, rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_RARE: { name: "§1Damage§x", type: TagMapping, rarity: "Rare", min: 3, max: 7, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_EPIC: { name: "§5Damage§x", type: TagMapping, rarity: "Epic", min: 5, max: 10, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_LEGENDARY: { name: "§6Damage§x", type: TagMapping, rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_MYTHIC: { name: "§cDamage§x", type: TagMapping, rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "damagepercent", measure: "%" },
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
