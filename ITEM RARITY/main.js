@@ -45,6 +45,37 @@ function parseTags(itemId = "minecraft:apple") {
     }
 }
 
+testCooldown(player, name, object = skills) {
+    const Obj = Object.values(object).find(s => s.name == name);
+    
+    const scoreboardObj = world.scoreboard.getObjective(Obj.scoreboard);
+    const scoreboardValue = scoreboardObj.getScore(player);
+    
+    return {
+        obj: scoreboardObj,
+        time: scoreboardValue
+    };
+}
+
+function updateCooldown() {
+    const COBJS = [
+        
+    ];
+    for (const obj of COBJS) {
+        const players = world.getPlayers();
+        const SBOBJ = world.scoreboard.getObjective(obj.id);
+        for (const player of players) {
+            const cd = SBOBJ.getScore(player);
+            if (cd >= 0) {
+                SBOBJ.addScore(player, -1);
+            } 
+            if (cd == 0) {
+                player.runCommand(`title @s actionbar §aSkill §l${obj.displayName}§r§a is off cooldown and ready!`)
+            }
+        }
+    }
+}
+
 function initializeScoreboards() {
     console.log("Initializing static scoreboards...");
     for (const scoreboard of PREDEFINED_SCOREBOARDS) {
@@ -85,43 +116,43 @@ function randomStats(rarity, type) {
     // Filter available stats that match the item type
     const availableStats = Object.values(stats).filter(stat => stat.type.includes(type));
     let srr = Object.values(RARITY).find(r => r.sid === rarity);
-    
+
     if (!availableStats.length) {
         return [];
     }
     // Calculate number of stats to add
     let StatsCounter = Math.floor(Math.random() * (srr.maxStats - srr.minStats + 1) + srr.minStats);
-    
+
     let result = [];
-    
+
     if (StatsCounter > 0) {
         result.push("§8Attributes");
-        
+
         let addedStats = 0;
         let attempts = 0;
         const maxAttempts = 20; // Prevent infinite loops
-        
+
         while (addedStats < StatsCounter && attempts < maxAttempts) {
             // Calculate rarity level for this stat
             let statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 2)));
             let RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
-            
+
             if (!RR) continue;
-            
+
             // Filter stats by rarity
             const validStats = availableStats.filter(s => s.rarity == RR.sid);
-            
+
             if (validStats.length > 0) {
                 const newStat = validStats[Math.floor(Math.random() * validStats.length)];
 
                 const newStatValue = Math.floor((Math.random() * (newStat.max - newStat.min + 1) + newStat.min) * BOOST_COEF / 10);
                 const measure = newStat.measure ?? "";
                 const sign = newStatValue >= 0 ? "+" : "";
-                
+
                 result.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${measure}`);
                 addedStats++;
             }
-            
+
             attempts++;
         }
         result.push("§a§t§b§e§n§d§r");
@@ -133,43 +164,45 @@ function randomSkill(rarity, type) {
     // Filter available skills that match the item type
     const availableSkills = Object.values(skills).filter(skill => skill.type.includes(type));
     let srr = Object.values(RARITY).find(r => r.sid === rarity);
-    
+
     if (!availableSkills.length || srr.skillChances.skill < Math.random()) {
         return [];
     }
-    
+
     let result = [];
     let skillData = null;
-    
+
     // Generate skill data first
     const statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 2)));
     const RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
-        
+
     if (RR) {
         const validSkills = availableSkills.filter(s => s.rarity == RR.sid);
-        
+
         if (validSkills.length > 0) {
             const newSkill = validSkills[Math.floor(Math.random() * validSkills.length)];
 
             const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
             const newSkillValueST = ("§w" + newSkillValue + "§w");
             const description = newSkill.description.replace("{x}", newSkillValueST).replace("§x", RR.color);
-            
+
             skillData = {
                 name: newSkill.name,
-                description: description
+                description: description,
+                cooldown: newSkill.cooldown
             };
         }
     }
-    
+
     // Push skill section and data if we have valid skill data
     if (skillData) {
         result.push("§8Skill");
         result.push(skillData.name);
         result.push(skillData.description);
+        result.push(skillData.cooldown);
         result.push("§s§k§l§e§n§d§r");
     }
-    
+
     return result;
 }
 
@@ -177,43 +210,45 @@ function randomPassiveAbility(rarity, type) {
     // Filter available passives that match the item type
     const availablePassives = Object.values(passives).filter(passive => passive.type.includes(type));
     let srr = Object.values(RARITY).find(r => r.sid === rarity);
-    
+
     if (!availablePassives.length || srr.skillChances.passive < Math.random()) {
         return [];
     }
-    
+
     let result = [];
     let passiveData = null;
-    
+
     // Generate passive data first
     const statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 2)));
     const RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
-        
+
     if (RR) {
         const validPassives = availablePassives.filter(s => s.rarity == RR.sid);
-        
+
         if (validPassives.length > 0) {
             const newPassive = validPassives[Math.floor(Math.random() * validPassives.length)];
 
             const newPassiveValue = Math.floor((Math.random() * (newPassive.max - newPassive.min + 1) + newPassive.min) * BOOST_COEF / 10);
             const newPassiveValueST = ("§w" + newPassiveValue + "§w");
             const description = newPassive.description.replace("{x}", newPassiveValueST).replace("§x", RR.color);
-            
+
             passiveData = {
                 name: newPassive.name,
-                description: description
+                description: description,
+                cooldown: newPassive.cooldown
             };
         }
     }
-    
+
     // Push passive section and data if we have valid passive data
     if (passiveData) {
         result.push("§8Passive ability");
         result.push(passiveData.name);
         result.push(passiveData.description);
+        result.push(passiveData.cooldown);
         result.push("§p§v§a§e§n§d§r");
     }
-    
+
     return result;
 }
 
@@ -227,15 +262,15 @@ function rarityItemTest(itemStack, player) {
 
         if (Tags && Tags.rarity) {
             const rarity = randomRarity();
-            
+
             const stats = randomStats(rarity.sid, Tags.data);
-            
+
             const skill = randomSkill(rarity.sid, Tags.data);
-            
+
             const passive = randomPassiveAbility(rarity.sid, Tags.data);
-            
+
             const newLore = [rarity.dName, ...stats, ...skill, ...passive];
-          
+
             try {
                 let newItem = itemStack.clone();
                 newItem.setLore(newLore);
@@ -258,7 +293,7 @@ function calculateDamage(player, damage = 0) {
         damage = damage * (1 + (getScoreboardValue("critdamage", player) / 100));
         player.runCommand("title @s actionbar §cCRIT " + damage.toFixed(1));
     }
-    
+
     return Math.floor(damage);
 }
 
@@ -269,16 +304,16 @@ function compileBuffs(player) {
         EquipmentSlot.Head, EquipmentSlot.Chest,
         EquipmentSlot.Legs, EquipmentSlot.Feet
     ];
-    
+
     let scoreboardStats = [];
-    
+
     for (const slot of slots) {
         const attributes = parseLoreToStats(equipment, slot);
         for (let attribute of attributes) {
             const values = attribute.split("§w");
             const StatObj = Object.values(stats).find(d => d.name === values[0]);
             if (!StatObj) continue;
-            
+
             scoreboardStats.push({
                 sbObj: StatObj.scoreboardTracker,
                 valueToAdd: Number(values[2])
@@ -291,7 +326,7 @@ function compileBuffs(player) {
     for (const entry of scoreboardStats) {
         // Use the scoreboard name directly since we have predefined static scoreboards
         const scoreboardName = entry.sbObj;
-            
+
         if (!summedStats[scoreboardName]) {
             summedStats[scoreboardName] = 0;
         }
@@ -318,7 +353,7 @@ function setMainStats(player) {
     let health = Math.floor(getScoreboardValue("health", player) / 4) - 1;
     let defense = Math.floor(Math.min(getScoreboardValue("defense", player), 80) / 20) - 1;
     let speed = Math.floor(Math.min(getScoreboardValue("speed", player), 200) / 20) - 1;
-    
+
     if (health >= 0) {
         player.addEffect("health_boost", 50, {amplifier: health, showParticles: false});
     }
@@ -335,14 +370,14 @@ function setMainStats(player) {
 function parseLoreToStats(equipment, slot) {
     const itemStack = equipment.getEquipment(slot);
     if (!itemStack) return [];
-    
+
     const loreArray = itemStack.getLore();
     if (!loreArray || loreArray.length === 0) return [];
-    
+
     let attributes = [];
     let ix = 0;
     let addATB = false;
-    
+
     while (ix < loreArray.length) {
         if (loreArray[ix] === "§8Attributes") {
             addATB = true;
@@ -355,21 +390,21 @@ function parseLoreToStats(equipment, slot) {
         }
         ix++;
     }
-    
+
     return attributes;
 }
 
 function parseLoreToSkills(equipment, slot) {
     const itemStack = equipment.getEquipment(slot);
     if (!itemStack) return [];
-    
+
     const loreArray = itemStack.getLore();
     if (!loreArray || loreArray.length === 0) return [];
-    
+
     let attributes = [];
     let ix = 0;
     let addATB = false;
-    
+
     while (ix < loreArray.length) {
         if (loreArray[ix] === "§8Skill") {
             addATB = true;
@@ -382,28 +417,31 @@ function parseLoreToSkills(equipment, slot) {
         }
         ix++;
     }
-    let string = attributes.join(" ");
-    string = string.match(/§w(.*?)§w/);
+    const string = attributes.join(" ");
+    const stringVal = string.match(/§w(.*?)§w/);
+    const stringCd = string.match(/cooldown: (.*?)s/);
     
+
     const Skill = {
         name: attributes[0],
         value: Number(string[1])
+        cooldown: Number(stringCd[1])
     }
-    
+
     return Skill;
 }
 
 function parseLoreToPassive(equipment, slot) {
     const itemStack = equipment.getEquipment(slot);
     if (!itemStack) return [];
-    
+
     const loreArray = itemStack.getLore();
     if (!loreArray || loreArray.length === 0) return [];
-    
+
     let attributes = [];
     let ix = 0;
     let addATB = false;
-    
+
     while (ix < loreArray.length) {
         if (loreArray[ix] === "§8Passive ability") {
             addATB = true;
@@ -416,14 +454,17 @@ function parseLoreToPassive(equipment, slot) {
         }
         ix++;
     }
-    let string = attributes.join(" ");
-    string = string.match(/§w(.*?)§w/);
+    const string = attributes.join(" ");
+    const stringVal = string.match(/§w(.*?)§w/);
+    const stringCd = string.match(/cooldown: (.*?)s/);
     
+
     const Passive = {
         name: attributes[0],
-        value: Number(string[1])
+        value: Number(stringVal[1]),
+        cooldown: Number(stringCd[1])
     }
-    
+
     return Passive;
 }
 
@@ -445,6 +486,10 @@ system.runInterval(() => {
         healEntity(player);
     }
 }, 200);
+
+system.runInterval(() => {
+    updateCooldown();
+}, 2);
 
 // Passive ability triggers - every second for buff-type passives
 system.runInterval(() => {
@@ -469,14 +514,14 @@ world.afterEvents.entityHurt.subscribe((ev) => {
     const player = ev.damageSource.damagingEntity;
     const mob = ev.hurtEntity;
     let damage = calculateDamage(player, ev.damage);
-    
+
     let range = ["sword", "axe", "pickaxe", "trident", "mace"];
     if (range.includes(parseTags(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand)?.typeId).data)) {
-        
+
         mob.applyDamage(damage);
-        
+
         healEntity(player, (getScoreboardValue("lifesteal", player) / 100) * damage);
-        
+
         // DO: Trigger passive abilities on hitting entity
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
@@ -505,7 +550,7 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
         mob.applyDamage(damage);
 
         healEntity(player, ((getScoreboardValue("lifesteal", player) / 100) * damage) / 2);
-        
+
         // DO: Trigger passive abilities on shooting projectile
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
@@ -523,13 +568,20 @@ world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
     const item = ev.itemStack;
     
-    // DO: Trigger skills on item use
-    // const equipment = player.getComponent("minecraft:equippable");
-    // const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
-    // if (skill.name) {
-    //     // Execute skill based on skill.name and skill.value
-    //     // Examples: fireball, lightning strike, teleport, etc.
-    // }
+    const equipment = player.getComponent("minecraft:equippable");
+    const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
+    if (skill.name) {
+        switch (skill.name) {
+            case "§cFlame Slash":
+                skillFlameSlash(player, skill);
+                break;
+            case "§bIce Spikes":
+                skillIceSpikes(player, skill);
+                break;
+            default:
+                console.log("Skill error, item use error");
+        }
+    }
 });
 
 // Passive ability event handlers
@@ -537,7 +589,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
     // Check if player is receiving damage
     if (ev.hurtEntity.typeId === "minecraft:player") {
         const player = ev.hurtEntity;
-        
+
         // DO: Trigger passive abilities on receiving damage
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
@@ -553,7 +605,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
 
 world.afterEvents.playerBreakBlock.subscribe((ev) => {
     const player = ev.player;
-    
+
     // DO: Trigger passive abilities on breaking blocks
     // const equipment = player.getComponent("minecraft:equippable");
     // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
@@ -570,3 +622,36 @@ world.afterEvents.playerBreakBlock.subscribe((ev) => {
 
 // Initialize scoreboards immediately when the script loads
 initializeScoreboards();
+
+//=====================================SKILLS FUNCTIONALITY===========================================
+
+function skillFlameSlash(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (!ccd || ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown);
+    
+    //TODO MAIN FUNCTIONALITY
+    
+}
+
+
+
+
+
+
+
+
+//=====================================PASSIVES FUNCTIONALITY===========================================
+
+
+
+
+
+
+
+
+
+
+
+
+
