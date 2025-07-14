@@ -282,51 +282,72 @@ function createItemTags(rarity, selectedStats, selectedSkill, selectedPassive) {
 
 // Main editor form
 function showItemEditor(player) {
-    const form = new ModalFormData()
-        .title("§6Item Rarity Editor §r- Create Custom Items");
+    console.log("Creating item editor form for player:", player.name);
     
-    // Base item ID input
-    form.textField("Base Item ID", "Enter item ID (e.g. minecraft:diamond_sword)", "minecraft:diamond_sword");
-    
-    // Custom item name
-    form.textField("Custom Item Name", "Enter custom name", "Epic Sword");
-    
-    // Rarity selection
-    const rarityOptions = Object.values(RARITY).map(rarity => rarity.dName);
-    form.dropdown("Item Rarity", rarityOptions, 2); // Default to Rare
-    
-    // Number of stats to add
-    form.slider("Number of Stats", 0, 6, 1, 2);
-    
-    // Include skill toggle
-    form.toggle("Include Active Skill", false);
-    
-    // Include passive toggle
-    form.toggle("Include Passive Ability", false);
-    
-    form.submitButton("§aCreate Item");
-    
-    form.show(player).then((response) => {
-        if (response.canceled) return;
+    try {
+        const form = new ModalFormData()
+            .title("§6Item Rarity Editor §r- Create Custom Items");
         
-        const baseItemId = response.formValues[0] || "minecraft:diamond_sword";
-        const customName = response.formValues[1] || "Custom Item";
-        const rarityIndex = response.formValues[2];
-        const numStats = response.formValues[3];
-        const includeSkill = response.formValues[4];
-        const includePassive = response.formValues[5];
+        // Base item ID input
+        form.textField("Base Item ID", "Enter item ID (e.g. minecraft:diamond_sword)", "minecraft:diamond_sword");
         
-        // Validate item ID format
-        if (!baseItemId.includes(":")) {
-            player.sendMessage("§cInvalid item ID format! Use namespace:item format (e.g. minecraft:diamond_sword)");
-            return;
-        }
+        // Custom item name
+        form.textField("Custom Item Name", "Enter custom name", "Epic Sword");
         
-        const selectedRarity = Object.values(RARITY)[rarityIndex];
+        // Rarity selection
+        const rarityOptions = Object.values(RARITY).map(rarity => rarity.dName);
+        form.dropdown("Item Rarity", rarityOptions, 2); // Default to Rare
         
-        // Show second form for detailed configuration
-        showDetailedEditor(player, baseItemId, customName, selectedRarity, numStats, includeSkill, includePassive);
-    });
+        // Number of stats to add
+        form.slider("Number of Stats", 0, 6, 1, 2);
+        
+        // Include skill toggle
+        form.toggle("Include Active Skill", false);
+        
+        // Include passive toggle
+        form.toggle("Include Passive Ability", false);
+        
+        form.submitButton("§aCreate Item");
+        
+        console.log("Showing form to player");
+        
+        form.show(player).then((response) => {
+            console.log("Form response received:", response);
+            
+            if (response.canceled) {
+                player.sendMessage("§cEditor canceled");
+                return;
+            }
+            
+            const baseItemId = response.formValues[0] || "minecraft:diamond_sword";
+            const customName = response.formValues[1] || "Custom Item";
+            const rarityIndex = response.formValues[2];
+            const numStats = response.formValues[3];
+            const includeSkill = response.formValues[4];
+            const includePassive = response.formValues[5];
+            
+            console.log("Form values:", {baseItemId, customName, rarityIndex, numStats, includeSkill, includePassive});
+            
+            // Validate item ID format
+            if (!baseItemId.includes(":")) {
+                player.sendMessage("§cInvalid item ID format! Use namespace:item format (e.g. minecraft:diamond_sword)");
+                return;
+            }
+            
+            const selectedRarity = Object.values(RARITY)[rarityIndex];
+            player.sendMessage("§aProceeding to detailed configuration...");
+            
+            // Show second form for detailed configuration
+            showDetailedEditor(player, baseItemId, customName, selectedRarity, numStats, includeSkill, includePassive);
+        }).catch((error) => {
+            player.sendMessage("§cForm error: " + error.message);
+            console.error("Form show error:", error);
+        });
+        
+    } catch (error) {
+        player.sendMessage("§cEditor creation error: " + error.message);
+        console.error("Editor creation error:", error);
+    }
 }
 
 // Detailed configuration form
@@ -407,83 +428,105 @@ function showDetailedEditor(player, baseItemId, customName, rarity, numStats, in
 }
 
 // Create and give the custom item to the player
-function createCustomItem(player, baseItem, customName, rarity, selectedStats, selectedSkill, selectedPassive) {
+function createCustomItem(player, baseItemId, customName, rarity, selectedStats, selectedSkill, selectedPassive) {
+    console.log("Creating custom item:", {baseItemId, customName, rarity: rarity.sid});
+    
     try {
         // Create the item
-        const itemStack = new ItemStack(baseItem.id, 1);
+        const itemStack = new ItemStack(baseItemId, 1);
+        console.log("ItemStack created successfully");
         
         // Set custom name with rarity color
         const coloredName = `${rarity.color}${customName}`;
         itemStack.nameTag = coloredName;
+        console.log("Name tag set:", coloredName);
         
         // Create lore
         const lore = createItemLore(customName, rarity, selectedStats, selectedSkill, selectedPassive);
         itemStack.setLore(lore);
+        console.log("Lore set, lines:", lore.length);
         
         // Create tags
         const tags = createItemTags(rarity, selectedStats, selectedSkill, selectedPassive);
+        console.log("Tags to add:", tags);
         
         // Add tags to item
         for (const tag of tags) {
             itemStack.addTag(tag);
         }
+        console.log("Tags added successfully");
         
         // Give item to player
         const inventory = player.getComponent("minecraft:inventory");
         if (inventory) {
+            console.log("Inventory found, adding item");
+            
             // Try to add to inventory, if full, drop at player location
             const remainingItems = inventory.container.addItem(itemStack);
             if (remainingItems) {
+                console.log("Inventory full, dropping item");
                 player.dimension.spawnItem(remainingItems, player.location);
+                player.sendMessage("§eInventory full! Item dropped on ground.");
             }
             
             player.sendMessage(`§a✓ Created custom item: ${coloredName}`);
             player.sendMessage(`§7Stats: ${selectedStats.length} | Skill: ${selectedSkill ? '✓' : '✗'} | Passive: ${selectedPassive ? '✓' : '✗'}`);
+            console.log("Item creation completed successfully");
+        } else {
+            throw new Error("Could not access player inventory");
         }
         
     } catch (error) {
         player.sendMessage(`§cError creating item: ${error.message}`);
         console.error("Item creation error:", error);
+        console.error("Stack trace:", error.stack);
     }
 }
 
 //=====================================EVENT HANDLERS===========================================
 
-// Listen for rssp:editor item usage
+// Listen for item usage - covers all cases
 world.afterEvents.itemUse.subscribe((event) => {
     const player = event.source;
     const item = event.itemStack;
     
-    // Check if the used item is the editor
-    if (item && item.typeId === "rssp:editor") {
-        // Prevent the default item use
-        system.run(() => {
-            showItemEditor(player);
-        });
-    }
-});
-
-// Alternative: Listen for item usage with specific tag
-world.afterEvents.itemUse.subscribe((event) => {
-    const player = event.source;
-    const item = event.itemStack;
+    if (!item) return;
     
-    // Check if the item has the editor tag
-    if (item && item.hasTag && item.hasTag("item_editor")) {
+    // Debug message
+    console.log(`Item used: ${item.typeId}, Tags: ${item.getTags().join(", ")}`);
+    
+    // Check multiple conditions for editor activation
+    const isEditor = 
+        item.typeId === "rssp:editor" ||  // Custom item type
+        item.getTags().includes("item_editor") ||  // Tagged item
+        (item.nameTag && item.nameTag.includes("Item Rarity Editor")) ||  // Named item
+        item.typeId === "minecraft:nether_star" && item.getTags().includes("item_editor");  // Nether star with tag
+    
+    if (isEditor) {
+        player.sendMessage("§aOpening Item Editor...");
+        console.log("Editor activated for player:", player.name);
+        
+        // Use system.run to prevent timing issues
         system.run(() => {
-            showItemEditor(player);
+            try {
+                showItemEditor(player);
+            } catch (error) {
+                player.sendMessage(`§cError opening editor: ${error.message}`);
+                console.error("Editor error:", error);
+            }
         });
     }
 });
 
 //=====================================UTILITY COMMANDS===========================================
 
-// Debug command to give editor item (if needed)
+// Debug commands
 world.afterEvents.chatSend.subscribe((event) => {
     const player = event.sender;
-    const message = event.message;
+    const message = event.message.toLowerCase();
     
-    if (message === "!give-editor" && player.hasTag("admin")) {
+    // Give editor item (for admins or in creative mode)
+    if (message === "!give-editor" || message === "!editor") {
         try {
             const editorItem = new ItemStack("minecraft:nether_star", 1);
             editorItem.nameTag = "§6Item Rarity Editor";
@@ -497,11 +540,27 @@ world.afterEvents.chatSend.subscribe((event) => {
             
             const inventory = player.getComponent("minecraft:inventory");
             inventory.container.addItem(editorItem);
-            player.sendMessage("§aEditor item given!");
+            player.sendMessage("§aItem Rarity Editor given!");
         } catch (error) {
-            player.sendMessage(`§cError: ${error.message}`);
+            player.sendMessage(`§cError giving editor: ${error.message}`);
+            console.error("Give editor error:", error);
+        }
+    }
+    
+    // Test editor directly (for debugging)
+    if (message === "!test-editor") {
+        player.sendMessage("§eTesting editor directly...");
+        try {
+            showItemEditor(player);
+        } catch (error) {
+            player.sendMessage(`§cEditor test failed: ${error.message}`);
+            console.error("Test editor error:", error);
         }
     }
 });
+
+// Initialize the editor module
+console.log("§aItem Rarity Editor module loaded successfully!");
+console.log("Available commands: !editor, !give-editor, !test-editor");
 
 export { showItemEditor, createCustomItem };
