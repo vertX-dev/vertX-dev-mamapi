@@ -403,7 +403,7 @@ function randomSkill(rarity, type) {
 
             const newSkillValueST = ("§w" + newSkillValue + "§w");
             
-            const description = newSkill.description.replace("{x}", newSkillValueST).replace("§xR§x", RR.color);
+            const description = newSkill.description.replace("{x}", newSkillValueST).replace("§x", RR.color);
             
             result.push(newSkill.name);
             result.push(description);
@@ -442,7 +442,7 @@ function randomPassiveAbility(rarity, type) {
 
             const newPassiveValueST = ("§w" + newPassiveValue + "§w");
             
-            const description = newPassive.description.replace("{x}", newPassiveValueST).replace("§xR§x", RR.color);
+            const description = newPassive.description.replace("{x}", newPassiveValueST).replace("§x", RR.color);
             
             result.push(newPassive.name);
             result.push(description);
