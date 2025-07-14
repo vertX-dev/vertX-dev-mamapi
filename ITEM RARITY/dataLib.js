@@ -57,48 +57,78 @@ export const RARITY = {
         chance: 1,
         sid: "Common",
         dName: "§7Common",
+        color: "§7",
         minStats: 0,
-        maxStats: 1
+        maxStats: 1,
+        skillChances: {
+            skill: 0,
+            passive: 0
+        }
     },
     UNCOMMON: {
         id: 2,
         chance: 0.7,
         sid: "Uncommon",
         dName: "§aUncommon",
+        color: "§a",
         minStats: 0,
-        maxStats: 2
+        maxStats: 2,
+        skillChances: {
+            skill: 0,
+            passive: 0
+        }
     },
     RARE: {
         id: 3,
         chance: 0.5,
         sid: "Rare",
         dName: "§9Rare",
+        color: "§9",
         minStats: 1,
-        maxStats: 2
+        maxStats: 2,
+        skillChances: {
+            skill: 0,
+            passive: 0.20
+        }
     },
     EPIC: {
         id: 4,
         chance: 0.4,
         sid: "Epic",
         dName: "§5Epic",
+        color: "§5",
         minStats: 1,
-        maxStats: 3
+        maxStats: 3,
+        skillChances: {
+            skill: 0.35,
+            passive: 0.55
+        }
     },
     LEGENDARY: {
         id: 5,
-        chance: 0.4,
+        chance: 0.35,
         sid: "Legendary",
         dName: "§6Legendary",
+        color: "§6",
         minStats: 2,
-        maxStats: 3
+        maxStats: 3,
+        skillChances: {
+            skill: 0.85,
+            passive: 0.60
+        }
     },
     MYTHIC: {
         id: 6,
-        chance: 0.5,
+        chance: 0.3,
         sid: "Mythic",
         dName: "§cMythic",
+        color: "§c",
         minStats: 3,
-        maxStats: 4
+        maxStats: 4,
+        skillChances: {
+            skill: 0.95,
+            passive: 0.95
+        }
     }
 };
 
@@ -204,8 +234,75 @@ export const stats = {
 
 
 
+export const skills = {
+    DAMAGE_COMMON: {
+        name: "§8Damage",
+        type: "sword",
+        rarity: "Epic",
+        min: 1,
+        max: 2,
+        description: "damage enemies in 360 for §x{x}"
+    },
+    FLAME_SLASH: {
+        name: "§cFlame Slash",
+        type: "sword",
+        rarity: "Epic",
+        min: 2,
+        max: 4,
+        description: "slashes enemies with fire dealing §x{x} burn damage"
+    },
+    ICE_SPIKES: {
+        name: "§bIce Spikes",
+        type: "sword",
+        rarity: "Legendary",
+        min: 3,
+        max: 5,
+        description: "summons ice spikes in area that deal §x{x} damage and slow"
+    },
+    SHADOW_STEP: {
+        name: "§5Shadow Step",
+        type: "sword",
+        rarity: "Mythic",
+        min: 1,
+        max: 1,
+        description: "teleport behind nearest enemy and strike for §x{x} bonus damage"
+    }
+};
 
-
+export const passives = {
+    DAMAGE_COMMON: {
+        name: "§8Damage",
+        type: "sword",
+        rarity: "Rare",
+        min: 1,
+        max: 2,
+        description: "damage enemies in 360 for §x{x}"
+    },
+    LIFE_STEAL: {
+        name: "§4Life Steal",
+        type: "sword",
+        rarity: "Rare",
+        min: 1,
+        max: 3,
+        description: "restore §x{x}% of damage dealt as health"
+    },
+    SHIELD_BREAKER: {
+        name: "§6Shield Breaker",
+        type: "sword",
+        rarity: "Epic",
+        min: 2,
+        max: 4,
+        description: "ignore §x{x}% of enemy armor"
+    },
+    FROST_TOUCH: {
+        name: "§bFrost Touch",
+        type: "sword",
+        rarity: "Rare",
+        min: 1,
+        max: 2,
+        description: "slow enemy for §x{x} seconds on hit"
+    }
+};
 
 
 
