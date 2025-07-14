@@ -2,7 +2,7 @@ import { world, system, EquipmentSlot, GameMode } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
 import { stats, TagMapping, RARITY, blackList } from './dataLib.js';
 
-let BOOST_KOEF = 10;
+let BOOST_COEF = 10;
 
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [
@@ -108,7 +108,7 @@ function randomStats(rarity, type) {
             if (validStats.length > 0) {
                 const newStat = validStats[Math.floor(Math.random() * validStats.length)];
 
-                const newStatValue = Math.floor((Math.random() * (newStat.max - newStat.min + 1) + newStat.min) * BOOST_KOEF / 10);
+                const newStatValue = Math.floor((Math.random() * (newStat.max - newStat.min + 1) + newStat.min) * BOOST_COEF / 10);
                 const measure = newStat.measure ?? "";
                 const sign = newStatValue >= 0 ? "+" : "";
                 
@@ -251,6 +251,7 @@ function parseLoreToStats(equipment, slot) {
     
     return attributes;
 }
+
 function healEntity(entity, value = getScoreboardValue("regeneration", entity)) {
     let cHealth = entity.getComponent("minecraft:health");
     cHealth.setCurrentValue(Math.min((cHealth.currentValue + Math.floor(value)), cHealth.effectiveMax));
@@ -325,7 +326,7 @@ function settings(player) {
     form.slider("§6ATTRIBUTE MULTIPLIER (default 10)", 1, 30, 1, BOOST_KOEF);
     form.show(player).then((response) => {
         if (response.canceled) return;
-        BOOST_KOEF = response.formValues[0];
+        BOOST_COEF = response.formValues[0];
     });
 }
 
@@ -362,10 +363,140 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
     const mob = entityHit.entity;
 
     if (mob.typeId !== "minecraft:enderman") {
-        let damage = calculateDamage(player, 6);
+        let damage = calculateDamage(player, 8);
 
         mob.applyDamage(damage);
 
         healEntity(player, ((getScoreboardValue("lifesteal", player) / 100) * damage) / 2);
     }
 });
+
+
+//=====================================SKILLS===========================================
+
+function randomSkill(rarity, type) {
+    // Filter available skills that match the item type
+    const availableSkills = Object.values(skills).filter(skill => skill.type.includes(type));
+    let srr = Object.values(RARITY).find(r => r.sid === rarity);
+    
+    if (!availableSkills.length || srr.skillChances.skill < Math.random()) {
+        return [];
+    }
+    
+    let result = [];
+    
+    if (StatsCounter > 0) {
+        result.push("§8Skill");
+        
+        const statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 2)));
+        const RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
+            
+        if (!RR) continue;
+        
+        const validSkills = availableSkills.filter(s => s.rarity == RR.sid);
+        
+        if (validSkills.length > 0) {
+            const newSkill = validSkills[Math.floor(Math.random() * validSkills.length)];
+
+            const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
+
+            const description = newSkill.description.replace("{x}", newSkillValue).replace("§xR§x", RR.color);
+            
+            result.push(description);
+            
+        }
+        result.push("§s§k§l§e§n§d§r");
+    }
+    return result;
+}
+
+function randomPassiveAbility(rarity, type) {
+    // Filter available skills that match the item type
+    const availablePassives = Object.values(skills).filter(skill => skill.type.includes(type));
+    let srr = Object.values(RARITY).find(r => r.sid === rarity);
+    
+    if (!availablePassives.length || srr.skillChances.passive < Math.random()) {
+        return [];
+    }
+    
+    let result = [];
+    
+    if (StatsCounter > 0) {
+        result.push("§8Passive ability");
+        
+        const statRarityLevel = Math.min(6, Math.max(1, srr.id - Math.floor(Math.random() * 2)));
+        const RR = Object.values(RARITY).find(r => r.id === statRarityLevel);
+            
+        if (!RR) continue;
+        
+        const validPassives = availablePassives.filter(s => s.rarity == RR.sid);
+        
+        if (validPassives.length > 0) {
+            const newPassive = validPassive[Math.floor(Math.random() * validPassive.length)];
+
+            const newPassiveValue = Math.floor((Math.random() * (newPassive.max - newPassive.min + 1) + newPassive.min) * BOOST_COEF / 10);
+
+            const description = newPassive.description.replace("{x}", newPassiveValue).replace("§xR§x", RR.color);
+            
+            result.push(description);
+            
+        }
+        result.push("§p§v§a§e§n§d§r");
+    }
+    return result;
+}
+
+
+function parseLoreToSkills(equipment, slot) {
+    const itemStack = equipment.getEquipment(slot);
+    if (!itemStack) return [];
+    
+    const loreArray = itemStack.getLore();
+    if (!loreArray || loreArray.length === 0) return [];
+    
+    let attributes = [];
+    let ix = 0;
+    let addATB = false;
+    
+    while (ix < loreArray.length) {
+        if (loreArray[ix] === "§8Skill") {
+            addATB = true;
+            ix++;
+            while (ix < loreArray.length && loreArray[ix] !== "§s§k§l§e§n§d§r") {
+                attributes.push(loreArray[ix]);
+                ix++;
+            }
+            break;
+        }
+        ix++;
+    }
+    
+    return attributes;
+}
+
+function parseLoreToSkills(equipment, slot) {
+    const itemStack = equipment.getEquipment(slot);
+    if (!itemStack) return [];
+    
+    const loreArray = itemStack.getLore();
+    if (!loreArray || loreArray.length === 0) return [];
+    
+    let attributes = [];
+    let ix = 0;
+    let addATB = false;
+    
+    while (ix < loreArray.length) {
+        if (loreArray[ix] === "§8Passive ability") {
+            addATB = true;
+            ix++;
+            while (ix < loreArray.length && loreArray[ix] !== "§p§v§a§e§n§d§r") {
+                attributes.push(loreArray[ix]);
+                ix++;
+            }
+            break;
+        }
+        ix++;
+    }
+    
+    return attributes;
+}
