@@ -1,6 +1,6 @@
 import { world, system, EquipmentSlot, GameMode } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
-import { stats, TagMapping, RARITY, blackList } from './dataLib.js';
+import { stats, TagMapping, RARITY, blackList, skills, passives } from './dataLib.js';
 
 let BOOST_COEF = 10;
 
@@ -47,13 +47,14 @@ function rarityItemTest(itemStack, player) {
 
         if (Tags && Tags.rarity) {
             const rarity = randomRarity();
+            
             const stats = randomStats(rarity.sid, Tags.data);
             
+            const skill = randomSkill(rarity.sid, Tags.data);
             
+            const passive = randomPassiveAbility(rarity.sid, Tags.data);
             
-            
-            
-            const newLore = [rarity.dName, ...stats];
+            const newLore = [rarity.dName, ...stats, ...skill, ...passive];
           
             try {
                 let newItem = itemStack.clone();
@@ -415,7 +416,7 @@ function randomSkill(rarity, type) {
 
 function randomPassiveAbility(rarity, type) {
     // Filter available skills that match the item type
-    const availablePassives = Object.values(skills).filter(skill => skill.type.includes(type));
+    const availablePassives = Object.values(passives).filter(skill => skill.type.includes(type));
     let srr = Object.values(RARITY).find(r => r.sid === rarity);
     
     if (!availablePassives.length || srr.skillChances.passive < Math.random()) {
