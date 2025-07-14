@@ -400,8 +400,11 @@ function randomSkill(rarity, type) {
 
             const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
 
-            const description = newSkill.description.replace("{x}", newSkillValue).replace("§xR§x", RR.color);
+            const newSkillValueST = ("§w" + newSkillValue + "§w");
             
+            const description = newSkill.description.replace("{x}", newSkillValueST).replace("§xR§x", RR.color);
+            
+            result.push(newSkill.name);
             result.push(description);
             
         }
@@ -436,8 +439,11 @@ function randomPassiveAbility(rarity, type) {
 
             const newPassiveValue = Math.floor((Math.random() * (newPassive.max - newPassive.min + 1) + newPassive.min) * BOOST_COEF / 10);
 
-            const description = newPassive.description.replace("{x}", newPassiveValue).replace("§xR§x", RR.color);
+            const newPassiveValueST = ("§w" + newPassiveValue + "§w");
             
+            const description = newPassive.description.replace("{x}", newPassiveValueST).replace("§xR§x", RR.color);
+            
+            result.push(newPassive.name);
             result.push(description);
             
         }
@@ -470,11 +476,18 @@ function parseLoreToSkills(equipment, slot) {
         }
         ix++;
     }
+    let string = attributes.join(" ");
+    string = string.match(/§w(.*?)§w/);
     
-    return attributes;
+    const Skill = {
+        name: attributes[0],
+        value: Number(string[1])
+    }
+    
+    return Skill;
 }
 
-function parseLoreToSkills(equipment, slot) {
+function parseLoreToPassive(equipment, slot) {
     const itemStack = equipment.getEquipment(slot);
     if (!itemStack) return [];
     
@@ -497,6 +510,13 @@ function parseLoreToSkills(equipment, slot) {
         }
         ix++;
     }
+    let string = attributes.join(" ");
+    string = string.match(/§w(.*?)§w/);
     
-    return attributes;
+    const Passive = {
+        name: attributes[0],
+        value: Number(string[1])
+    }
+    
+    return Passive;
 }
