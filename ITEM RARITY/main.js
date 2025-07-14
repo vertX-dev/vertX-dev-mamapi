@@ -19,6 +19,12 @@ const PREDEFINED_SCOREBOARDS = [
     { name: "lifesteal", displayName: "Life steal" }
 ];
 
+const COOLDOWN_PREDEFINED_SCOREBOARDS = [
+    { name: "smashleap", displayName: "Smash Leap" },
+    { name: "flameslash", displayName: "Flame Slash" }
+    
+];
+
 //=====================================UTILITY FUNCTIONS===========================================
 
 function getScoreboardValue(scoreboard, player) {
@@ -45,7 +51,7 @@ function parseTags(itemId = "minecraft:apple") {
     }
 }
 
-testCooldown(player, name, object = skills) {
+function testCooldown(player, name, object = skills) {
     const Obj = Object.values(object).find(s => s.name == name);
     
     const scoreboardObj = world.scoreboard.getObjective(Obj.scoreboard);
@@ -58,27 +64,40 @@ testCooldown(player, name, object = skills) {
 }
 
 function updateCooldown() {
-    const COBJS = [
-        
-    ];
-    for (const obj of COBJS) {
-        const players = world.getPlayers();
-        const SBOBJ = world.scoreboard.getObjective(obj.id);
+    const players = world.getPlayers();
+
+    for (const obj of COOLDOWN_PREDEFINED_SCOREBOARDS) {
+        const scoreboard = world.scoreboard.getObjective(obj.name);
+        if (!scoreboard) continue;
+
         for (const player of players) {
-            const cd = SBOBJ.getScore(player);
+            const cd = scoreboard.getScore(player);
             if (cd >= 0) {
-                SBOBJ.addScore(player, -1);
-            } 
-            if (cd == 0) {
-                player.runCommand(`title @s actionbar §aSkill §l${obj.displayName}§r§a is off cooldown and ready!`)
+                scoreboard.addScore(player, -1);
+            }
+            if (cd === 0) {
+                player.runCommand(`title @s actionbar §aSkill §l${obj.displayName}§r§a is off cooldown and ready!`);
             }
         }
     }
 }
 
+
 function initializeScoreboards() {
     console.log("Initializing static scoreboards...");
     for (const scoreboard of PREDEFINED_SCOREBOARDS) {
+        try {
+            const existing = world.scoreboard.getObjective(scoreboard.name);
+            if (!existing) {
+                world.scoreboard.addObjective(scoreboard.name, scoreboard.displayName);
+                console.log(`Scoreboard '${scoreboard.name}' (${scoreboard.displayName}) added.`);
+            }
+        } catch (e) {
+            console.warn(`Failed to add scoreboard '${scoreboard.name}':`, e.message);
+        }
+    }
+    
+    for (const scoreboard of COOLDOWN_PREDEFINED_SCOREBOARDS) {
         try {
             const existing = world.scoreboard.getObjective(scoreboard.name);
             if (!existing) {
@@ -189,7 +208,7 @@ function randomSkill(rarity, type) {
             skillData = {
                 name: newSkill.name,
                 description: description,
-                cooldown: newSkill.cooldown
+                cooldown: "§eCooldown: " + Math.floor(newSkill.cooldown / 10) + "s"
             };
         }
     }
@@ -235,7 +254,7 @@ function randomPassiveAbility(rarity, type) {
             passiveData = {
                 name: newPassive.name,
                 description: description,
-                cooldown: newPassive.cooldown
+                cooldown: "§eCooldown: " + Math.floor(newPassive.cooldown / 10) + "s"
             };
         }
     }
@@ -417,15 +436,15 @@ function parseLoreToSkills(equipment, slot) {
         }
         ix++;
     }
+    
     const string = attributes.join(" ");
     const stringVal = string.match(/§w(.*?)§w/);
-    const stringCd = string.match(/cooldown: (.*?)s/);
+    const stringCd = string.match(/§eCooldown: (.*?)s/);
     
-
     const Skill = {
         name: attributes[0],
-        value: Number(string[1])
-        cooldown: Number(stringCd[1])
+        value: stringVal ? Number(stringVal[1]) : 0,
+        cooldown: stringCd ? Number(stringCd[1]) : 0
     }
 
     return Skill;
@@ -454,15 +473,15 @@ function parseLoreToPassive(equipment, slot) {
         }
         ix++;
     }
+    
     const string = attributes.join(" ");
     const stringVal = string.match(/§w(.*?)§w/);
-    const stringCd = string.match(/cooldown: (.*?)s/);
+    const stringCd = string.match(/§eCooldown: (.*?)s/);
     
-
     const Passive = {
         name: attributes[0],
-        value: Number(stringVal[1]),
-        cooldown: Number(stringCd[1])
+        value: stringVal ? Number(stringVal[1]) : 0,
+        cooldown: stringCd ? Number(stringCd[1]) : 0
     }
 
     return Passive;
@@ -570,13 +589,10 @@ world.afterEvents.itemUse.subscribe((ev) => {
     
     const equipment = player.getComponent("minecraft:equippable");
     const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
-    if (skill.name) {
-        switch (skill.name) {
-            case "§cFlame Slash":
-                skillFlameSlash(player, skill);
-                break;
-            case "§bIce Spikes":
-                skillIceSpikes(player, skill);
+    if (skill && skill.name) {
+        switch (skill.name.slice(2)) {
+            case "Smash Leap":
+                skillSmashLeap(player, skill);
                 break;
             default:
                 console.log("Skill error, item use error");
@@ -624,16 +640,258 @@ world.afterEvents.playerBreakBlock.subscribe((ev) => {
 initializeScoreboards();
 
 //=====================================SKILLS FUNCTIONALITY===========================================
-
-function skillFlameSlash(player, skill) {
-    const ccd = testCooldown(player, skill.name);
+/**
+ * const ccd = testCooldown(player, skill.name);
     if (!ccd || ccd.time > 0) return;
     ccd.obj.setScore(player, skill.cooldown);
+ */
+
+
+
+function skillSmashLeap(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
     
-    //TODO MAIN FUNCTIONALITY
-    
+    // Stun enemies
+    player.runCommand(`effect @e[r=${skill.value}] slowness 2 4 true`);
+    player.runCommand(`effect @s slowness 0`);
+    // Ground impact
+    player.runCommand(`particle minecraft:block_dust_stone ~ ~1 ~`);
+    player.runCommand(`particle minecraft:smash_ground_particle ~ ~1 ~`);
+    player.runCommand(`playsound mace.heavy_smash_ground @s`);
+    // Wind leap (only if player has wind charge)
+    player.runCommand(`effect @s[hasitem={item=wind_charge}] levitation 1 7 true`);
+    player.runCommand(`playsound wind_charge.burst @s[hasitem={item=wind_charge}]`);
+    player.runCommand(`execute at @s[hasitem={item=wind_charge}] run particle minecraft:wind_explosion_emitter ~ ~ ~`);
+    player.runCommand(`clear @s[hasitem={item=wind_charge}] wind_charge 0 1`);
 }
 
+function skillSpinStrike(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    const damage = calculateDamage(player, skill.value);
+    
+    // Spin attack effects
+    player.runCommand(`particle minecraft:sweep_attack ~ ~1 ~`);
+    player.runCommand(`particle minecraft:crit ~ ~1 ~`);
+    player.runCommand(`playsound entity.player.attack.sweep @s`);
+    player.runCommand(`playsound entity.player.attack.strong @s`);
+    
+    // Damage all enemies in 3 block radius
+    player.runCommand(`damage @e[r=3,rm=1] ${damage} generic`);
+    
+    // Visual spin effect
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * 360;
+        const x = Math.cos(angle * Math.PI / 180) * 2;
+        const z = Math.sin(angle * Math.PI / 180) * 2;
+        player.runCommand(`particle minecraft:sweep_attack ~${x} ~1 ~${z}`);
+    }
+}
+
+function skillExplosiveMining(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    // Custom explosion size
+    const size = skill.value;
+    player.dimension.createExplosion(player.location, size * 3);
+    player.runCommand(`particle minecraft:explosion_emitter ~ ~ ~`);
+    player.runCommand(`particle minecraft:large_explosion ~ ~ ~`);
+    player.runCommand(`playsound entity.generic.explode @s`);
+    
+    // Damage nearby entities
+    const explosionDamage = size * 3;
+    player.runCommand(`damage @e[r=${Math.floor(size * 1.4)},rm=1] ${explosionDamage} explosion`);
+}
+
+function skillRayMiner(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    const distance = skill.value;
+    let blocksDestroyed = 0;
+    
+    // Ray mining effect
+    player.runCommand(`particle minecraft:electric_spark_particle ~ ~1 ~`);
+    player.runCommand(`playsound block.beacon.activate @s`);
+    player.runCommand(`playsound block.end_portal.spawn @s ~ ~ ~`);
+    
+    // Break blocks in straight line
+    for (let i = 1; i <= distance; i++) {
+        player.runCommand(`execute at @s positioned ^^^${i} run particle minecraft:electric_spark_particle ~ ~ ~`);
+        player.runCommand(`execute at @s positioned ^^^${i} run particle minecraft:scrape ~ ~ ~`);
+        
+        // Check if block exists and destroy it
+        const result = player.runCommand(`execute at @s positioned^^^${i} run testforblock ~ ~ ~ air`);
+        if (result.successCount === 0) { // Block is not air
+            player.runCommand(`execute at @s positioned^^^${i} run setblock ~ ~ ~ air destroy`);
+            blocksDestroyed++;
+        }
+    }
+    
+    // Remove durability based on blocks destroyed
+    if (blocksDestroyed > 0) {
+        const equipment = player.getComponent("minecraft:equippable");
+        const item = getEquipment(EquipmentSlot.Mainhand).clone();
+        let dur = item.getComponent("minecraft:durability");
+        dur.damage = dur.MaxDurability - blocksDestroyed;
+        
+        equipment.setEquipment(EquipmentSlot.Mainhand, item);
+    }
+}
+
+function skillExcavator(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    const depth = skill.value;
+    let blocksDestroyed = 0;
+    
+    // Excavation effects
+    player.runCommand(`particle minecraft:block_dust_sand ~ ~1 ~`);
+    player.runCommand(`particle minecraft:falling_dust_sand ~ ~1 ~`);
+    player.runCommand(`playsound block.gravel.break @s`);
+    player.runCommand(`playsound block.sand.break @s`);
+    
+    // Define sand-type blocks
+    const sandBlocks = ["sand", "gravel", "dirt", "clay", "coarse_dirt", "podzol", "mycelium", "grass_block"];
+    
+    // Break blocks in 3x3x depth area
+    for (let x = -1; x <= 1; x++) {
+        for (let z = -1; z <= 1; z++) {
+            for (let y = 0; y < depth; y++) {
+                // Check each sand-type block
+                for (const block of sandBlocks) {
+                    const result = player.runCommand(`execute at @s positioned~${x} ~${-y} ~${z} run testforblock ~ ~ ~ ${block}`);
+                    if (result.successCount > 0) {
+                        player.runCommand(`execute at @s positioned~${x} ~${-y} ~${z} run setblock ~ ~ ~ air destroy`);
+                        player.runCommand(`execute at @s positioned~${x} ~${-y} ~${z} run particle minecraft:block_dust_sand ~ ~ ~`);
+                        blocksDestroyed++;
+                        break; // Found a sand block, no need to check others
+                    }
+                }
+            }
+        }
+    }
+    
+    // Remove durability based on blocks destroyed
+    if (blocksDestroyed > 0) {
+        const equipment = player.getComponent("minecraft:equippable");
+        const item = getEquipment(EquipmentSlot.Mainhand).clone();
+        let dur = item.getComponent("minecraft:durability");
+        dur.damage = dur.MaxDurability - blocksDestroyed;
+        
+        equipment.setEquipment(EquipmentSlot.Mainhand, item);
+    }
+}
+
+function skillFlameArc(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    const damage = calculateDamage(player, skill.value);
+    
+    // Fire arc effects
+    player.runCommand(`particle minecraft:flame ~ ~1 ~`);
+    player.runCommand(`particle minecraft:lava ~ ~1 ~`);
+    player.runCommand(`playsound item.firecharge.use @s`);
+    player.runCommand(`playsound block.fire.ambient @s`);
+    
+    // Create arc of fire - simulate arc shape with multiple fill commands
+    const arcPositions = [
+        "^^^2", "^^^3", "^^^4", "^^^5", "^^^6",
+        "^^1^2", "^^1^3", "^^1^4", "^^1^5",
+        "^^-1^2", "^^-1^3", "^^-1^4", "^^-1^5",
+        "^1^^2", "^1^^3", "^1^^4",
+        "^-1^^2", "^-1^^3", "^-1^^4"
+    ];
+    
+    // Set fire blocks in arc pattern
+    for (const pos of arcPositions) {
+        player.runCommand(`execute at @s positioned${pos} run fill ~ ~ ~ ~ ~ ~ fire replace air`);
+        player.runCommand(`execute at @s positioned${pos} run particle minecraft:flame ~ ~ ~`);
+    }
+    
+    // Damage enemies in arc area
+    for (const pos of arcPositions) {
+        player.runCommand(`execute at @s positioned${pos} run damage @e[r=1,type=!player] ${damage} fire`);
+    }
+}
+
+function skillShadowDash(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    let dashDistance = skill.value;
+    
+    // Check if player is high in air (more than 10 blocks)
+    const groundCheck = player.runCommand(`execute at @s positioned~ ~-11 ~ run testforblock ~ ~ ~ air`);
+    if (groundCheck.successCount > 0) {
+        dashDistance = Math.floor(dashDistance / 2); // Reduce distance by half
+    }
+    
+    // Shadow dash effects
+    player.runCommand(`particle minecraft:portal ~ ~1 ~`);
+    player.runCommand(`particle minecraft:smoke ~ ~1 ~`);
+    player.runCommand(`playsound entity.enderman.teleport @s`);
+    player.runCommand(`playsound entity.phantom.swoop @s`);
+    
+    // Create dash trail
+    for (let i = 1; i <= dashDistance; i++) {
+        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:portal ~ ~1 ~`);
+        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:smoke ~ ~1 ~`);
+    }
+    
+    // Teleport player
+    player.runCommand(`tp @s ^^^${dashDistance}`);
+    
+    // Final dash effect
+    player.runCommand(`particle minecraft:portal ~ ~1 ~`);
+    player.runCommand(`playsound entity.enderman.teleport @s`);
+}
+
+function skillVoidPierce(player, skill) {
+    const ccd = testCooldown(player, skill.name);
+    if (ccd.time > 0) return;
+    ccd.obj.setScore(player, skill.cooldown * 10);
+    
+    const damage = calculateDamage(player, skill.value);
+    
+    // Void projectile effects
+    player.runCommand(`particle minecraft:portal ~ ~1.5 ~`);
+    player.runCommand(`particle minecraft:reverse_portal ~ ~1.5 ~`);
+    player.runCommand(`playsound entity.wither.shoot @s`);
+    player.runCommand(`playsound block.portal.ambient @s`);
+    
+    // Create piercing projectile path (max 9 blocks)
+    for (let i = 1; i <= 9; i++) {
+        // Projectile trail
+        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:portal ~ ~ ~`);
+        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:reverse_portal ~ ~ ~`);
+        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:end_rod ~ ~ ~`);
+        
+        // Damage enemies at each position (piercing effect)
+        player.runCommand(`execute at @s positioned^^^${i} run damage @e[r=1,type=!player] ${damage} magic`);
+        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:damage_indicator ~ ~1 ~`);
+        
+        // Impact sound for each hit
+        player.runCommand(`execute at @s positioned^^^${i} if entity @e[r=1,type=!player] run playsound entity.arrow.hit @s`);
+    }
+    
+    // Final projectile impact
+    player.runCommand(`execute at @s positioned^^^9 run particle minecraft:portal ~ ~ ~`);
+    player.runCommand(`execute at @s positioned^^^9 run particle minecraft:explosion ~ ~ ~`);
+    player.runCommand(`execute at @s positioned^^^9 run playsound entity.generic.explode @s`);
+}
 
 
 
