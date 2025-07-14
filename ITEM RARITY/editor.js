@@ -1,6 +1,183 @@
 import { world, system, EquipmentSlot, ItemStack } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
-import { RARITY, stats, skills, passives } from './dataLib.js';
+
+//=====================================DATA DEFINITIONS===========================================
+
+// Rarity definitions
+const RARITY = {
+    COMMON: {
+        id: 1,
+        chance: 1,
+        sid: "Common",
+        dName: "§7Common",
+        color: "§7",
+        minStats: 0,
+        maxStats: 1,
+        skillChances: {
+            skill: 0,
+            passive: 0
+        }
+    },
+    UNCOMMON: {
+        id: 2,
+        chance: 0.7,
+        sid: "Uncommon",
+        dName: "§aUncommon",
+        color: "§a",
+        minStats: 0,
+        maxStats: 2,
+        skillChances: {
+            skill: 0,
+            passive: 0
+        }
+    },
+    RARE: {
+        id: 3,
+        chance: 0.5,
+        sid: "Rare",
+        dName: "§9Rare",
+        color: "§9",
+        minStats: 1,
+        maxStats: 2,
+        skillChances: {
+            skill: 0.16,
+            passive: 0.20
+        }
+    },
+    EPIC: {
+        id: 4,
+        chance: 0.4,
+        sid: "Epic",
+        dName: "§5Epic",
+        color: "§5",
+        minStats: 1,
+        maxStats: 3,
+        skillChances: {
+            skill: 0.33,
+            passive: 0.40
+        }
+    },
+    LEGENDARY: {
+        id: 5,
+        chance: 0.4,
+        sid: "Legendary",
+        dName: "§6Legendary",
+        color: "§6",
+        minStats: 2,
+        maxStats: 3,
+        skillChances: {
+            skill: 0.5,
+            passive: 0.66
+        }
+    },
+    MYTHIC: {
+        id: 6,
+        chance: 0.5,
+        sid: "Mythic",
+        dName: "§cMythic",
+        color: "§c",
+        minStats: 3,
+        maxStats: 4,
+        skillChances: {
+            skill: 1,
+            passive: 1
+        }
+    }
+};
+
+// Stats definitions
+const stats = {
+    // DAMAGE - All items
+    DAMAGE_COMMON: { name: "§8Damage", rarity: "Common", min: 1, max: 2, scoreboardTracker: "damage" },
+    DAMAGE_UNCOMMON: { name: "§aDamage", rarity: "Uncommon", min: 1, max: 3, scoreboardTracker: "damage" },
+    DAMAGE_RARE: { name: "§1Damage", rarity: "Rare", min: 2, max: 4, scoreboardTracker: "damage" },
+    DAMAGE_EPIC: { name: "§5Damage", rarity: "Epic", min: 3, max: 5, scoreboardTracker: "damage" },
+    DAMAGE_LEGENDARY: { name: "§6Damage", rarity: "Legendary", min: 4, max: 7, scoreboardTracker: "damage" },
+    DAMAGE_MYTHIC: { name: "§cDamage", rarity: "Mythic", min: 5, max: 8, scoreboardTracker: "damage" },
+
+    // DEFENSE - All items
+    DEFENSE_COMMON: { name: "§8Defense", rarity: "Common", min: 1, max: 3, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_UNCOMMON: { name: "§aDefense", rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_RARE: { name: "§1Defense", rarity: "Rare", min: 3, max: 6, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_EPIC: { name: "§5Defense", rarity: "Epic", min: 5, max: 8, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_LEGENDARY: { name: "§6Defense", rarity: "Legendary", min: 7, max: 10, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_MYTHIC: { name: "§cDefense", rarity: "Mythic", min: 10, max: 15, scoreboardTracker: "defense", measure: "%" },
+
+    // SPEED - All items
+    SPEED_COMMON: { name: "§8Speed", rarity: "Common", min: 1, max: 3, scoreboardTracker: "speed", measure: "%" },
+    SPEED_UNCOMMON: { name: "§aSpeed", rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "speed", measure: "%" },
+    SPEED_RARE: { name: "§1Speed", rarity: "Rare", min: 3, max: 6, scoreboardTracker: "speed", measure: "%" },
+    SPEED_EPIC: { name: "§5Speed", rarity: "Epic", min: 5, max: 8, scoreboardTracker: "speed", measure: "%" },
+    SPEED_LEGENDARY: { name: "§6Speed", rarity: "Legendary", min: 7, max: 10, scoreboardTracker: "speed", measure: "%" },
+    SPEED_MYTHIC: { name: "§cSpeed", rarity: "Mythic", min: 10, max: 15, scoreboardTracker: "speed", measure: "%" },
+    
+    // HEALTH - All items
+    HEALTH_COMMON: { name: "§8Health", rarity: "Common", min: 1, max: 2, scoreboardTracker: "health" },
+    HEALTH_UNCOMMON: { name: "§aHealth", rarity: "Uncommon", min: 1, max: 4, scoreboardTracker: "health" },
+    HEALTH_RARE: { name: "§1Health", rarity: "Rare", min: 2, max: 5, scoreboardTracker: "health" },
+    HEALTH_EPIC: { name: "§5Health", rarity: "Epic", min: 4, max: 7, scoreboardTracker: "health" },
+    HEALTH_LEGENDARY: { name: "§6Health", rarity: "Legendary", min: 5, max: 8, scoreboardTracker: "health" },
+    HEALTH_MYTHIC: { name: "§cHealth", rarity: "Mythic", min: 6, max: 10, scoreboardTracker: "health" },
+    
+    // CRITICAL CHANCE - All items
+    CRIT_CHANCE_COMMON: { name: "§8Crit Chance", rarity: "Common", min: 1, max: 3, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_UNCOMMON: { name: "§aCrit Chance", rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_RARE: { name: "§1Crit Chance", rarity: "Rare", min: 3, max: 7, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_EPIC: { name: "§5Crit Chance", rarity: "Epic", min: 5, max: 10, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_LEGENDARY: { name: "§6Crit Chance", rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "critchance", measure: "%" },
+    CRIT_CHANCE_MYTHIC: { name: "§cCrit Chance", rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "critchance", measure: "%" },
+
+    // CRITICAL DAMAGE - All items
+    CRIT_DAMAGE_COMMON: { name: "§8Crit Damage", rarity: "Common", min: 1, max: 5, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_UNCOMMON: { name: "§aCrit Damage", rarity: "Uncommon", min: 4, max: 10, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_RARE: { name: "§1Crit Damage", rarity: "Rare", min: 9, max: 15, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_EPIC: { name: "§5Crit Damage", rarity: "Epic", min: 15, max: 22, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_LEGENDARY: { name: "§6Crit Damage", rarity: "Legendary", min: 21, max: 33, scoreboardTracker: "critdamage", measure: "%" },
+    CRIT_DAMAGE_MYTHIC: { name: "§cCrit Damage", rarity: "Mythic", min: 33, max: 45, scoreboardTracker: "critdamage", measure: "%" },
+
+    // REGENERATION - Epic+ items
+    REGENERATION_EPIC: { name: "§5Regeneration", rarity: "Epic", min: 1, max: 2, scoreboardTracker: "regeneration", measure: "/10s" },
+    REGENERATION_LEGENDARY: { name: "§6Regeneration", rarity: "Legendary", min: 1, max: 3, scoreboardTracker: "regeneration", measure: "/10s" },
+    REGENERATION_MYTHIC: { name: "§cRegeneration", rarity: "Mythic", min: 3, max: 4, scoreboardTracker: "regeneration", measure: "/10s" },
+
+    // DAMAGE PERCENT - All items
+    DAMAGE_PERCENT_COMMON: { name: "§8Damage%", rarity: "Common", min: 1, max: 3, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_UNCOMMON: { name: "§aDamage%", rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_RARE: { name: "§1Damage%", rarity: "Rare", min: 3, max: 7, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_EPIC: { name: "§5Damage%", rarity: "Epic", min: 5, max: 10, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_LEGENDARY: { name: "§6Damage%", rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "damagepercent", measure: "%" },
+    DAMAGE_PERCENT_MYTHIC: { name: "§cDamage%", rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "damagepercent", measure: "%" },
+
+    // LIFE STEAL - Rare+ items
+    LIFESTEAL_RARE: { name: "§1Life Steal", rarity: "Rare", min: 1, max: 2, scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_EPIC: { name: "§5Life Steal", rarity: "Epic", min: 2, max: 4, scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_LEGENDARY: { name: "§6Life Steal", rarity: "Legendary", min: 3, max: 6, scoreboardTracker: "lifesteal", measure: "%" },
+    LIFESTEAL_MYTHIC: { name: "§cLife Steal", rarity: "Mythic", min: 5, max: 8, scoreboardTracker: "lifesteal", measure: "%" }
+};
+
+// Skills definitions
+const skills = {
+    SMASH_LEAP: { name: "Smash Leap", description: "Leap forward and deal AoE damage", cooldown: 10 },
+    SPIN_STRIKE: { name: "Spin Strike", description: "Spin attack damaging nearby enemies", cooldown: 8 },
+    EXPLOSIVE_MINING: { name: "Explosive Mining", description: "Mine in a 3x3 area", cooldown: 15 },
+    RAY_MINER: { name: "Ray Miner", description: "Mine in a straight line", cooldown: 12 },
+    EXCAVATOR: { name: "Excavator", description: "Mine a large area", cooldown: 20 },
+    FLAME_ARC: { name: "Flame Arc", description: "Fire projectile that burns enemies", cooldown: 6 },
+    SHADOW_DASH: { name: "Shadow Dash", description: "Teleport through enemies dealing damage", cooldown: 14 },
+    VOID_PIERCE: { name: "Void Pierce", description: "Piercing attack that ignores armor", cooldown: 18 }
+};
+
+// Passives definitions
+const passives = {
+    THORNS: { name: "Thorns", description: "Reflect damage back to attackers" },
+    FIRE_AURA: { name: "Fire Aura", description: "Burn nearby enemies" },
+    ICE_SHIELD: { name: "Ice Shield", description: "Chance to freeze attackers" },
+    LIGHTNING_STRIKE: { name: "Lightning Strike", description: "Chance to strike with lightning" },
+    VAMPIRE: { name: "Vampire", description: "Heal when dealing damage" },
+    BERSERKER: { name: "Berserker", description: "Damage increases when health is low" },
+    GUARDIAN: { name: "Guardian", description: "Reduce damage when health is high" },
+    SWIFT: { name: "Swift", description: "Increased movement speed in combat" }
+};
 
 //=====================================ITEM EDITOR CONFIGURATION===========================================
 
