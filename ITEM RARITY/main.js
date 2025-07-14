@@ -1,6 +1,7 @@
 import { world, system, EquipmentSlot, GameMode } from "@minecraft/server";
 import { ModalFormData } from "@minecraft/server-ui";
 import { stats, TagMapping, RARITY, blackList, skills, passives } from './dataLib.js';
+import './editor.js'; // Load the item editor module
 
 //=====================================CONFIGURATION & CONSTANTS===========================================
 
