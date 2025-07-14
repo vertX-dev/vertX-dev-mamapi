@@ -450,7 +450,7 @@ system.runInterval(() => {
 system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
-        // TODO: Implement passive abilities that trigger every second (buffs, regeneration, etc.)
+        // DO: Implement passive abilities that trigger every second (buffs, regeneration, etc.)
         // Example: Check for passive abilities that provide continuous effects
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
@@ -477,7 +477,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
         
         healEntity(player, (getScoreboardValue("lifesteal", player) / 100) * damage);
         
-        // TODO: Trigger passive abilities on hitting entity
+        // DO: Trigger passive abilities on hitting entity
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
         // for (const slot of slots) {
@@ -506,7 +506,7 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
 
         healEntity(player, ((getScoreboardValue("lifesteal", player) / 100) * damage) / 2);
         
-        // TODO: Trigger passive abilities on shooting projectile
+        // DO: Trigger passive abilities on shooting projectile
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
         // for (const slot of slots) {
@@ -523,7 +523,7 @@ world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
     const item = ev.itemStack;
     
-    // TODO: Trigger skills on item use
+    // DO: Trigger skills on item use
     // const equipment = player.getComponent("minecraft:equippable");
     // const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
     // if (skill.name) {
@@ -538,7 +538,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
     if (ev.hurtEntity.typeId === "minecraft:player") {
         const player = ev.hurtEntity;
         
-        // TODO: Trigger passive abilities on receiving damage
+        // DO: Trigger passive abilities on receiving damage
         // const equipment = player.getComponent("minecraft:equippable");
         // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
         // for (const slot of slots) {
@@ -554,7 +554,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
 world.afterEvents.playerBreakBlock.subscribe((ev) => {
     const player = ev.player;
     
-    // TODO: Trigger passive abilities on breaking blocks
+    // DO: Trigger passive abilities on breaking blocks
     // const equipment = player.getComponent("minecraft:equippable");
     // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
     // for (const slot of slots) {
