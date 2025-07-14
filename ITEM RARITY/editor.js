@@ -4,27 +4,6 @@ import { RARITY, stats, skills, passives } from './dataLib.js';
 
 //=====================================ITEM EDITOR CONFIGURATION===========================================
 
-// Available base item types for custom item creation
-const BASE_ITEMS = [
-    { id: "minecraft:iron_sword", name: "Iron Sword", category: "weapon" },
-    { id: "minecraft:diamond_sword", name: "Diamond Sword", category: "weapon" },
-    { id: "minecraft:netherite_sword", name: "Netherite Sword", category: "weapon" },
-    { id: "minecraft:bow", name: "Bow", category: "weapon" },
-    { id: "minecraft:crossbow", name: "Crossbow", category: "weapon" },
-    { id: "minecraft:iron_helmet", name: "Iron Helmet", category: "armor" },
-    { id: "minecraft:iron_chestplate", name: "Iron Chestplate", category: "armor" },
-    { id: "minecraft:iron_leggings", name: "Iron Leggings", category: "armor" },
-    { id: "minecraft:iron_boots", name: "Iron Boots", category: "armor" },
-    { id: "minecraft:diamond_helmet", name: "Diamond Helmet", category: "armor" },
-    { id: "minecraft:diamond_chestplate", name: "Diamond Chestplate", category: "armor" },
-    { id: "minecraft:diamond_leggings", name: "Diamond Leggings", category: "armor" },
-    { id: "minecraft:diamond_boots", name: "Diamond Boots", category: "armor" },
-    { id: "minecraft:iron_pickaxe", name: "Iron Pickaxe", category: "tool" },
-    { id: "minecraft:diamond_pickaxe", name: "Diamond Pickaxe", category: "tool" },
-    { id: "minecraft:iron_axe", name: "Iron Axe", category: "tool" },
-    { id: "minecraft:diamond_axe", name: "Diamond Axe", category: "tool" }
-];
-
 // Get available stats for a specific rarity
 function getStatsForRarity(rarityName) {
     const availableStats = [];
@@ -129,9 +108,8 @@ function showItemEditor(player) {
     const form = new ModalFormData()
         .title("§6Item Rarity Editor §r- Create Custom Items");
     
-    // Base item selection
-    const baseItemOptions = BASE_ITEMS.map(item => item.name);
-    form.dropdown("Base Item Type", baseItemOptions, 0);
+    // Base item ID input
+    form.textField("Base Item ID", "Enter item ID (e.g. minecraft:diamond_sword)", "minecraft:diamond_sword");
     
     // Custom item name
     form.textField("Custom Item Name", "Enter custom name", "Epic Sword");
@@ -154,25 +132,31 @@ function showItemEditor(player) {
     form.show(player).then((response) => {
         if (response.canceled) return;
         
-        const baseItemIndex = response.formValues[0];
+        const baseItemId = response.formValues[0] || "minecraft:diamond_sword";
         const customName = response.formValues[1] || "Custom Item";
         const rarityIndex = response.formValues[2];
         const numStats = response.formValues[3];
         const includeSkill = response.formValues[4];
         const includePassive = response.formValues[5];
         
-        const baseItem = BASE_ITEMS[baseItemIndex];
+        // Validate item ID format
+        if (!baseItemId.includes(":")) {
+            player.sendMessage("§cInvalid item ID format! Use namespace:item format (e.g. minecraft:diamond_sword)");
+            return;
+        }
+        
         const selectedRarity = Object.values(RARITY)[rarityIndex];
         
         // Show second form for detailed configuration
-        showDetailedEditor(player, baseItem, customName, selectedRarity, numStats, includeSkill, includePassive);
+        showDetailedEditor(player, baseItemId, customName, selectedRarity, numStats, includeSkill, includePassive);
     });
 }
 
 // Detailed configuration form
-function showDetailedEditor(player, baseItem, customName, rarity, numStats, includeSkill, includePassive) {
+function showDetailedEditor(player, baseItemId, customName, rarity, numStats, includeSkill, includePassive) {
     const form = new ModalFormData()
-        .title(`§6Configuring: ${rarity.dName} ${customName}`);
+        .title(`§6Configuring: ${rarity.dName} ${customName}`)
+        .textField("Item ID Preview", "Base item", baseItemId);
     
     // Get available stats for this rarity
     const availableStats = getStatsForRarity(rarity.sid);
@@ -210,7 +194,7 @@ function showDetailedEditor(player, baseItem, customName, rarity, numStats, incl
     form.show(player).then((response) => {
         if (response.canceled) return;
         
-        let responseIndex = 0;
+        let responseIndex = 1; // Skip the item ID preview field
         
         // Get selected stats
         const selectedStats = [];
@@ -241,7 +225,7 @@ function showDetailedEditor(player, baseItem, customName, rarity, numStats, incl
         }
         
         // Create the custom item
-        createCustomItem(player, baseItem, customName, rarity, selectedStats, selectedSkill, selectedPassive);
+        createCustomItem(player, baseItemId, customName, rarity, selectedStats, selectedSkill, selectedPassive);
     });
 }
 
