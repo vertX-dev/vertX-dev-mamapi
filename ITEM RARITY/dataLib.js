@@ -278,17 +278,17 @@ export const stats = {
     SPEED_COMMON:    { name: "§8Speed",     type: Object.keys(TagMapping), rarity: "Common",    min: 1,  max: 3,  scoreboardTracker: "speed", measure: "%" },
     SPEED_UNCOMMON:  { name: "§aSpeed",     type: Object.keys(TagMapping), rarity: "Uncommon",  min: 2,  max: 5,  scoreboardTracker: "speed", measure: "%" },
     SPEED_RARE:      { name: "§1Speed",     type: Object.keys(TagMapping), rarity: "Rare",      min: 3,  max: 6,  scoreboardTracker: "speed", measure: "%" },
-    SPEED_EPIC:      { name: "§5Speed",     type: TagMapping, rarity: "Epic",      min: 5,  max: 8,  scoreboardTracker: "speed", measure: "%" },
-    SPEED_LEGENDARY: { name: "§6Speed",     type: TagMapping, rarity: "Legendary", min: 7,  max: 10, scoreboardTracker: "speed", measure: "%" },
-    SPEED_MYTHIC:    { name: "§cSpeed",     type: TagMapping, rarity: "Mythic",    min: 10, max: 15, scoreboardTracker: "speed", measure: "%" },
+    SPEED_EPIC:      { name: "§5Speed",     type: Object.keys(TagMapping), rarity: "Epic",      min: 5,  max: 8,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_LEGENDARY: { name: "§6Speed",     type: Object.keys(TagMapping), rarity: "Legendary", min: 7,  max: 10, scoreboardTracker: "speed", measure: "%" },
+    SPEED_MYTHIC:    { name: "§cSpeed",     type: Object.keys(TagMapping), rarity: "Mythic",    min: 10, max: 15, scoreboardTracker: "speed", measure: "%" },
     
     // HEALTH - All items
-    HEALTH_COMMON: { name: "§8Health", type: TagMapping, rarity: "Common", min: 1, max: 2, scoreboardTracker: "health" },
-    HEALTH_UNCOMMON: { name: "§aHealth", type: TagMapping, rarity: "Uncommon", min: 1, max: 4, scoreboardTracker: "health" },
-    HEALTH_RARE: { name: "§1Health", type: TagMapping, rarity: "Rare", min: 2, max: 5, scoreboardTracker: "health" },
-    HEALTH_EPIC: { name: "§5Health", type: TagMapping, rarity: "Epic", min: 4, max: 7, scoreboardTracker: "health" },
-    HEALTH_LEGENDARY: { name: "§6Health", type: TagMapping, rarity: "Legendary", min: 5, max: 8, scoreboardTracker: "health" },
-    HEALTH_MYTHIC: { name: "§cHealth", type: TagMapping, rarity: "Mythic", min: 6, max: 10, scoreboardTracker: "health" },
+    HEALTH_COMMON: { name: "§8Health", type: Object.keys(TagMapping), rarity: "Common", min: 1, max: 2, scoreboardTracker: "health" },
+    HEALTH_UNCOMMON: { name: "§aHealth", type: Object.keys(TagMapping), rarity: "Uncommon", min: 1, max: 4, scoreboardTracker: "health" },
+    HEALTH_RARE: { name: "§1Health", type: Object.keys(TagMapping), rarity: "Rare", min: 2, max: 5, scoreboardTracker: "health" },
+    HEALTH_EPIC: { name: "§5Health", type: Object.keys(TagMapping), rarity: "Epic", min: 4, max: 7, scoreboardTracker: "health" },
+    HEALTH_LEGENDARY: { name: "§6Health", type: Object.keys(TagMapping), rarity: "Legendary", min: 5, max: 8, scoreboardTracker: "health" },
+    HEALTH_MYTHIC: { name: "§cHealth", type: Object.keys(TagMapping), rarity: "Mythic", min: 6, max: 10, scoreboardTracker: "health" },
     
     // CRITICAL CHANCE - All items
     CRIT_CHANCE_COMMON: { name: "§8Crit Chance", type: TagMapping, rarity: "Common", min: 1, max: 3, scoreboardTracker: "critchance", measure: "%" },
