@@ -259,25 +259,25 @@ export const TagMapping = {
 
 export const stats = {
     // DAMAGE - All items
-    DAMAGE_COMMON: { name: "§8Damage", type: TagMapping, rarity: "Common", min: 1, max: 2, scoreboardTracker: "damage" },
-    DAMAGE_UNCOMMON: { name: "§aDamage", type: TagMapping, rarity: "Uncommon", min: 1, max: 3, scoreboardTracker: "damage" },
-    DAMAGE_RARE: { name: "§1Damage", type: TagMapping, rarity: "Rare", min: 2, max: 4, scoreboardTracker: "damage" },
-    DAMAGE_EPIC: { name: "§5Damage", type: TagMapping, rarity: "Epic", min: 3, max: 5, scoreboardTracker: "damage" },
-    DAMAGE_LEGENDARY: { name: "§6Damage", type: TagMapping, rarity: "Legendary", min: 4, max: 7, scoreboardTracker: "damage" },
-    DAMAGE_MYTHIC: { name: "§cDamage", type: TagMapping, rarity: "Mythic", min: 5, max: 8, scoreboardTracker: "damage" },
+    DAMAGE_COMMON: { name: "§8Damage", type: Object.keys(TagMapping), rarity: "Common", min: 1, max: 2, scoreboardTracker: "damage" },
+    DAMAGE_UNCOMMON: { name: "§aDamage", type: Object.keys(TagMapping), rarity: "Uncommon", min: 1, max: 3, scoreboardTracker: "damage" },
+    DAMAGE_RARE: { name: "§1Damage", type: Object.keys(TagMapping), rarity: "Rare", min: 2, max: 4, scoreboardTracker: "damage" },
+    DAMAGE_EPIC: { name: "§5Damage", type: Object.keys(TagMapping), rarity: "Epic", min: 3, max: 5, scoreboardTracker: "damage" },
+    DAMAGE_LEGENDARY: { name: "§6Damage", type: Object.keys(TagMapping), rarity: "Legendary", min: 4, max: 7, scoreboardTracker: "damage" },
+    DAMAGE_MYTHIC: { name: "§cDamage", type: Object.keys(TagMapping), rarity: "Mythic", min: 5, max: 8, scoreboardTracker: "damage" },
 
     // DEFENSE - All items
-    DEFENSE_COMMON: { name: "§8Defense", type: TagMapping, rarity: "Common", min: 1, max: 3, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_UNCOMMON: { name: "§aDefense", type: TagMapping, rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_RARE: { name: "§1Defense", type: TagMapping, rarity: "Rare", min: 3, max: 6, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_EPIC: { name: "§5Defense", type: TagMapping, rarity: "Epic", min: 5, max: 8, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_LEGENDARY: { name: "§6Defense", type: TagMapping, rarity: "Legendary", min: 7, max: 10, scoreboardTracker: "defense", measure: "%" },
-    DEFENSE_MYTHIC: { name: "§cDefense", type: TagMapping, rarity: "Mythic", min: 10, max: 15, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_COMMON: { name: "§8Defense", type: Object.keys(TagMapping), rarity: "Common", min: 1, max: 3, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_UNCOMMON: { name: "§aDefense", type: Object.keys(TagMapping), rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_RARE: { name: "§1Defense", type: Object.keys(TagMapping), rarity: "Rare", min: 3, max: 6, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_EPIC: { name: "§5Defense", type: Object.keys(TagMapping), rarity: "Epic", min: 5, max: 8, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_LEGENDARY: { name: "§6Defense", type: Object.keys(TagMapping), rarity: "Legendary", min: 7, max: 10, scoreboardTracker: "defense", measure: "%" },
+    DEFENSE_MYTHIC: { name: "§cDefense", type: Object.keys(TagMapping), rarity: "Mythic", min: 10, max: 15, scoreboardTracker: "defense", measure: "%" },
 
     // SPEED - All items
-    SPEED_COMMON:    { name: "§8Speed",     type: TagMapping, rarity: "Common",    min: 1,  max: 3,  scoreboardTracker: "speed", measure: "%" },
-    SPEED_UNCOMMON:  { name: "§aSpeed",     type: TagMapping, rarity: "Uncommon",  min: 2,  max: 5,  scoreboardTracker: "speed", measure: "%" },
-    SPEED_RARE:      { name: "§1Speed",     type: TagMapping, rarity: "Rare",      min: 3,  max: 6,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_COMMON:    { name: "§8Speed",     type: Object.keys(TagMapping), rarity: "Common",    min: 1,  max: 3,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_UNCOMMON:  { name: "§aSpeed",     type: Object.keys(TagMapping), rarity: "Uncommon",  min: 2,  max: 5,  scoreboardTracker: "speed", measure: "%" },
+    SPEED_RARE:      { name: "§1Speed",     type: Object.keys(TagMapping), rarity: "Rare",      min: 3,  max: 6,  scoreboardTracker: "speed", measure: "%" },
     SPEED_EPIC:      { name: "§5Speed",     type: TagMapping, rarity: "Epic",      min: 5,  max: 8,  scoreboardTracker: "speed", measure: "%" },
     SPEED_LEGENDARY: { name: "§6Speed",     type: TagMapping, rarity: "Legendary", min: 7,  max: 10, scoreboardTracker: "speed", measure: "%" },
     SPEED_MYTHIC:    { name: "§cSpeed",     type: TagMapping, rarity: "Mythic",    min: 10, max: 15, scoreboardTracker: "speed", measure: "%" },
