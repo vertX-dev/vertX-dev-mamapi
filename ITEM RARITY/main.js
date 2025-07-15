@@ -1,6 +1,9 @@
 import { world, system, EquipmentSlot, GameMode } from "@minecraft/server";
 import { ActionFormData, ModalFormData, FormCancelationReason, uiManager } from "@minecraft/server-ui";
-import { stats, TagMapping, RARITY, blackList, skills, passives } from './dataLib.js';
+import { RARITY, blackList, TagMapping } from './mainLib.js';
+import { stats } from './statsLib.js';
+import { skills } from './skillsLib.js';
+import { passives } from './passivesLib.js';
 
 //=====================================CONFIGURATION & CONSTANTS===========================================
 
