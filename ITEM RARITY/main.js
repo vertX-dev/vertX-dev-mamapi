@@ -1,5 +1,5 @@
 import { world, system, EquipmentSlot, GameMode } from "@minecraft/server";
-import { ModalFormData } from "@minecraft/server-ui";
+import { ActionFormData, ModalFormData, FormCancelationReason, uiManager } from "@minecraft/server-ui";
 import { stats, TagMapping, RARITY, blackList, skills, passives } from './dataLib.js';
 
 //=====================================CONFIGURATION & CONSTANTS===========================================
@@ -129,6 +129,112 @@ function initializeScoreboards() {
     }
     console.log("Static scoreboards initialization complete.");
 }
+//=======================================UI MENU=========================================================
+async function forceShow(player, form, timeout = Infinity) {
+    const startTick = system.currentTick;
+    while ((system.currentTick - startTick) < timeout) {
+        const response = await form.show(player);
+        if (response.cancelationReason !== FormCancelationReason.UserBusy) return response;
+    };
+    throw new Error(`Timed out after ${timeout} ticks`);
+}
+
+async function msifMenu(player) {
+    const menu = new ActionFormData()
+        .title('rssp_buttons')
+        .button('', 'textures/ui/gamerpic')
+    const response = await forceShow(player, menu, 200);
+    if (response.selection >= 0) {
+        switch (response.selection) {
+            case 0:
+                statsMainMenu(player);
+                break;
+        }
+    }
+}
+
+world.afterEvents.playerSpawn.subscribe((ev) => {
+    const player = ev.player;
+    uiManager.closeAllForms(player);
+    msifMenu(player);
+});
+
+system.runTimeout(() => {
+    const players = world.getPlayers();
+    for (const player of players) {
+        uiManager.closeAllForms(player);
+        msifMenu(player);
+    }
+}, 20);
+
+function statsMainMenu(player) {
+    const menu = new ActionFormData()
+        .title('SELECT OPTION')
+        .button('STATS', 'textures/ui/gamerpic')
+    
+    
+    menu.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    showStatsForm(player);
+                    break;
+            } 
+        }
+    });
+}
+
+function showStatsForm(player) {
+  const stats = {
+    damage: getScoreboardValue("damage", player),
+    damagepercent: getScoreboardValue("damagepercent", player),
+    defense: getScoreboardValue("defense", player),
+    health: getScoreboardValue("health", player) + 20,
+    speed: getScoreboardValue("speed", player),
+    regeneration: getScoreboardValue("regeneration", player),
+    critchance: getScoreboardValue("critchance", player) + 5,
+    critdamage: getScoreboardValue("critdamage", player) + 50,
+    lifesteal: getScoreboardValue("lifesteal", player),
+  };
+
+  const form = new ActionFormData()
+    .title("§l§aYour Stats")
+    .body(
+      `§7Damage: §f${stats.damage}\n` +
+      `§7Damage %: §f${stats.damagepercent}%\n` +
+      `§7Defense: §f${stats.defense}\n` +
+      `§7Health: §f${stats.health}\n` +
+      `§7Speed: §f${stats.speed}\n` +
+      `§7Regeneration: §f${stats.regeneration}\n` +
+      `§7Crit Chance: §f${stats.critchance}%\n` +
+      `§7Crit Damage: §f${stats.critdamage}%\n` +
+      `§7Lifesteal: §f${stats.lifesteal}%`
+    )
+    .button("§aOK");
+
+  form.show(player).then((r) => {
+      if (r.canceled) {
+          uiManager.closeAllForms(player);
+          msifMenu(player);
+      } else if (r.selection == 0) {
+          uiManager.closeAllForms(player);
+          msifMenu(player);
+      }
+  });
+}
+
+function upgradeMenu(player) {
+    const equipment = player.getComponent("minecraft:equippable");
+    const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
+    
+    const loreArray = itemStack.getLore();
+    const tag = parseTags(itemStack.typeId);
+    
+    const stats = parseLoreToStats(equipment, EquipmentSlot.Mainhand)
+}
+    
+
+
 
 //=====================================CORE GAME LOGIC===========================================
 
@@ -604,9 +710,9 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
 // Skill activation event handler
 world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
-    const item = ev.itemStack;
     
     const equipment = player.getComponent("minecraft:equippable");
+    
     const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
     if (skill && skill.name) {
         switch (skill.name.slice(2)) {
@@ -899,10 +1005,6 @@ function skillVoidPierce(player, skill) {
 
     player.runCommand(`execute at @s positioned^^^9 run particle minecraft:dragon_breath_fire ~ ~ ~`);
 }
-
-
-
-
 
 
 //=====================================PASSIVES FUNCTIONALITY===========================================
