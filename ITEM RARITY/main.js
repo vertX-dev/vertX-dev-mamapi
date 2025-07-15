@@ -1,36 +1,110 @@
-import { world, system, EquipmentSlot, GameMode } from "@minecraft/server";
-import { ActionFormData, ModalFormData, FormCancelationReason, uiManager } from "@minecraft/server-ui";
-import { RARITY, blackList, TagMapping } from './mainLib.js';
-import { stats } from './statsLib.js';
-import { skills } from './skillsLib.js';
-import { passives } from './passivesLib.js';
+import {
+    world,
+    system,
+    EquipmentSlot,
+    GameMode
+} from "@minecraft/server";
+import {
+    ActionFormData,
+    ModalFormData,
+    FormCancelationReason,
+    uiManager
+} from "@minecraft/server-ui";
+import {
+    RARITY,
+    blackList,
+    TagMapping
+} from './mainLib.js';
+import {
+    stats
+} from './statsLib.js';
+import {
+    skills
+} from './skillsLib.js';
+import {
+    passives
+} from './passivesLib.js';
 
 //=====================================CONFIGURATION & CONSTANTS===========================================
 
-let BOOST_COEF = 10;
+let BOOST_COEF; //default 10
+let RR_BASE; // default common
 
 // Static predefined scoreboards - load early to prevent timing issues
-const PREDEFINED_SCOREBOARDS = [
-    { name: "damage", displayName: "Damage" },
-    { name: "damagepercent", displayName: "Damage percent bonus" },
-    { name: "defense", displayName: "Defense" },
-    { name: "health", displayName: "Health" },
-    { name: "speed", displayName: "Speed" },
-    { name: "regeneration", displayName: "Regeneration" },
-    { name: "critchance", displayName: "Crit Chance" },
-    { name: "critdamage", displayName: "Crit Damage" },
-    { name: "lifesteal", displayName: "Life steal" }
+const PREDEFINED_SCOREBOARDS = [{
+        name: "damage",
+        displayName: "Damage"
+    },
+    {
+        name: "damagepercent",
+        displayName: "Damage percent bonus"
+    },
+    {
+        name: "defense",
+        displayName: "Defense"
+    },
+    {
+        name: "health",
+        displayName: "Health"
+    },
+    {
+        name: "speed",
+        displayName: "Speed"
+    },
+    {
+        name: "regeneration",
+        displayName: "Regeneration"
+    },
+    {
+        name: "critchance",
+        displayName: "Crit Chance"
+    },
+    {
+        name: "critdamage",
+        displayName: "Crit Damage"
+    },
+    {
+        name: "lifesteal",
+        displayName: "Life steal"
+    },
+    {
+        name: "healthpercent",
+        displayName: "Health percent bonus"
+    }
 ];
 
-const COOLDOWN_PREDEFINED_SCOREBOARDS = [
-    { name: "smashleap", displayName: "Smash Leap" },
-    { name: "spinstrike", displayName: "Spin Strike" },
-    { name: "explosivemining", displayName: "Explosive Mining" },
-    { name: "rayminer", displayName: "Ray Miner" },
-    { name: "excavator", displayName: "Excavator" },
-    { name: "flamearc", displayName: "Flame Arc" },
-    { name: "shadowdash", displayName: "Shadow Dash" },
-    { name: "voidpierce", displayName: "Void Pierce" }
+const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
+        name: "smashleap",
+        displayName: "Smash Leap"
+    },
+    {
+        name: "spinstrike",
+        displayName: "Spin Strike"
+    },
+    {
+        name: "explosivemining",
+        displayName: "Explosive Mining"
+    },
+    {
+        name: "rayminer",
+        displayName: "Ray Miner"
+    },
+    {
+        name: "excavator",
+        displayName: "Excavator"
+    },
+    {
+        name: "flamearc",
+        displayName: "Flame Arc"
+    },
+    {
+        name: "shadowdash",
+        displayName: "Shadow Dash"
+    },
+    {
+        name: "voidpierce",
+        displayName: "Void Pierce"
+    }
 ];
 
 //=====================================UTILITY FUNCTIONS===========================================
@@ -50,10 +124,10 @@ function parseTags(itemId = "minecraft:apple") {
             }
         }
     }
-    
+
     // Split the itemId by underscores and colons to get individual words
     const itemWords = itemId.toLowerCase().split(/[_:]/);
-    
+
     // Check each tag category
     for (const [tagKey, tagValues] of Object.entries(TagMapping)) {
         // Check if any word from itemId matches any value in the tag array
@@ -66,7 +140,7 @@ function parseTags(itemId = "minecraft:apple") {
             }
         }
     }
-    
+
     // No match found
     return {
         rarity: false
@@ -75,10 +149,10 @@ function parseTags(itemId = "minecraft:apple") {
 
 function testCooldown(player, name, object = skills) {
     const Obj = Object.values(object).find(s => s.name == name);
-    
+
     const scoreboardObj = world.scoreboard.getObjective(Obj.scoreboard);
     const scoreboardValue = scoreboardObj.getScore(player);
-    
+
     return {
         obj: scoreboardObj,
         time: scoreboardValue
@@ -118,7 +192,7 @@ function initializeScoreboards() {
             console.warn(`Failed to add scoreboard '${scoreboard.name}':`, e.message);
         }
     }
-    
+
     for (const scoreboard of COOLDOWN_PREDEFINED_SCOREBOARDS) {
         try {
             const existing = world.scoreboard.getObjective(scoreboard.name);
@@ -153,14 +227,55 @@ async function msifMenu(player) {
                 statsMainMenu(player);
                 break;
         }
+    } else {
+        msifMenu(player);
     }
 }
 
 world.afterEvents.playerSpawn.subscribe((ev) => {
     const player = ev.player;
     uiManager.closeAllForms(player);
+
+    // Check if player has creative mode
+    try {
+        const gameModeResult = player.runCommand("testfor @s[m=creative]");
+        const isCreative = gameModeResult.successCount > 0;
+
+        if (isCreative) {
+            // Check if any other players have admin tag
+            const adminCheckResult = player.runCommand("testfor @a[tag=admin]");
+            const hasAdminPlayers = adminCheckResult.successCount > 0;
+
+            if (!hasAdminPlayers) {
+                // Add admin tag to this player
+                player.runCommand("tag @s add admin");
+                console.log(`Added admin tag to player: ${player.name}`);
+            }
+        }
+    } catch (error) {
+        console.warn("Error checking player gamemode or admin status:", error);
+    }
+
+    // Check and initialize variables if they don't exist
+    try {
+        // Check BOOST_COEF variable
+        if (!BOOST_COEF) {
+            BOOST_COEF = 10;
+            console.log(`Initialized BOOST_COEF to 10`);
+        }
+
+        // Check RR_BASE variable
+        if (!RR_BASE) {
+            RR_BASE = RARITY.COMMON;
+            console.log(`Initialized RR_BASE to RARITY.COMMON`);
+        }
+    } catch (error) {
+        console.warn("Error initializing variables:", error);
+    }
+
     msifMenu(player);
 });
+
 
 system.runTimeout(() => {
     const players = world.getPlayers();
@@ -174,74 +289,137 @@ function statsMainMenu(player) {
     const menu = new ActionFormData()
         .title('SELECT OPTION')
         .button('STATS', 'textures/ui/gamerpic')
-    
-    
+        .button('SETTINGS', 'textures/ui/automation_glyph_color')
+
+
     menu.show(player).then((r) => {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
                     showStatsForm(player);
                     break;
-            } 
+                case 1:
+                    showSettingsForm(player);
+                    break;
+            }
+        } else {
+            uiManager.closeAllForms(player);
+            msifMenu(player);
         }
     });
 }
 
 function showStatsForm(player) {
-  const stats = {
-    damage: getScoreboardValue("damage", player),
-    damagepercent: getScoreboardValue("damagepercent", player),
-    defense: getScoreboardValue("defense", player),
-    health: getScoreboardValue("health", player) + 20,
-    speed: getScoreboardValue("speed", player),
-    regeneration: getScoreboardValue("regeneration", player),
-    critchance: getScoreboardValue("critchance", player) + 5,
-    critdamage: getScoreboardValue("critdamage", player) + 50,
-    lifesteal: getScoreboardValue("lifesteal", player),
-  };
+    const stats = {
+        damage: getScoreboardValue("damage", player),
+        damagepercent: getScoreboardValue("damagepercent", player),
+        defense: getScoreboardValue("defense", player),
+        health: getScoreboardValue("health", player) + 20,
+        speed: getScoreboardValue("speed", player),
+        regeneration: getScoreboardValue("regeneration", player),
+        critchance: getScoreboardValue("critchance", player) + 5,
+        critdamage: getScoreboardValue("critdamage", player) + 50,
+        lifesteal: getScoreboardValue("lifesteal", player),
+        //stunchance: getScoreboardValue("stunchance", player),
+        //stuntime: getScoreboardValue("stunchance", player),
+        healthpercent: getScoreboardValue("healthpercent", player)
 
-  const form = new ActionFormData()
-    .title("§l§aYour Stats")
-    .body(
-      `§7Damage: §f${stats.damage}\n` +
-      `§7Damage %: §f${stats.damagepercent}%\n` +
-      `§7Defense: §f${stats.defense}\n` +
-      `§7Health: §f${stats.health}\n` +
-      `§7Speed: §f${stats.speed}\n` +
-      `§7Regeneration: §f${stats.regeneration}\n` +
-      `§7Crit Chance: §f${stats.critchance}%\n` +
-      `§7Crit Damage: §f${stats.critdamage}%\n` +
-      `§7Lifesteal: §f${stats.lifesteal}%`
-    )
-    .button("§aOK");
+    };
 
-  form.show(player).then((r) => {
-      if (r.canceled) {
-          uiManager.closeAllForms(player);
-          msifMenu(player);
-      } else if (r.selection == 0) {
-          uiManager.closeAllForms(player);
-          msifMenu(player);
-      }
-  });
+    const form = new ActionFormData()
+        .title("§l§aYour Stats")
+        .body(
+            `§7Damage: §f${stats.damage}\n` +
+            `§7Damage: §f${stats.damagepercent}%%\n` +
+            `§7Defense: §f${stats.defense}\n` +
+            `§7Health: §f${stats.health}\n` +
+            `§7Speed: §f${stats.speed}\n` +
+            `§7Regeneration: §f${stats.regeneration}\n` +
+            `§7Crit Chance: §f${stats.critchance}%%\n` +
+            `§7Crit Damage: §f${stats.critdamage}%%\n` +
+            `§7Lifesteal: §f${stats.lifesteal}%%\n` +
+            `§7Health: §f${stats.healthpercent}%%`
+        )
+        .button("§aOK");
+
+    form.show(player).then((r) => {
+        if (r.canceled) {
+            uiManager.closeAllForms(player);
+            msifMenu(player);
+        } else if (r.selection == 0) {
+            uiManager.closeAllForms(player);
+            msifMenu(player);
+        }
+    });
 }
 
 function upgradeMenu(player) {
     const equipment = player.getComponent("minecraft:equippable");
     const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
-    
+
     const loreArray = itemStack.getLore();
     const tag = parseTags(itemStack.typeId);
-    
+
     const stats = parseLoreToStats(equipment, EquipmentSlot.Mainhand)
 }
-    
+
+function showSettingsForm(player) {
+
+    if (!player.hasTag("admin")) {
+        uiManager.closeAllForms(player);
+        msifMenu(player);
+    }
+    const rarityOptions = [{
+            name: "§7Common",
+            value: RARITY.COMMON
+        },
+        {
+            name: "§aUncommon",
+            value: RARITY.UNCOMMON
+        },
+        {
+            name: "§9Rare",
+            value: RARITY.RARE
+        },
+        {
+            name: "§5Epic",
+            value: RARITY.EPIC
+        },
+        {
+            name: "§6Legendary",
+            value: RARITY.LEGENDARY
+        },
+        {
+            name: "§cMythic",
+            value: RARITY.MYTHIC
+        },
+    ];
+
+    const currentRarityIndex = rarityOptions.findIndex(opt => opt.value === RR_BASE) || 0;
+
+    const form = new ModalFormData()
+        .title("Settings")
+        .slider("Boost Coefficient", 1, 50, 1, BOOST_COEF)
+        .dropdown("Minimum Rarity", rarityOptions.map(opt => opt.name), currentRarityIndex);
+
+    form.show(player).then(response => {
+        if (!response.canceled) {
+            const [boostCoef, rarityIndex] = response.formValues;
+            BOOST_COEF = boostCoef;
+            RR_BASE = rarityOptions[rarityIndex].value;
+            player.sendMessage(`§aSettings updated:\n§fBoost Coef: §e${BOOST_COEF}\n§fMin Rarity: ${rarityOptions[rarityIndex].name}`);
+        }
+
+        uiManager.closeAllForms(player);
+        msifMenu(player);
+    });
+}
 
 
 
 //=====================================CORE GAME LOGIC===========================================
 
-function randomRarity(RR = RARITY.COMMON) {
+function randomRarity(RR = RR_BASE) {
     let rarity = RR;
     let currentId = rarity.id;
 
@@ -497,18 +675,29 @@ function healEntity(entity, value = getScoreboardValue("regeneration", entity)) 
 
 function setMainStats(player) {
     //get all stats
-    let health = Math.floor(getScoreboardValue("health", player) / 4) - 1;
+    let health = Math.floor(getScoreboardValue("health", player));
     let defense = Math.floor(Math.min(getScoreboardValue("defense", player), 80) / 20) - 1;
     let speed = Math.floor(Math.min(getScoreboardValue("speed", player), 200) / 20) - 1;
 
+    health = Math.floor(health * (1 + (getScoreboardValue("healthpercent", player) / 100)) / 4) - 1;
+
     if (health >= 0) {
-        player.addEffect("health_boost", 50, {amplifier: health, showParticles: false});
+        player.addEffect("health_boost", 50, {
+            amplifier: health,
+            showParticles: false
+        });
     }
     if (defense >= 0) {
-        player.addEffect("resistance", 50, {amplifier: defense, showParticles: false});
+        player.addEffect("resistance", 50, {
+            amplifier: defense,
+            showParticles: false
+        });
     }
     if (speed >= 0) {
-        player.addEffect("speed", 50, {amplifier: speed, showParticles: false});
+        player.addEffect("speed", 50, {
+            amplifier: speed,
+            showParticles: false
+        });
     }
 }
 
@@ -564,11 +753,11 @@ function parseLoreToSkills(equipment, slot) {
         }
         ix++;
     }
-    
+
     const string = attributes.join(" ");
     const stringVal = string.match(/§w(.*?)§w/);
     const stringCd = string.match(/§eCooldown: (.*?)s/);
-    
+
     const Skill = {
         name: attributes[0],
         value: stringVal ? Number(stringVal[1]) : 0,
@@ -601,11 +790,11 @@ function parseLoreToPassive(equipment, slot) {
         }
         ix++;
     }
-    
+
     const string = attributes.join(" ");
     const stringVal = string.match(/§w(.*?)§w/);
     const stringCd = string.match(/§eCooldown: (.*?)s/);
-    
+
     const Passive = {
         name: attributes[0],
         value: stringVal ? Number(stringVal[1]) : 0,
@@ -713,9 +902,9 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
 // Skill activation event handler
 world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
-    
+
     const equipment = player.getComponent("minecraft:equippable");
-    
+
     const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
     if (skill && skill.name) {
         switch (skill.name.slice(2)) {
@@ -804,7 +993,7 @@ function skillSmashLeap(player, skill) {
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
-    
+
     // Stun enemies
     player.runCommand(`effect @e[r=${skill.value}] slowness 2 4 true`);
     player.runCommand(`effect @s slowness 0`);
@@ -826,17 +1015,17 @@ function skillSpinStrike(player, skill) {
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
-    
+
     const damage = calculateDamage(player, skill.value);
-    
+
     // Spin attack particles and sound
     player.runCommand(`particle minecraft:critical_hit_emitter ~ ~1 ~`);
     player.runCommand(`playsound entity.player.attack.sweep @s`);
     player.runCommand(`playsound entity.player.attack.strong @s`);
-    
+
     // Hit and damage enemies
     player.runCommand(`damage @e[r=3,rm=1,type=!player] ${damage}`);
-    
+
     // 360 spin visuals
     for (let i = 0; i < 8; i++) {
         const angle = (i / 8) * Math.PI * 2;
@@ -853,11 +1042,15 @@ function skillExplosiveMining(player, skill) {
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
-    
+
     const size = skill.value;
-    player.addEffect("resistance", 50, {amplifier: 4});
-    player.dimension.createExplosion(player.location, size * 2, { breaksBlocks: true });
-    
+    player.addEffect("resistance", 50, {
+        amplifier: 4
+    });
+    player.dimension.createExplosion(player.location, size * 2, {
+        breaksBlocks: true
+    });
+
     // Explosion effects
     player.runCommand(`particle minecraft:explosion_emitter ~ ~ ~`);
     player.runCommand(`particle minecraft:large_explosion ~ ~ ~`);
@@ -879,12 +1072,12 @@ function skillRayMiner(player, skill) {
     player.runCommand(`particle minecraft:electric_spark_particle ~ ~1 ~`);
 
     for (let i = 1; i <= distance; i++) {
-        player.runCommand(`execute at @s positioned ^^^${i} run particle minecraft:electric_spark_particle ~ ~ ~`);
-        player.runCommand(`execute at @s positioned ^^^${i} run particle minecraft:scrape ~ ~ ~`);
+        player.runCommand(`execute at @s positioned ^^1^${i} run particle minecraft:electric_spark_particle ~ ~ ~`);
+        player.runCommand(`execute at @s positioned ^^1^${i} run particle minecraft:scrape ~ ~ ~`);
 
-        const result = player.runCommand(`execute at @s positioned^^^${i} run testforblock ~ ~ ~ air`);
+        const result = player.runCommand(`execute at @s positioned^^1^${i} run testforblock ~ ~ ~ air`);
         if (result.successCount === 0) {
-            player.runCommand(`execute at @s positioned^^^${i} run setblock ~ ~ ~ air destroy`);
+            player.runCommand(`execute at @s positioned^^1^${i} run setblock ~ ~ ~ air destroy`);
             blocksDestroyed++;
         }
     }
@@ -919,9 +1112,9 @@ function skillExcavator(player, skill) {
         for (let z = -1; z <= 1; z++) {
             for (let y = 0; y < depth; y++) {
                 for (const block of sandBlocks) {
-                    const result = player.runCommand(`execute at @s positioned^${x} ^${z} ^${y} run testforblock ~ ~ ~ ${block}`);
+                    const result = player.runCommand(`execute at @s positioned^${x} ^${z + 1} ^${y} run testforblock ~ ~ ~ ${block}`);
                     if (result.successCount > 0) {
-                        player.runCommand(`execute at @s positioned^${x} ^${z} ^${y} run setblock ~ ~ ~ air destroy`);
+                        player.runCommand(`execute at @s positioned^${x} ^${z + 1} ^${y} run setblock ~ ~ ~ air destroy`);
                         blocksDestroyed++;
                         break;
                     }
@@ -1001,26 +1194,13 @@ function skillVoidPierce(player, skill) {
     player.runCommand(`playsound entity.wither.shoot @s`);
 
     for (let i = 1; i <= 9; i++) {
-        player.runCommand(`execute at @s positioned^^^${i} run particle minecraft:endrod ~ ~ ~`);
-        player.runCommand(`execute at @s positioned^^^${i} run damage @e[r=1,type=!player] ${damage} magic`);
-        player.runCommand(`execute at @s positioned^^^${i} if entity @e[r=1,type=!player] run playsound entity.arrow.hit @s`);
+        player.runCommand(`execute at @s positioned^^1^${i} run particle minecraft:endrod ~ ~ ~`);
+        player.runCommand(`execute at @s positioned^^1^${i} run damage @e[r=1,type=!player] ${damage} magic`);
+        player.runCommand(`execute at @s positioned^^1^${i} if entity @e[r=1,type=!player] run playsound entity.arrow.hit @s`);
     }
 
-    player.runCommand(`execute at @s positioned^^^9 run particle minecraft:dragon_breath_fire ~ ~ ~`);
+    player.runCommand(`execute at @s positioned^^1^9 run particle minecraft:dragon_breath_fire ~ ~ ~`);
 }
 
 
 //=====================================PASSIVES FUNCTIONALITY===========================================
-
-
-
-
-
-
-
-
-
-
-
-
-
