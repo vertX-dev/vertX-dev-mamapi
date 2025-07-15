@@ -138,7 +138,7 @@ export const blackList = [
 ];
 
 //16 -> 495
-const TagMapping = {
+export const TagMapping = {
     // Melee Weapons
     "sword": ["sword", "katana", "claymore", "rapier", "shortsword", "longsword", "greatsword", "broadsword", "cutlass", "sabre", "scimitar", "falchion", "blade", "saber"],
     "axe": ["axe", "battleaxe", "handaxe", "tomahawk", "great_axe", "lumber_axe", "hatchet", "cleaver"],
