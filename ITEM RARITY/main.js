@@ -446,17 +446,11 @@ function showSettingsForm(player) {
 
     const form = new ModalFormData()
         .title("Settings")
-        .slider({
-            label: "Boost Coefficient",
-            min: 1,
-            max: 50,
+        .slider("Boost Coefficient", 1, 50, {
             step: sliderParam.valueStep,
             defaultValue: sliderParam.defaultValue
         })
-        .dropdown({
-            label: "Minimum Rarity",
-            options: rarityOptions.map(opt => opt.name)
-        });
+        .dropdown("Minimum Rarity", rarityOptions.map(opt => opt.name));
 
     form.show(player).then(response => {
         if (!response.canceled) {
@@ -1625,10 +1619,8 @@ function showEnhancedRarityUpgradeMenu(equipment, player, itemStack) {
     form.title("§dRarity Upgrade Menu");
     
     if (!upgradeCost || !upgradeCost.targetRarity) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item is already at maximum rarity!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item is already at maximum rarity!"
         });
         form.show(player);
         return;
@@ -1638,21 +1630,15 @@ function showEnhancedRarityUpgradeMenu(equipment, player, itemStack) {
     const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
     const canAfford = hasRequiredItems(player, adjustedCost);
     
-    form.textField({
-        label: "Upgrade Details",
-        defaultValue: `§7Current: §e${currentRarity}\n§7Target: §e${upgradeCost.targetRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
-        placeholderText: ""
+    form.textField("Upgrade Details", "", {
+        defaultValue: `§7Current: §e${currentRarity}\n§7Target: §e${upgradeCost.targetRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`
     });
     
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(10, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(10, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Upgrade",
+    form.toggle("§aConfirm Upgrade", {
         defaultValue: false
     });
     
@@ -1677,10 +1663,8 @@ function showEnhancedStatsRerollMenu(equipment, player, itemStack) {
     form.title("§aStats Reroll Menu");
     
     if (!rerollCost) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item cannot be rerolled!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item cannot be rerolled!"
         });
         form.show(player);
         return;
@@ -1696,29 +1680,22 @@ function showEnhancedStatsRerollMenu(equipment, player, itemStack) {
         formText += `\n§7${index + 1}. ${stat}`;
     });
     
-    form.textField({
-        label: "Reroll Details",
-        defaultValue: formText,
-        placeholderText: ""
+    form.textField("Reroll Details", "", {
+        defaultValue: formText
     });
     
     // Add checkboxes for locking stats
     currentStats.forEach((stat, index) => {
-        form.toggle({
-            label: `§eLock Stat ${index + 1}: ${stat.replace(/§./g, '')}`,
+        form.toggle(`§eLock Stat ${index + 1}: ${stat.replace(/§./g, '')}`, {
             defaultValue: false
         });
     });
     
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Reroll",
+    form.toggle("§aConfirm Reroll", {
         defaultValue: false
     });
     
@@ -1750,10 +1727,8 @@ function showEnhancedStatsUpgradeMenu(equipment, player, itemStack) {
     form.title("§2Stats Upgrade Menu");
     
     if (!upgradeCost) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item cannot be upgraded!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item cannot be upgraded!"
         });
         form.show(player);
         return;
@@ -1769,20 +1744,14 @@ function showEnhancedStatsUpgradeMenu(equipment, player, itemStack) {
         formText += `\n§7${index + 1}. ${stat}`;
     });
     
-    form.textField({
-        label: "Upgrade Details",
-        defaultValue: formText,
-        placeholderText: ""
+    form.textField("Upgrade Details", "", {
+        defaultValue: formText
     });
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Upgrade",
+    form.toggle("§aConfirm Upgrade", {
         defaultValue: false
     });
     
@@ -1807,10 +1776,8 @@ function showEnhancedSkillUpgradeMenu(equipment, player, itemStack) {
     form.title("§9Skill Upgrade Menu");
     
     if (!upgradeCost) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item cannot be upgraded!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item cannot be upgraded!"
         });
         form.show(player);
         return;
@@ -1820,21 +1787,15 @@ function showEnhancedSkillUpgradeMenu(equipment, player, itemStack) {
     const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
     const canAfford = hasRequiredItems(player, adjustedCost);
     
-    form.textField({
-        label: "Upgrade Details",
-        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
-        placeholderText: ""
+    form.textField("Upgrade Details", "", {
+        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`
     });
     
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Upgrade",
+    form.toggle("§aConfirm Upgrade", {
         defaultValue: false
     });
     
@@ -1859,10 +1820,8 @@ function showEnhancedSkillRerollMenu(equipment, player, itemStack) {
     form.title("§bSkill Reroll Menu");
     
     if (!rerollCost) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item cannot be rerolled!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item cannot be rerolled!"
         });
         form.show(player);
         return;
@@ -1872,21 +1831,15 @@ function showEnhancedSkillRerollMenu(equipment, player, itemStack) {
     const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
     const canAfford = hasRequiredItems(player, adjustedCost);
     
-    form.textField({
-        label: "Reroll Details",
-        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
-        placeholderText: ""
+    form.textField("Reroll Details", "", {
+        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`
     });
     
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Reroll",
+    form.toggle("§aConfirm Reroll", {
         defaultValue: false
     });
     
@@ -1911,10 +1864,8 @@ function showEnhancedPassiveUpgradeMenu(equipment, player, itemStack) {
     form.title("§6Passive Upgrade Menu");
     
     if (!upgradeCost) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item cannot be upgraded!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item cannot be upgraded!"
         });
         form.show(player);
         return;
@@ -1924,21 +1875,15 @@ function showEnhancedPassiveUpgradeMenu(equipment, player, itemStack) {
     const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
     const canAfford = hasRequiredItems(player, adjustedCost);
     
-    form.textField({
-        label: "Upgrade Details",
-        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
-        placeholderText: ""
+    form.textField("Upgrade Details", "", {
+        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`
     });
     
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Upgrade",
+    form.toggle("§aConfirm Upgrade", {
         defaultValue: false
     });
     
@@ -1963,10 +1908,8 @@ function showEnhancedPassiveRerollMenu(equipment, player, itemStack) {
     form.title("§ePassive Reroll Menu");
     
     if (!rerollCost) {
-        form.textField({
-            label: "OK",
-            defaultValue: "§cThis item cannot be rerolled!",
-            placeholderText: ""
+        form.textField("OK", "", {
+            defaultValue: "§cThis item cannot be rerolled!"
         });
         form.show(player);
         return;
@@ -1976,21 +1919,15 @@ function showEnhancedPassiveRerollMenu(equipment, player, itemStack) {
     const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
     const canAfford = hasRequiredItems(player, adjustedCost);
     
-    form.textField({
-        label: "Reroll Details",
-        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
-        placeholderText: ""
+    form.textField("Reroll Details", "", {
+        defaultValue: `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`
     });
     
-    form.slider({
-        label: "§6Bulk Attempts",
-        min: 1,
-        max: Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1),
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), {
         step: 1,
         defaultValue: 1
     });
-    form.toggle({
-        label: "§aConfirm Reroll",
+    form.toggle("§aConfirm Reroll", {
         defaultValue: false
     });
     
