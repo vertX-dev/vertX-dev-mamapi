@@ -128,12 +128,12 @@ function getScoreboardValue(scoreboard, player) {
 }
 
 function getUpgradeRarityIcon(rarity) {
-    const rarity = Object.values(RARITY).find(r => r.sid === rarity).id;
-    return RARITY_UPGRADES_GLYPS.charAt(rarity - 1);
+    const raritya = Object.values(RARITY).find(r => r.sid === rarity).id;
+    return RARITY_UPGRADES_GLYPS.charAt(raritya - 1);
 }
 
 function getUpgradeTemplates(player) {
-    return `${countItemInInventory(player, rss:common_upgrade)}   ${countItemInInventory(player, rss:uncommon_upgrade)}   ${countItemInInventory(player, rss:rare_upgrade)}   ${countItemInInventory(player, rss:epic_upgrade)}   ${countItemInInventory(player, rss:legendary_upgrade)}   ${countItemInInventory(player, rss:mythic_upgrade)}`;
+    return `${countItemInInventory(player, "rss:common_upgrade")}   ${countItemInInventory(player, "rss:uncommon_upgrade")}   ${countItemInInventory(player, "rss:rare_upgrade")}   ${countItemInInventory(player, "rss:epic_upgrade")}   ${countItemInInventory(player, "rss:legendary_upgrade")}   ${countItemInInventory(player, "rss:mythic_upgrade")}`;
 }
 
 function countItemInInventory(player, itemId) {
@@ -350,11 +350,10 @@ function statsMainMenu(player) {
                     upgradeMenu(player);
                     break;
             }
-        } else {
+        }
+        if (!player.hasTag("pc_mode")) {
             uiManager.closeAllForms(player);
-            if (!player.hasTag("pc_mode")) {
-                msifMenu(player);
-            }
+            msifMenu(player);
         }
     });
 }
@@ -499,11 +498,15 @@ function upgradeMenu(player) {
     displayUpgradeOptions(equipment, player, itemStack);
 }
 
+function toTitleCase(str) {
+    return str.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+}
+
 // Helper function to display upgrade options
 function displayUpgradeOptions(equipment, player, itemStack) {
     const form = new ActionFormData();
     form.title("§6Item Upgrade Menu");
-    form.body(`§7Item: §e${itemStack.nameTag ?? itemStack.typeId.split("_").spit(":").toUpperCase()}\n§7Select an upgrade option:`);
+    form.body(`§7Item: §e${itemStack.nameTag ?? toTitleCase(itemStack.typeId.split(":").pop().replace(/_/g, " "))}\n§7Select an upgrade option:`);
     
     form.button(`§a[Rarity Upgrade]`, "textures/ui/smithing_icon");
     form.button("§cCancel", "textures/ui/cancel");
@@ -571,11 +574,11 @@ function rarityUpgrade(equipment, player, itemStack) {
                 player.runCommand("clear @s " + upgrades[RR.id - 1] + " 0 1");
                 rarityItemTest(item, player, RR.sid);
             }
-            if (!player.hasTag("pc_mode")) {
-                uiManager.closeAllForms(player);
-                msifMenu(player);
-            }
         });
+    if (!player.hasTag("pc_mode")) {
+        uiManager.closeAllForms(player);
+        msifMenu(player);
+    }
 }
 
 // Chat commands
@@ -775,12 +778,12 @@ function randomPassiveAbility(rarity, type) {
     return result;
 }
 
-function rarityItemTest(itemStack, player, rarity = "§7Common") {
+function rarityItemTest(itemStack, player, rarityUp = "§7Common") {
     if (!itemStack || !player) return;
 
     const lore = itemStack.getLore() ?? [];
 
-    if (lore.length === 0 || rarity != "§7Common") {
+    if (lore.length === 0 || rarityUp != "§7Common") {
         const Tags = parseTags(itemStack.typeId);
 
         if (Tags && Tags.rarity && rarity === "§7Common") {
@@ -805,7 +808,7 @@ function rarityItemTest(itemStack, player, rarity = "§7Common") {
                 console.warn("Error applying rarity:", error);
             }
         } else {
-            const rarity = Object.values(RARITY).find(r => r.sid === rarity);
+            const rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
             
             const stats = randomStats(rarity.sid, Tags.data);
 
