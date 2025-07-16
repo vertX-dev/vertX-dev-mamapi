@@ -32,8 +32,11 @@ import {
 let BOOST_COEF; //default 10
 let RR_BASE; // default common
 
-const HEALTH_BAR_FONT = "";//32 values
-const RARITY_UPGRADES_GLYPS = "";//6 values
+const HEALTH_BAR_FONT = "";//32 values
+const RARITY_UPGRADES_GLYPS = "";//6 values
+
+// Settings auto-load flag
+let settingsLoaded = false;
 
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
@@ -352,7 +355,7 @@ function statsMainMenu(player) {
                     showStatsForm(player, true);
                     break;
                 case 1:
-                    showSettingsForm(player, true);
+                    showEnhancedSettingsForm(player);
                     break;
                 case 2:
                     uiManager.closeAllForms(player);
@@ -589,7 +592,7 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
                 system.runTimeout(() => showStatsForm(sender), 60);
                 break;
             case '.settings':
-                system.runTimeout(() => showSettingsForm(sender), 60);
+                system.runTimeout(() => showEnhancedSettingsForm(sender), 60);
                 break;
             case '.disablepc':
                 system.runTimeout(() => {sender.removeTag("pc_mode")},20);
@@ -686,6 +689,12 @@ function randomStats(rarity, type) {
 }
 
 function randomSkill(rarity, type) {
+    // Ensure BOOST_COEF is initialized
+    if (!BOOST_COEF || BOOST_COEF == 0) {
+        BOOST_COEF = 10;
+        console.log(`Initialized BOOST_COEF to 10 in randomSkill`);
+    }
+    
     // Filter available skills that match the item type
     const availableSkills = Object.values(skills).filter(skill => skill.type.includes(type));
     
@@ -735,6 +744,12 @@ function randomSkill(rarity, type) {
 }
 
 function randomPassiveAbility(rarity, type) {
+    // Ensure BOOST_COEF is initialized
+    if (!BOOST_COEF || BOOST_COEF == 0) {
+        BOOST_COEF = 10;
+        console.log(`Initialized BOOST_COEF to 10 in randomPassiveAbility`);
+    }
+    
     // Filter available passives that match the item type
     const availablePassives = Object.values(passives).filter(passive => passive.type.includes(type));
     
@@ -1883,6 +1898,14 @@ function showEnhancedPassiveRerollMenu(equipment, player, itemStack) {
 
 // Core game loops
 system.runInterval(() => {
+    // Auto-load settings on first run
+    if (!settingsLoaded) {
+        system.runTimeout(() => {
+            autoLoadSettings();
+            settingsLoaded = true;
+        }, 60); // Delay to ensure world is fully loaded
+    }
+    
     const players = world.getPlayers();
     for (const player of players) {
         rarityItemTest(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand), player);
@@ -2400,9 +2423,11 @@ function performBulkStatsReroll(equipment, player, itemStack, adjustedCost, atte
             
             // Update lore with new stats
             let newLore = [];
+            let statsFound = false;
             let i = 0;
             while (i < currentLore.length) {
                 if (currentLore[i] === "§8Attributes") {
+                    statsFound = true;
                     // Skip old stats section
                     while (i < currentLore.length && currentLore[i] !== "§a§t§b§e§n§d§r") {
                         i++;
@@ -2414,6 +2439,11 @@ function performBulkStatsReroll(equipment, player, itemStack, adjustedCost, atte
                     newLore.push(currentLore[i]);
                     i++;
                 }
+            }
+            
+            // If no stats section was found, add the new stats at the end
+            if (!statsFound && newStats && newStats.length > 0) {
+                newLore.push(...newStats);
             }
             
             let newItem = itemStack.clone();
@@ -2600,4 +2630,185 @@ function performBulkPassiveReroll(equipment, player, itemStack, adjustedCost, at
     }
     
     player.sendMessage(`§6Bulk Passive Reroll Complete: §a${successCount} rerolls`);
+}
+
+// Settings Save/Load System
+function getAdminPlayer() {
+    const players = world.getAllPlayers();
+    // Try to find admin tagged player first
+    let adminPlayer = players.find(p => p.hasTag("admin"));
+    
+    // If no admin, try to find host (first player or server operator)
+    if (!adminPlayer && players.length > 0) {
+        adminPlayer = players[0]; // Use first player as fallback
+    }
+    
+    return adminPlayer;
+}
+
+function saveSettingsToScoreboard(player) {
+    try {
+        // Create or get scoreboards for settings
+        let boostScoreboard = world.scoreboard.getObjective("rrs_boost_coef");
+        if (!boostScoreboard) {
+            boostScoreboard = world.scoreboard.addObjective("rrs_boost_coef", "RRS Boost Coefficient");
+        }
+        
+        let rarityScoreboard = world.scoreboard.getObjective("rrs_min_rarity");
+        if (!rarityScoreboard) {
+            rarityScoreboard = world.scoreboard.addObjective("rrs_min_rarity", "RRS Minimum Rarity");
+        }
+        
+        // Save settings to scoreboards
+        boostScoreboard.setScore(player, BOOST_COEF);
+        rarityScoreboard.setScore(player, RR_BASE.id);
+        
+        player.sendMessage("§aSettings saved to scoreboard!");
+        return true;
+    } catch (error) {
+        player.sendMessage("§cFailed to save settings to scoreboard: " + error);
+        console.error("Settings save error:", error);
+        return false;
+    }
+}
+
+function loadSettingsFromScoreboard(player) {
+    try {
+        const boostScoreboard = world.scoreboard.getObjective("rrs_boost_coef");
+        const rarityScoreboard = world.scoreboard.getObjective("rrs_min_rarity");
+        
+        if (boostScoreboard && rarityScoreboard) {
+            const boostScore = boostScoreboard.getScore(player);
+            const rarityScore = rarityScoreboard.getScore(player);
+            
+            if (boostScore !== undefined && rarityScore !== undefined) {
+                BOOST_COEF = boostScore;
+                RR_BASE = Object.values(RARITY).find(r => r.id === rarityScore) || RARITY.COMMON;
+                
+                player.sendMessage(`§aSettings loaded from scoreboard!\n§fBoost Coef: §e${BOOST_COEF}\n§fMin Rarity: §e${RR_BASE.sid}`);
+                return true;
+            }
+        }
+        
+        player.sendMessage("§cNo saved settings found in scoreboard!");
+        return false;
+    } catch (error) {
+        player.sendMessage("§cFailed to load settings from scoreboard: " + error);
+        console.error("Settings load error:", error);
+        return false;
+    }
+}
+
+function saveSettingsToTags(player) {
+    try {
+        // Remove old settings tags
+        const oldTags = player.getTags().filter(tag => tag.startsWith("rrs_setting_"));
+        oldTags.forEach(tag => player.removeTag(tag));
+        
+        // Add new settings tags
+        player.addTag(`rrs_setting_boost_${BOOST_COEF}`);
+        player.addTag(`rrs_setting_rarity_${RR_BASE.id}`);
+        
+        player.sendMessage("§aSettings saved to player tags!");
+        return true;
+    } catch (error) {
+        player.sendMessage("§cFailed to save settings to tags: " + error);
+        console.error("Settings save error:", error);
+        return false;
+    }
+}
+
+function loadSettingsFromTags(player) {
+    try {
+        const tags = player.getTags();
+        const boostTag = tags.find(tag => tag.startsWith("rrs_setting_boost_"));
+        const rarityTag = tags.find(tag => tag.startsWith("rrs_setting_rarity_"));
+        
+        if (boostTag && rarityTag) {
+            const boostValue = parseInt(boostTag.replace("rrs_setting_boost_", ""));
+            const rarityValue = parseInt(rarityTag.replace("rrs_setting_rarity_", ""));
+            
+            if (!isNaN(boostValue) && !isNaN(rarityValue)) {
+                BOOST_COEF = boostValue;
+                RR_BASE = Object.values(RARITY).find(r => r.id === rarityValue) || RARITY.COMMON;
+                
+                player.sendMessage(`§aSettings loaded from tags!\n§fBoost Coef: §e${BOOST_COEF}\n§fMin Rarity: §e${RR_BASE.sid}`);
+                return true;
+            }
+        }
+        
+        player.sendMessage("§cNo saved settings found in player tags!");
+        return false;
+    } catch (error) {
+        player.sendMessage("§cFailed to load settings from tags: " + error);
+        console.error("Settings load error:", error);
+        return false;
+    }
+}
+
+function autoLoadSettings() {
+    try {
+        const adminPlayer = getAdminPlayer();
+        if (!adminPlayer) return;
+        
+        // Try to load from scoreboard first, then tags
+        if (!loadSettingsFromScoreboard(adminPlayer)) {
+            loadSettingsFromTags(adminPlayer);
+        }
+    } catch (error) {
+        console.error("Auto load settings error:", error);
+    }
+}
+
+function showEnhancedSettingsForm(player) {
+    if (!player.hasTag("admin")) {
+        player.sendMessage("§cYou must be an admin to access settings!");
+        if (!player.hasTag("pc_mode")) {
+            uiManager.closeAllForms(player);
+            msifMenu(player);
+        }
+        return;
+    }
+
+    const form = new ActionFormData();
+    form.title("§6Enhanced Settings Menu");
+    form.body(`§7Current Settings:\n§fBoost Coefficient: §e${BOOST_COEF}\n§fMinimum Rarity: §e${RR_BASE.sid}\n\n§7Choose an option:`);
+    
+    form.button("§aModify Settings", "textures/ui/gear");
+    form.button("§2Save to Scoreboard", "textures/ui/book_writable");
+    form.button("§9Load from Scoreboard", "textures/ui/book_portfolio");
+    form.button("§6Save to Player Tags", "textures/ui/tags");
+    form.button("§eLoad from Player Tags", "textures/ui/magnifying_glass");
+    form.button("§cBack to Menu", "textures/ui/cancel");
+
+    form.show(player).then((response) => {
+        if (response.canceled || response.selection === undefined) return;
+        
+        switch (response.selection) {
+            case 0:
+                showSettingsForm(player);
+                break;
+            case 1:
+                saveSettingsToScoreboard(player);
+                break;
+            case 2:
+                loadSettingsFromScoreboard(player);
+                break;
+            case 3:
+                saveSettingsToTags(player);
+                break;
+            case 4:
+                loadSettingsFromTags(player);
+                break;
+            case 5:
+                if (!player.hasTag("pc_mode")) {
+                    uiManager.closeAllForms(player);
+                    msifMenu(player);
+                }
+                return;
+        }
+        
+        // Return to enhanced settings menu after action
+        system.runTimeout(() => showEnhancedSettingsForm(player), 40);
+    });
 }
