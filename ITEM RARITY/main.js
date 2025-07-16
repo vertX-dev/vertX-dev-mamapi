@@ -26,6 +26,26 @@ import {
 import {
     passives
 } from './passivesLib.js';
+import {
+    getStatsFromLore,
+    statsMainMenu,
+    showEnhancedStatsRerollMenu,
+    showEnhancedStatsUpgradeMenu,
+    performBulkStatsReroll,
+    performBulkStatsUpgrade
+} from './stats.js';
+import {
+    showEnhancedSkillUpgradeMenu,
+    showEnhancedSkillRerollMenu,
+    performBulkSkillUpgrade,
+    performBulkSkillReroll
+} from './skills.js';
+import {
+    showEnhancedPassiveUpgradeMenu,
+    showEnhancedPassiveRerollMenu,
+    performBulkPassiveUpgrade,
+    performBulkPassiveReroll
+} from './passives.js';
 
 //=====================================CONFIGURATION & CONSTANTS===========================================
 
@@ -340,40 +360,7 @@ system.runTimeout(() => {
     }
 }, 20);
 
-function statsMainMenu(player) {
-    const menu = new ActionFormData()
-        .title('SELECT OPTION')
-        .button('STATS', 'textures/ui/gamerpic')
-        .button('SETTINGS', 'textures/ui/automation_glyph_color')
-        .button('PC MODE', 'textures/ui/addServer')
-        .button('FORGE', 'textures/ui/smithing_icon');
 
-    menu.show(player).then((r) => {
-        if (!r.canceled) {
-            switch (r.selection) {
-                case 0:
-                    showStatsForm(player, true);
-                    break;
-                case 1:
-                    showEnhancedSettingsForm(player);
-                    break;
-                case 2:
-                    uiManager.closeAllForms(player);
-                    player.addTag("pc_mode");
-                    player.sendMessage("PC MODE ENABLED\nUse .help for additional info\nYou need to enable beta API");
-                    break;
-                case 3:
-                    upgradeMenu(player);
-                    break;
-            }
-        } else {
-            uiManager.closeAllForms(player);
-            if (!player.hasTag("pc_mode")) {
-                msifMenu(player);
-            }
-        }
-    });
-}
 
 function showStatsForm(player) {
     const stats = {
@@ -1118,25 +1105,6 @@ function calculateCostWithCounter(baseCost, counter, multiplier = 1.5) {
     }));
 }
 
-function getStatsFromLore(itemStack) {
-    const lore = itemStack.getLore() ?? [];
-    const stats = [];
-    let inStatsSection = false;
-    
-    for (const line of lore) {
-        if (line === "§8Attributes") {
-            inStatsSection = true;
-            continue;
-        }
-        if (line === "§a§t§b§e§n§d§r") {
-            break;
-        }
-        if (inStatsSection && line.includes("§w")) {
-            stats.push(line);
-        }
-    }
-    return stats;
-}
 
 // Get current item rarity from lore
 function getItemRarity(itemStack) {
@@ -2866,3 +2834,19 @@ function showEnhancedSettingsForm(player) {
         system.runTimeout(() => showEnhancedSettingsForm(player), 40);
     });
 }
+
+// Export utility functions for use in separate scripts
+export { 
+    getItemRarity, 
+    getUpgradeCounter, 
+    calculateCostWithCounter, 
+    getUpgradeTemplates, 
+    hasRequiredItems, 
+    countItemInInventory, 
+    removeItemFromInventory, 
+    updateUpgradeCounter,
+    showStatsForm,
+    showEnhancedSettingsForm,
+    msifMenu,
+    upgradeMenu
+};
