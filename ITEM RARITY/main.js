@@ -344,10 +344,14 @@ system.runTimeout(() => {
 function statsMainMenu(player) {
 const menu = new ActionFormData()
 .title('SELECT OPTION')
-.button('STATS', 'textures/ui/gamerpic')
-.button('SETTINGS','textures/ui/automation_glyph_color')
-.button('PC MODE', 'textures/ui/addServer')
-.button('FORGE', 'textures/ui/smithing_icon');
+.button('STATS',
+'textures/ui/gamerpic')
+.button('SETTINGS',
+'textures/ui/automation_glyph_color')
+.button('PC MODE',
+'textures/ui/addServer')
+.button('FORGE',
+'textures/ui/smithing_icon');
 
 menu.show(player).then((r) => {
 if (!r.canceled) {
@@ -378,25 +382,25 @@ msifMenu(player);
 
 function showStatsForm(player) {
 const stats = {
-damage: getScoreboardValue("damage",
+    damage: getScoreboardValue("damage",
 player),
-damagepercent: getScoreboardValue("damagepercent",
+    damagepercent: getScoreboardValue("damagepercent",
 player),
-defense: getScoreboardValue("defense",
+    defense: getScoreboardValue("defense",
 player),
-health: getScoreboardValue("health",
+    health: getScoreboardValue("health",
 player) + 20,
-speed: getScoreboardValue("speed",
+    speed: getScoreboardValue("speed",
 player),
-regeneration: getScoreboardValue("regeneration",
+    regeneration: getScoreboardValue("regeneration",
 player),
-critchance: getScoreboardValue("critchance",
+    critchance: getScoreboardValue("critchance",
 player) + 5,
-critdamage: getScoreboardValue("critdamage",
+    critdamage: getScoreboardValue("critdamage",
 player) + 50,
-lifesteal: getScoreboardValue("lifesteal",
+    lifesteal: getScoreboardValue("lifesteal",
 player),
-healthpercent: getScoreboardValue("healthpercent",
+    healthpercent: getScoreboardValue("healthpercent",
 player)
 };
 
