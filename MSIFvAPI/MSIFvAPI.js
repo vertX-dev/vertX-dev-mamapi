@@ -147,6 +147,8 @@ function parseMSIFTags(tags) {
                         aSetFunctionG = parts[currentIndex + 2];
                         currentIndex = currentIndex + 4;
                         break;
+                    default: 
+                        currentIndex++;
                 }
             }
             
