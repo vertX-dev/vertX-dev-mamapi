@@ -560,7 +560,7 @@ function rarityUpgrade(equipment, player, itemStack) {
             }
             const raritySelected = r.formValues[0];
             const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
-            const RR = Object.values(RARITY).find(r => r.sid === raritySelected);
+            const RR = Object.values(RARITY).find(r => r.sid === raritySelected.slice(0, -2));
             
             const upgrades = [
                 "rrs:common_upgrade",
