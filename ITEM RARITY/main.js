@@ -534,8 +534,16 @@ function displayUpgradeOptions(equipment, player, itemStack) {
 
 function rarityUpgrade(equipment, player, itemStack) {
     const upgrades = getUpgradeTemplates(player);
+    let rarity = [
+        "§7Common",
+        "§aUncommon",
+        "§1Rare",
+        "§5Epic",
+        "§6Legendary",
+        "§cMythic"
+    ]
     const form = new ModalFormData()
-        .dropdown()
+        .dropdown("RARITY", rarity)
 }
 
 // Chat commands
