@@ -231,6 +231,32 @@ function initializeScoreboards() {
     console.log("Static scoreboards initialization complete.");
 }
 //=======================================UI MENU=========================================================
+
+// Helper function to normalize rarity names for consistent lookup
+function normalizeRarityName(rarity) {
+    if (!rarity) return "Common";
+    
+    // Handle different formats and convert to the sid format (e.g., "Common", "Uncommon")
+    let normalized = rarity;
+    
+    // Remove color codes if present
+    normalized = normalized.replace(/§./g, '');
+    
+    // Trim whitespace
+    normalized = normalized.trim();
+    
+    // Convert to proper case (first letter uppercase, rest lowercase)
+    normalized = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+    
+    // Validate that it's a known rarity
+    const validRarities = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
+    if (!validRarities.includes(normalized)) {
+        return "Common";
+    }
+    
+    return normalized;
+}
+
 async function forceShow(player, form, timeout = Infinity) {
     const startTick = system.currentTick;
     while ((system.currentTick - startTick) < timeout) {
@@ -612,9 +638,12 @@ function randomRarity(RR = RR_BASE) {
 function randomStats(rarity, type) {
     // Filter available stats that match the item type
     const availableStats = Object.values(stats).filter(stat => stat.type.includes(type));
-    let srr = Object.values(RARITY).find(r => r.sid === rarity);
+    
+    // Normalize rarity name for consistent lookup
+    const normalizedRarity = normalizeRarityName(rarity);
+    let srr = Object.values(RARITY).find(r => r.sid === normalizedRarity);
 
-    if (!availableStats.length) {
+    if (!availableStats.length || !srr) {
         return [];
     }
     // Calculate number of stats to add
@@ -660,9 +689,12 @@ function randomStats(rarity, type) {
 function randomSkill(rarity, type) {
     // Filter available skills that match the item type
     const availableSkills = Object.values(skills).filter(skill => skill.type.includes(type));
-    let srr = Object.values(RARITY).find(r => r.sid === rarity);
+    
+    // Normalize rarity name for consistent lookup
+    const normalizedRarity = normalizeRarityName(rarity);
+    let srr = Object.values(RARITY).find(r => r.sid === normalizedRarity);
 
-    if (!availableSkills.length || srr.skillChances.skill < Math.random()) {
+    if (!availableSkills.length || !srr || srr.skillChances.skill < Math.random()) {
         return [];
     }
 
@@ -706,9 +738,12 @@ function randomSkill(rarity, type) {
 function randomPassiveAbility(rarity, type) {
     // Filter available passives that match the item type
     const availablePassives = Object.values(passives).filter(passive => passive.type.includes(type));
-    let srr = Object.values(RARITY).find(r => r.sid === rarity);
+    
+    // Normalize rarity name for consistent lookup
+    const normalizedRarity = normalizeRarityName(rarity);
+    let srr = Object.values(RARITY).find(r => r.sid === normalizedRarity);
 
-    if (!availablePassives.length || srr.skillChances.passive < Math.random()) {
+    if (!availablePassives.length || !srr || srr.skillChances.passive < Math.random()) {
         return [];
     }
 
@@ -1014,16 +1049,42 @@ function removeItemsFromInventory(player, itemId, amount) {
     return remaining === 0;
 }
 
+// Helper function to convert normalized rarity name to uppercase format for UPGRADE_COSTS lookup
+function rarityToUpgradeKey(rarity) {
+    const normalized = normalizeRarityName(rarity);
+    return normalized.toUpperCase();
+}
+
 // Get current item rarity from lore
 function getItemRarity(itemStack) {
-    if (!itemStack) return "§7Common";
+    if (!itemStack) return "COMMON";
 
     const lore = itemStack.getLore() ?? [];
-    if (lore.length === 0) return "§7Common";
+    if (lore.length === 0) return "COMMON";
 
-    // Check first line of lore for rarity
-    return lore[0].slice(2).toUpperCase();
+    // Extract rarity from first line of lore
+    const rarityLine = lore[0];
     
+    // Handle different formats of rarity names
+    // Format 1: "§7Common" (with color codes)
+    // Format 2: "Common" (without color codes)
+    // Format 3: "COMMON" (already uppercase)
+    
+    let rarityName = rarityLine;
+    
+    // Remove color codes if present (§ followed by any character)
+    rarityName = rarityName.replace(/§./g, '');
+    
+    // Convert to uppercase for consistent lookup
+    rarityName = rarityName.toUpperCase().trim();
+    
+    // Validate that it's a known rarity, fallback to COMMON if not
+    const validRarities = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHIC"];
+    if (!validRarities.includes(rarityName)) {
+        return "COMMON";
+    }
+    
+    return rarityName;
 }
 
 // Check if player has required items for upgrade
