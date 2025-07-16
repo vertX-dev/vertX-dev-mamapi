@@ -522,7 +522,7 @@ function displayUpgradeOptions(equipment, player, itemStack) {
                 rarityUpgrade(equipment, player, itemStack);
                 break;
             case 1:
-                player.sendMessage("§7Upgrade cancelled.");
+                player.sendMessage("§7Upgrade canceled.");
                 break;
         }
         if (!player.hasTag("pc_mode")) {
@@ -535,15 +535,49 @@ function displayUpgradeOptions(equipment, player, itemStack) {
 function rarityUpgrade(equipment, player, itemStack) {
     const upgrades = getUpgradeTemplates(player);
     let rarity = [
-        "§7Common",
-        "§aUncommon",
-        "§1Rare",
-        "§5Epic",
-        "§6Legendary",
-        "§cMythic"
+        "§7Common ",
+        "§aUncommon ",
+        "§1Rare ",
+        "§5Epic ",
+        "§6Legendary ",
+        "§cMythic "
     ]
     const form = new ModalFormData()
-        .dropdown("RARITY", rarity)
+        .title("§aRARITY UPGRADE")
+        .label(`${getUpgradeTemplates(player)}`)
+        .dropdown("Rarity upgrades", rarity)
+        .submitButton("UPGRADE");
+        form.show(player).then((r) => {
+            if (r.canceled) {
+                if (!player.hasTag("pc_mode")) {
+                    uiManager.closeAllForms(player);
+                    msifMenu(player);
+                }
+                return;
+            }
+            const raritySelected = r.formValues[0];
+            const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+            const RR = Object.values(RARITY).find(r => r.sid === raritySelected);
+            
+            const upgrades = [
+                "rrs:common_upgrade",
+                "rrs:uncommon_upgrade",
+                "rrs:rare_upgrade",
+                "rrs:epic_upgrade",
+                "rrs:legendary_upgrade",
+                "rrs:mythic_upgrade"
+            ]
+            if (item && item.typeId && countItemInInventory(player, upgrades[RR.id - 1])) {
+                
+            }
+            
+            
+            
+            if (!player.hasTag("pc_mode")) {
+                uiManager.closeAllForms(player);
+                msifMenu(player);
+            }
+        });
 }
 
 // Chat commands
@@ -743,17 +777,38 @@ function randomPassiveAbility(rarity, type) {
     return result;
 }
 
-function rarityItemTest(itemStack, player) {
+function rarityItemTest(itemStack, player, rarity = "§7Common") {
     if (!itemStack || !player) return;
 
     const lore = itemStack.getLore() ?? [];
 
-    if (lore.length === 0) {
+    if (lore.length === 0 || rarity != "§7Common") {
         const Tags = parseTags(itemStack.typeId);
 
-        if (Tags && Tags.rarity) {
+        if (Tags && Tags.rarity && rarity === "§7Common") {
             const rarity = randomRarity();
 
+            const stats = randomStats(rarity.sid, Tags.data);
+
+            const skill = randomSkill(rarity.sid, Tags.data);
+
+            const passive = randomPassiveAbility(rarity.sid, Tags.data);
+
+            const newLore = [rarity.dName, ...stats, ...skill, ...passive];
+
+            try {
+                let newItem = itemStack.clone();
+                newItem.setLore(newLore);
+                const equippable = player.getComponent("minecraft:equippable");
+                if (equippable) {
+                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                }
+            } catch (error) {
+                console.warn("Error applying rarity:", error);
+            }
+        } else {
+            const rarity = Object.values(RARITY).find(r => r.sid === rarity);
+            
             const stats = randomStats(rarity.sid, Tags.data);
 
             const skill = randomSkill(rarity.sid, Tags.data);
