@@ -2,7 +2,8 @@ import {
     world,
     system,
     EquipmentSlot,
-    GameMode
+    GameMode,
+    ItemStack
 } from "@minecraft/server";
 import {
     ActionFormData,
@@ -31,6 +32,7 @@ let BOOST_COEF; //default 10
 let RR_BASE; // default common
 
 const HEALTH_BAR_FONT = "";//32 values
+const RARITY_UPGRADES_GLYPS = "";//6 values
 
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
@@ -123,6 +125,31 @@ function getScoreboardValue(scoreboard, player) {
     const scoreboardObj = world.scoreboard.getObjective(scoreboard);
     const scoreboardValue = scoreboardObj.getScore(player);
     return scoreboardValue;
+}
+
+function getUpgradeRarityIcon(rarity) {
+    const rarity = Object.values(RARITY).find(r => r.sid === rarity).id;
+    return RARITY_UPGRADES_GLYPS.charAt(rarity - 1);
+}
+
+function getUpgradeTemplates(player) {
+    return `${countItemInInventory(player, rss:common_upgrade)}   ${countItemInInventory(player, rss:uncommon_upgrade)}   ${countItemInInventory(player, rss:rare_upgrade)}   ${countItemInInventory(player, rss:epic_upgrade)}   ${countItemInInventory(player, rss:legendary_upgrade)}   ${countItemInInventory(player, rss:mythic_upgrade)}`;
+}
+
+function countItemInInventory(player, itemId) {
+    const inventory = player.getComponent("minecraft:inventory")?.container;
+    if (!inventory) return 0;
+
+    let total = 0;
+
+    for (let i = 0; i < inventory.size; i++) {
+        const item = inventory.getItem(i);
+        if (item && item.typeId === itemId) {
+            total += item.amount;
+        }
+    }
+
+    return total;
 }
 
 function parseTags(itemId = "minecraft:apple") {
@@ -422,14 +449,112 @@ function showSettingsForm(player) {
 }
 
 function upgradeMenu(player) {
+    // Check if there's an anvil nearby
+    const playerLocation = player.location;
+    const dimension = player.dimension;
     
+    // Search for anvil in a 3x3x3 area around the player
+    let anvilFound = false;
+    for (let x = -1; x <= 1; x++) {
+        for (let y = -1; y <= 1; y++) {
+            for (let z = -1; z <= 1; z++) {
+                const checkLocation = {
+                    x: playerLocation.x + x,
+                    y: playerLocation.y + y,
+                    z: playerLocation.z + z
+                };
+                
+                try {
+                    const block = dimension.getBlock(checkLocation);
+                    if (block && block.typeId === "minecraft:anvil") {
+                        anvilFound = true;
+                        break;
+                    }
+                } catch (error) {
+                    // Block might be unloaded or out of bounds
+                    continue;
+                }
+            }
+            if (anvilFound) break;
+        }
+        if (anvilFound) break;
+    }
+    
+    // If no anvil found, notify player and return
+    if (!anvilFound) {
+        player.sendMessage("§cYou need to be near an anvil to upgrade items!");
+        return;
+    }
+    
+    // Check if player has an item in main hand
     const equipment = player.getComponent("minecraft:equippable");
     const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
+    
+    if (!itemStack) {
+        player.sendMessage("§cYou need to hold an item to upgrade it!");
+        return;
+    }
+    
+    // Display upgrade menu
+    displayUpgradeOptions(equipment, player, itemStack);
+}
 
-    const loreArray = itemStack.getLore();
-    const tag = parseTags(itemStack.typeId);
-
-    const stats = parseLoreToStats(equipment, EquipmentSlot.Mainhand);
+// Helper function to display upgrade options
+function displayUpgradeOptions(equipment, player, itemStack) {
+    const form = new ActionFormData();
+    form.title("§6Item Upgrade Menu");
+    form.body(`§7Item: §e${itemStack.nameTag ?? itemStack.typeId.split("_").spit(":")}\n§7Select an upgrade option:`);
+    
+    // Add upgrade buttons with appropriate icons
+    form.button("§dRarity Upgrade", "textures/items/diamond");
+    form.button("§aStats Reroll", "textures/items/enchanted_book");
+    form.button("§2Stats Upgrade", "textures/items/experience_bottle");
+    form.button("§bSkill Reroll", "textures/items/book");
+    form.button("§9Skill Upgrade", "textures/items/nether_star");
+    form.button("§6Passive Upgrade", "textures/items/totem");
+    form.button("§ePassive Reroll", "textures/items/blaze_powder");
+    form.button("§cCancel", "textures/blocks/barrier");
+    
+    form.show(player).then((response) => {
+        if (response.canceled) {
+            if (!player.hasTag("pc_mode")) {
+                uiManager.closeAllForms(player);
+                msifMenu(player);
+            }
+            return;
+        }
+        
+        switch (response.selection) {
+            case 0:
+                rarityUpgrade(equipment, player, itemStack);
+                break;
+            case 1:
+                statsReroll(equipment, player, itemStack);
+                break;
+            case 2:
+                statsUpgrade(equipment, player, itemStack);
+                break;
+            case 3:
+                skillReroll(equipment, player, itemStack);
+                break;
+            case 4:
+                skillUpgrade(equipment, player, itemStack);
+                break;
+            case 5:
+                passiveUpgrade(equipment, player, itemStack);
+                break;
+            case 6:
+                passiveReroll(equipment, player, itemStack);
+                break;
+            case 7:
+                player.sendMessage("§7Upgrade cancelled.");
+                break;
+        }
+        if (!player.hasTag("pc_mode")) {
+            uiManager.closeAllForms(player);
+            msifMenu(player);
+        }
+    });
 }
 
 // Chat commands
