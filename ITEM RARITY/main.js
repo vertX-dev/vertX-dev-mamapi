@@ -524,7 +524,12 @@ function upgradeMenu(player) {
 function displayUpgradeOptions(equipment, player, itemStack) {
     const form = new ActionFormData();
     form.title("§6Item Upgrade Menu");
-    form.body(`§7Item: §e${itemStack.nameTag ?? itemStack.typeId.split("_").join(" ").split(":").pop()}\n§7Select an upgrade option:`);
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const currentRarity = getItemRarity(itemStack);
+    const itemName = itemStack.nameTag ?? itemStack.typeId.split("_").join(" ").split(":").pop();
+    
+    form.body(`§7Item: §e${itemName}\n§7Current Rarity: §e${currentRarity}\n§7Your RRS Upgrades: §a${upgradeTemplates}\n\n§7Select an upgrade option:`);
 
     // Add upgrade buttons with appropriate icons
     form.button("§dRarity Upgrade", "textures/ui/smithing_icon");
@@ -534,46 +539,34 @@ function displayUpgradeOptions(equipment, player, itemStack) {
     form.button("§9Skill Upgrade", "textures/ui/hammer_l");
     form.button("§ePassive Reroll", "textures/ui/icon_random");
     form.button("§6Passive Upgrade", "textures/ui/hammer_l");
-    form.button("§cCancel", "textures/ui/cancel");
 
     form.show(player).then((response) => {
-        if (response.canceled) {
-            if (!player.hasTag("pc_mode")) {
-                uiManager.closeAllForms(player);
-                msifMenu(player);
-            }
-            return;
-        }
-
+        if (response.canceled || response.selection === undefined) return;
+        
         switch (response.selection) {
             case 0:
-                rarityUpgrade(equipment, player, itemStack);
+                showEnhancedRarityUpgradeMenu(equipment, player, itemStack);
                 break;
             case 1:
-                statsReroll(equipment, player, itemStack);
+                showEnhancedStatsRerollMenu(equipment, player, itemStack);
                 break;
             case 2:
-                statsUpgrade(equipment, player, itemStack);
+                showEnhancedStatsUpgradeMenu(equipment, player, itemStack);
                 break;
             case 3:
-                skillReroll(equipment, player, itemStack);
+                showEnhancedSkillRerollMenu(equipment, player, itemStack);
                 break;
             case 4:
-                skillUpgrade(equipment, player, itemStack);
+                showEnhancedSkillUpgradeMenu(equipment, player, itemStack);
                 break;
             case 5:
-                passiveReroll(equipment, player, itemStack);
+                showEnhancedPassiveRerollMenu(equipment, player, itemStack);
                 break;
             case 6:
-                passiveUpgrade(equipment, player, itemStack);
+                showEnhancedPassiveUpgradeMenu(equipment, player, itemStack);
                 break;
-            case 7:
+            default:
                 player.sendMessage("§7Upgrade cancelled.");
-                break;
-        }
-        if (!player.hasTag("pc_mode")) {
-            uiManager.closeAllForms(player);
-            msifMenu(player);
         }
     });
 }
@@ -1055,6 +1048,72 @@ function rarityToUpgradeKey(rarity) {
     return normalized.toUpperCase();
 }
 
+// Helper functions for upgrade/reroll counter management
+function getUpgradeCounter(itemStack, type) {
+    const lore = itemStack.getLore() ?? [];
+    const counterPattern = new RegExp(`§8${type} Count: (\\d+)`);
+    
+    for (const line of lore) {
+        const match = line.match(counterPattern);
+        if (match) {
+            return parseInt(match[1]);
+        }
+    }
+    return 0;
+}
+
+function setUpgradeCounter(itemStack, type, count) {
+    const lore = itemStack.getLore() ?? [];
+    const counterPattern = new RegExp(`§8${type} Count: \\d+`);
+    const newCounterLine = `§8${type} Count: ${count}`;
+    
+    let newLore = [];
+    let counterFound = false;
+    
+    for (const line of lore) {
+        if (counterPattern.test(line)) {
+            newLore.push(newCounterLine);
+            counterFound = true;
+        } else {
+            newLore.push(line);
+        }
+    }
+    
+    if (!counterFound) {
+        // Add counter after rarity line (index 0)
+        newLore.splice(1, 0, newCounterLine);
+    }
+    
+    itemStack.setLore(newLore);
+}
+
+function calculateCostWithCounter(baseCost, counter, multiplier = 1.5) {
+    return baseCost.map(item => ({
+        ...item,
+        count: Math.ceil(item.count * Math.pow(multiplier, counter))
+    }));
+}
+
+function getStatsFromLore(itemStack) {
+    const lore = itemStack.getLore() ?? [];
+    const stats = [];
+    let inStatsSection = false;
+    
+    for (const line of lore) {
+        if (line === "§8Attributes") {
+            inStatsSection = true;
+            continue;
+        }
+        if (line === "§a§t§b§e§n§d§r") {
+            break;
+        }
+        if (inStatsSection && line.includes("§w")) {
+            stats.push(line);
+        }
+    }
+    return stats;
+}
+
 // Get current item rarity from lore
 function getItemRarity(itemStack) {
     if (!itemStack) return "COMMON";
@@ -1108,18 +1167,20 @@ function consumeRequiredItems(player, requiredItems) {
     return true;
 }
 
-// Rarity Upgrade Function
+// Rarity Upgrade Function (Legacy - redirects to enhanced menu)
 function rarityUpgrade(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const upgradeCost = UPGRADE_COSTS.RARITY_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Rarity Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
 
     if (!upgradeCost || !upgradeCost.targetRarity) {
         player.sendMessage("§cThis item is already at maximum rarity!");
         return;
     }
 
-    if (!hasRequiredItems(player, upgradeCost.requiredItems)) {
-        const requirements = upgradeCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
@@ -1128,13 +1189,16 @@ function rarityUpgrade(equipment, player, itemStack) {
 
     // Roll for success
     if (Math.random() > upgradeCost.successChance) {
-        consumeRequiredItems(player, upgradeCost.requiredItems);
+        consumeRequiredItems(player, adjustedCost);
+        const newCounter = upgradeCounter + 1;
+        setUpgradeCounter(itemStack, "Rarity Upgrade", newCounter);
         player.sendMessage("§cUpgrade failed! Items were consumed.");
         return;
     }
 
     // Successful upgrade
-    consumeRequiredItems(player, upgradeCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = upgradeCounter + 1;
 
     const newRarity = RARITY[upgradeCost.targetRarity];
     const currentLore = itemStack.getLore() ?? [];
@@ -1144,18 +1208,21 @@ function rarityUpgrade(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Rarity Upgrade", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage(`§aSuccessfully upgraded to ${newRarity.dName}§a!`);
 }
 
-// Stats Upgrade Function
+// Stats Upgrade Function (Legacy - now with counter tracking)
 function statsUpgrade(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const upgradeCost = UPGRADE_COSTS.STATS_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Stats Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
 
-    if (!hasRequiredItems(player, upgradeCost.requiredItems)) {
-        const requirements = upgradeCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
@@ -1164,13 +1231,16 @@ function statsUpgrade(equipment, player, itemStack) {
 
     // Roll for success
     if (Math.random() > upgradeCost.successChance) {
-        consumeRequiredItems(player, upgradeCost.requiredItems);
+        consumeRequiredItems(player, adjustedCost);
+        const newCounter = upgradeCounter + 1;
+        setUpgradeCounter(itemStack, "Stats Upgrade", newCounter);
         player.sendMessage("§cUpgrade failed! Items were consumed.");
         return;
     }
 
     // Successful upgrade - enhance existing stats
-    consumeRequiredItems(player, upgradeCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = upgradeCounter + 1;
 
     const currentLore = itemStack.getLore() ?? [];
     let newLore = [...currentLore];
@@ -1202,25 +1272,29 @@ function statsUpgrade(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Stats Upgrade", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage("§aStats upgraded successfully!");
 }
 
-// Stats Reroll Function
+// Stats Reroll Function (Legacy - now with counter tracking)
 function statsReroll(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const rerollCost = UPGRADE_COSTS.STATS_REROLL[currentRarity];
+    const rerollCounter = getUpgradeCounter(itemStack, "Stats Reroll");
+    const adjustedCost = rerollCost ? calculateCostWithCounter(rerollCost.requiredItems, rerollCounter) : null;
 
-    if (!hasRequiredItems(player, rerollCost.requiredItems)) {
-        const requirements = rerollCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
         return;
     }
 
-    consumeRequiredItems(player, rerollCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = rerollCounter + 1;
 
     // Get item type for rerolling
     const Tags = parseTags(itemStack.typeId);
@@ -1253,18 +1327,21 @@ function statsReroll(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Stats Reroll", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage("§aStats rerolled successfully!");
 }
 
-// Skill Upgrade Function
+// Skill Upgrade Function (Legacy - now with counter tracking)
 function skillUpgrade(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const upgradeCost = UPGRADE_COSTS.SKILL_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Skill Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
 
-    if (!hasRequiredItems(player, upgradeCost.requiredItems)) {
-        const requirements = upgradeCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
@@ -1273,12 +1350,15 @@ function skillUpgrade(equipment, player, itemStack) {
 
     // Roll for success
     if (Math.random() > upgradeCost.successChance) {
-        consumeRequiredItems(player, upgradeCost.requiredItems);
+        consumeRequiredItems(player, adjustedCost);
+        const newCounter = upgradeCounter + 1;
+        setUpgradeCounter(itemStack, "Skill Upgrade", newCounter);
         player.sendMessage("§cUpgrade failed! Items were consumed.");
         return;
     }
 
-    consumeRequiredItems(player, upgradeCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = upgradeCounter + 1;
 
     const currentLore = itemStack.getLore() ?? [];
     let newLore = [...currentLore];
@@ -1310,25 +1390,29 @@ function skillUpgrade(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Skill Upgrade", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage("§aSkill upgraded successfully!");
 }
 
-// Skill Reroll Function
+// Skill Reroll Function (Legacy - now with counter tracking)
 function skillReroll(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const rerollCost = UPGRADE_COSTS.SKILL_REROLL[currentRarity];
+    const rerollCounter = getUpgradeCounter(itemStack, "Skill Reroll");
+    const adjustedCost = rerollCost ? calculateCostWithCounter(rerollCost.requiredItems, rerollCounter) : null;
 
-    if (!hasRequiredItems(player, rerollCost.requiredItems)) {
-        const requirements = rerollCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
         return;
     }
 
-    consumeRequiredItems(player, rerollCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = rerollCounter + 1;
 
     // Get item type for rerolling
     const Tags = parseTags(itemStack.typeId);
@@ -1361,18 +1445,21 @@ function skillReroll(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Skill Reroll", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage("§aSkill rerolled successfully!");
 }
 
-// Passive Upgrade Function
+// Passive Upgrade Function (Legacy - now with counter tracking)
 function passiveUpgrade(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const upgradeCost = UPGRADE_COSTS.PASSIVE_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Passive Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
 
-    if (!hasRequiredItems(player, upgradeCost.requiredItems)) {
-        const requirements = upgradeCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
@@ -1381,12 +1468,15 @@ function passiveUpgrade(equipment, player, itemStack) {
 
     // Roll for success
     if (Math.random() > upgradeCost.successChance) {
-        consumeRequiredItems(player, upgradeCost.requiredItems);
+        consumeRequiredItems(player, adjustedCost);
+        const newCounter = upgradeCounter + 1;
+        setUpgradeCounter(itemStack, "Passive Upgrade", newCounter);
         player.sendMessage("§cUpgrade failed! Items were consumed.");
         return;
     }
 
-    consumeRequiredItems(player, upgradeCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = upgradeCounter + 1;
 
     const currentLore = itemStack.getLore() ?? [];
     let newLore = [...currentLore];
@@ -1418,25 +1508,29 @@ function passiveUpgrade(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Passive Upgrade", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage("§aPassive upgraded successfully!");
 }
 
-// Passive Reroll Function
+// Passive Reroll Function (Legacy - now with counter tracking)
 function passiveReroll(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const rerollCost = UPGRADE_COSTS.PASSIVE_REROLL[currentRarity];
+    const rerollCounter = getUpgradeCounter(itemStack, "Passive Reroll");
+    const adjustedCost = rerollCost ? calculateCostWithCounter(rerollCost.requiredItems, rerollCounter) : null;
 
-    if (!hasRequiredItems(player, rerollCost.requiredItems)) {
-        const requirements = rerollCost.requiredItems
+    if (!hasRequiredItems(player, adjustedCost)) {
+        const requirements = adjustedCost
             .map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`)
             .join(", ");
         player.sendMessage(`§cYou need: ${requirements}`);
         return;
     }
 
-    consumeRequiredItems(player, rerollCost.requiredItems);
+    consumeRequiredItems(player, adjustedCost);
+    const newCounter = rerollCounter + 1;
 
     // Get item type for rerolling
     const Tags = parseTags(itemStack.typeId);
@@ -1469,9 +1563,299 @@ function passiveReroll(equipment, player, itemStack) {
 
     let newItem = itemStack.clone();
     newItem.setLore(newLore);
+    setUpgradeCounter(newItem, "Passive Reroll", newCounter);
     equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
 
     player.sendMessage("§aPassive rerolled successfully!");
+}
+
+// Enhanced UI Menus with confirmation, bulk operations, and stat locking
+function showEnhancedRarityUpgradeMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const upgradeCost = UPGRADE_COSTS.RARITY_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Rarity Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§dRarity Upgrade Menu");
+    
+    if (!upgradeCost || !upgradeCost.targetRarity) {
+        form.textField("§cThis item is already at maximum rarity!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    
+    form.textField(
+        `§7Current: §e${currentRarity}\n§7Target: §e${upgradeCost.targetRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
+        "",
+        "Upgrade Details"
+    );
+    
+    form.slider("§6Bulk Attempts", 1, Math.min(10, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Upgrade", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[2]) {
+            player.sendMessage("§7Upgrade cancelled.");
+            return;
+        }
+        
+        const attempts = response.formValues[1];
+        performBulkRarityUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, upgradeCounter);
+    });
+}
+
+function showEnhancedStatsRerollMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const rerollCost = UPGRADE_COSTS.STATS_REROLL[currentRarity];
+    const rerollCounter = getUpgradeCounter(itemStack, "Stats Reroll");
+    const adjustedCost = rerollCost ? calculateCostWithCounter(rerollCost.requiredItems, rerollCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§aStats Reroll Menu");
+    
+    if (!rerollCost) {
+        form.textField("§cThis item cannot be rerolled!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    const currentStats = getStatsFromLore(itemStack);
+    
+    let formText = `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Base Cost: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}\n\n§7Current Stats:`;
+    currentStats.forEach((stat, index) => {
+        formText += `\n§7${index + 1}. ${stat}`;
+    });
+    
+    form.textField(formText, "", "Reroll Details");
+    
+    // Add checkboxes for locking stats
+    currentStats.forEach((stat, index) => {
+        form.toggle(`§eLock Stat ${index + 1}: ${stat.replace(/§./g, '')}`, false);
+    });
+    
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Reroll", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[response.formValues.length - 1]) {
+            player.sendMessage("§7Reroll cancelled.");
+            return;
+        }
+        
+        const lockedStats = [];
+        for (let i = 1; i <= currentStats.length; i++) {
+            if (response.formValues[i]) {
+                lockedStats.push(i - 1);
+            }
+        }
+        
+        const attempts = response.formValues[response.formValues.length - 2];
+        performBulkStatsReroll(equipment, player, itemStack, adjustedCost, attempts, rerollCounter, lockedStats);
+    });
+}
+
+function showEnhancedStatsUpgradeMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const upgradeCost = UPGRADE_COSTS.STATS_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Stats Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§2Stats Upgrade Menu");
+    
+    if (!upgradeCost) {
+        form.textField("§cThis item cannot be upgraded!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    const currentStats = getStatsFromLore(itemStack);
+    
+    let formText = `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}\n\n§7Current Stats:`;
+    currentStats.forEach((stat, index) => {
+        formText += `\n§7${index + 1}. ${stat}`;
+    });
+    
+    form.textField(formText, "", "Upgrade Details");
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Upgrade", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[2]) {
+            player.sendMessage("§7Upgrade cancelled.");
+            return;
+        }
+        
+        const attempts = response.formValues[1];
+        performBulkStatsUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, upgradeCounter);
+    });
+}
+
+function showEnhancedSkillUpgradeMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const upgradeCost = UPGRADE_COSTS.SKILL_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Skill Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§9Skill Upgrade Menu");
+    
+    if (!upgradeCost) {
+        form.textField("§cThis item cannot be upgraded!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    
+    form.textField(
+        `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
+        "",
+        "Upgrade Details"
+    );
+    
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Upgrade", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[2]) {
+            player.sendMessage("§7Upgrade cancelled.");
+            return;
+        }
+        
+        const attempts = response.formValues[1];
+        performBulkSkillUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, upgradeCounter);
+    });
+}
+
+function showEnhancedSkillRerollMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const rerollCost = UPGRADE_COSTS.SKILL_REROLL[currentRarity];
+    const rerollCounter = getUpgradeCounter(itemStack, "Skill Reroll");
+    const adjustedCost = rerollCost ? calculateCostWithCounter(rerollCost.requiredItems, rerollCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§bSkill Reroll Menu");
+    
+    if (!rerollCost) {
+        form.textField("§cThis item cannot be rerolled!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    
+    form.textField(
+        `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
+        "",
+        "Reroll Details"
+    );
+    
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Reroll", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[2]) {
+            player.sendMessage("§7Reroll cancelled.");
+            return;
+        }
+        
+        const attempts = response.formValues[1];
+        performBulkSkillReroll(equipment, player, itemStack, adjustedCost, attempts, rerollCounter);
+    });
+}
+
+function showEnhancedPassiveUpgradeMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const upgradeCost = UPGRADE_COSTS.PASSIVE_UPGRADE[currentRarity];
+    const upgradeCounter = getUpgradeCounter(itemStack, "Passive Upgrade");
+    const adjustedCost = upgradeCost ? calculateCostWithCounter(upgradeCost.requiredItems, upgradeCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§6Passive Upgrade Menu");
+    
+    if (!upgradeCost) {
+        form.textField("§cThis item cannot be upgraded!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    
+    form.textField(
+        `§7Current Rarity: §e${currentRarity}\n§7Success Rate: §a${(upgradeCost.successChance * 100).toFixed(1)}%\n§7Upgrade Count: §c${upgradeCounter}\n§7Multiplier: §ax${upgradeCost.upgradeMultiplier}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
+        "",
+        "Upgrade Details"
+    );
+    
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Upgrade", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[2]) {
+            player.sendMessage("§7Upgrade cancelled.");
+            return;
+        }
+        
+        const attempts = response.formValues[1];
+        performBulkPassiveUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, upgradeCounter);
+    });
+}
+
+function showEnhancedPassiveRerollMenu(equipment, player, itemStack) {
+    const currentRarity = getItemRarity(itemStack);
+    const rerollCost = UPGRADE_COSTS.PASSIVE_REROLL[currentRarity];
+    const rerollCounter = getUpgradeCounter(itemStack, "Passive Reroll");
+    const adjustedCost = rerollCost ? calculateCostWithCounter(rerollCost.requiredItems, rerollCounter) : null;
+    
+    const form = new ModalFormData();
+    form.title("§ePassive Reroll Menu");
+    
+    if (!rerollCost) {
+        form.textField("§cThis item cannot be rerolled!", "", "OK");
+        form.show(player);
+        return;
+    }
+    
+    const upgradeTemplates = getUpgradeTemplates(player);
+    const requirements = adjustedCost.map(req => `${req.count}x ${req.item.replace("minecraft:", "").replace("rrs:", "")}`).join(", ");
+    const canAfford = hasRequiredItems(player, adjustedCost);
+    
+    form.textField(
+        `§7Current Rarity: §e${currentRarity}\n§7Reroll Count: §c${rerollCounter}\n§7Your RRS: §a${upgradeTemplates}\n§7Required: §e${requirements}\n§7Can Afford: ${canAfford ? '§aYes' : '§cNo'}`,
+        "",
+        "Reroll Details"
+    );
+    
+    form.slider("§6Bulk Attempts", 1, Math.min(5, canAfford ? Math.floor(adjustedCost.reduce((max, req) => Math.min(max, countItemInInventory(player, req.item) / req.count), Infinity)) : 1), 1, 1);
+    form.toggle("§aConfirm Reroll", false);
+    
+    form.show(player).then((response) => {
+        if (response.canceled || !response.formValues[2]) {
+            player.sendMessage("§7Reroll cancelled.");
+            return;
+        }
+        
+        const attempts = response.formValues[1];
+        performBulkPassiveReroll(equipment, player, itemStack, adjustedCost, attempts, rerollCounter);
+    });
 }
 
 //=====================================EVENT LISTENERS & HANDLERS===========================================
@@ -1907,3 +2291,291 @@ function skillVoidPierce(player, skill) {
     
 
 }*/
+
+// Bulk Operation Functions with Counter Tracking and Stat Locking
+function performBulkRarityUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, startingCounter) {
+    let successCount = 0;
+    let failCount = 0;
+    let currentCounter = startingCounter;
+    
+    for (let i = 0; i < attempts; i++) {
+        // Recalculate cost based on current counter
+        const currentCost = calculateCostWithCounter(upgradeCost.requiredItems, currentCounter);
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk upgrade.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        // Roll for success
+        if (Math.random() <= upgradeCost.successChance) {
+            successCount++;
+            // Apply upgrade
+            const newRarity = RARITY[upgradeCost.targetRarity];
+            const currentLore = itemStack.getLore() ?? [];
+            const newLore = [newRarity.dName, ...currentLore.slice(1)];
+            
+            let newItem = itemStack.clone();
+            newItem.setLore(newLore);
+            setUpgradeCounter(newItem, "Rarity Upgrade", currentCounter);
+            equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
+            
+            player.sendMessage(`§aRarity upgrade successful! (${successCount}/${i + 1})`);
+            break; // Only one rarity upgrade needed
+        } else {
+            failCount++;
+        }
+        
+        // Update counter in lore for failed attempts too
+        setUpgradeCounter(itemStack, "Rarity Upgrade", currentCounter);
+    }
+    
+    player.sendMessage(`§6Bulk Rarity Upgrade Complete: §a${successCount} success, §c${failCount} failed`);
+}
+
+function performBulkStatsReroll(equipment, player, itemStack, adjustedCost, attempts, startingCounter, lockedStats) {
+    let successCount = 0;
+    let currentCounter = startingCounter;
+    const lockCostMultiplier = 1.5; // Increase cost for each locked stat
+    
+    for (let i = 0; i < attempts; i++) {
+        // Calculate cost with lock penalty
+        let currentCost = calculateCostWithCounter(adjustedCost, currentCounter);
+        if (lockedStats.length > 0) {
+            currentCost = currentCost.map(item => ({
+                ...item,
+                count: Math.ceil(item.count * Math.pow(lockCostMultiplier, lockedStats.length))
+            }));
+        }
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk reroll.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        // Perform stats reroll with locking
+        const currentRarity = getItemRarity(itemStack);
+        const Tags = parseTags(itemStack.typeId);
+        
+        if (Tags && Tags.rarity) {
+            const currentLore = itemStack.getLore() ?? [];
+            const currentStats = getStatsFromLore(itemStack);
+            
+            // Generate new stats
+            const newStats = randomStats(currentRarity, Tags.data);
+            
+            // Apply locked stats
+            for (const lockedIndex of lockedStats) {
+                if (lockedIndex < currentStats.length && lockedIndex < newStats.length) {
+                    newStats[lockedIndex] = currentStats[lockedIndex];
+                }
+            }
+            
+            // Update lore with new stats
+            let newLore = [];
+            let i = 0;
+            while (i < currentLore.length) {
+                if (currentLore[i] === "§8Attributes") {
+                    // Skip old stats section
+                    while (i < currentLore.length && currentLore[i] !== "§a§t§b§e§n§d§r") {
+                        i++;
+                    }
+                    if (i < currentLore.length) i++; // Skip end marker
+                    // Add new stats
+                    newLore.push(...newStats);
+                } else {
+                    newLore.push(currentLore[i]);
+                    i++;
+                }
+            }
+            
+            let newItem = itemStack.clone();
+            newItem.setLore(newLore);
+            setUpgradeCounter(newItem, "Stats Reroll", currentCounter);
+            equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
+            
+            successCount++;
+        }
+    }
+    
+    const lockInfo = lockedStats.length > 0 ? ` (${lockedStats.length} stats locked)` : "";
+    player.sendMessage(`§6Bulk Stats Reroll Complete: §a${successCount} rerolls${lockInfo}`);
+}
+
+function performBulkStatsUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, startingCounter) {
+    let successCount = 0;
+    let failCount = 0;
+    let currentCounter = startingCounter;
+    
+    for (let i = 0; i < attempts; i++) {
+        // Recalculate cost based on current counter
+        const currentCost = calculateCostWithCounter(upgradeCost.requiredItems, currentCounter);
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk upgrade.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        // Roll for success
+        if (Math.random() <= upgradeCost.successChance) {
+            successCount++;
+            
+            // Enhance existing stats
+            const currentLore = itemStack.getLore() ?? [];
+            let newLore = [...currentLore];
+            let statsFound = false;
+            
+            // Find and upgrade stats section
+            for (let j = 0; j < newLore.length; j++) {
+                if (newLore[j] === "§8Attributes") {
+                    statsFound = true;
+                    j++; // Move to first stat
+                    while (j < newLore.length && newLore[j] !== "§a§t§b§e§n§d§r") {
+                        const statLine = newLore[j];
+                        const valueMatch = statLine.match(/§w([+-]?\d+)§w/);
+                        if (valueMatch) {
+                            const currentValue = parseInt(valueMatch[1]);
+                            const newValue = Math.floor(currentValue * upgradeCost.upgradeMultiplier);
+                            newLore[j] = statLine.replace(/§w[+-]?\d+§w/, `§w${newValue >= 0 ? '+' : ''}${newValue}§w`);
+                        }
+                        j++;
+                    }
+                    break;
+                }
+            }
+            
+            if (statsFound) {
+                let newItem = itemStack.clone();
+                newItem.setLore(newLore);
+                setUpgradeCounter(newItem, "Stats Upgrade", currentCounter);
+                equipment.setEquipment(EquipmentSlot.Mainhand, newItem);
+            }
+        } else {
+            failCount++;
+        }
+        
+        // Update counter in lore for failed attempts too
+        setUpgradeCounter(itemStack, "Stats Upgrade", currentCounter);
+    }
+    
+    player.sendMessage(`§6Bulk Stats Upgrade Complete: §a${successCount} success, §c${failCount} failed`);
+}
+
+function performBulkSkillUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, startingCounter) {
+    let successCount = 0;
+    let failCount = 0;
+    let currentCounter = startingCounter;
+    
+    for (let i = 0; i < attempts; i++) {
+        const currentCost = calculateCostWithCounter(upgradeCost.requiredItems, currentCounter);
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk upgrade.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        if (Math.random() <= upgradeCost.successChance) {
+            successCount++;
+            // Call original skill upgrade logic here
+            skillUpgrade(equipment, player, itemStack);
+        } else {
+            failCount++;
+        }
+        
+        setUpgradeCounter(itemStack, "Skill Upgrade", currentCounter);
+    }
+    
+    player.sendMessage(`§6Bulk Skill Upgrade Complete: §a${successCount} success, §c${failCount} failed`);
+}
+
+function performBulkSkillReroll(equipment, player, itemStack, adjustedCost, attempts, startingCounter) {
+    let successCount = 0;
+    let currentCounter = startingCounter;
+    
+    for (let i = 0; i < attempts; i++) {
+        const currentCost = calculateCostWithCounter(adjustedCost, currentCounter);
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk reroll.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        // Call original skill reroll logic here
+        skillReroll(equipment, player, itemStack);
+        successCount++;
+        
+        setUpgradeCounter(itemStack, "Skill Reroll", currentCounter);
+    }
+    
+    player.sendMessage(`§6Bulk Skill Reroll Complete: §a${successCount} rerolls`);
+}
+
+function performBulkPassiveUpgrade(equipment, player, itemStack, adjustedCost, upgradeCost, attempts, startingCounter) {
+    let successCount = 0;
+    let failCount = 0;
+    let currentCounter = startingCounter;
+    
+    for (let i = 0; i < attempts; i++) {
+        const currentCost = calculateCostWithCounter(upgradeCost.requiredItems, currentCounter);
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk upgrade.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        if (Math.random() <= upgradeCost.successChance) {
+            successCount++;
+            // Call original passive upgrade logic here
+            passiveUpgrade(equipment, player, itemStack);
+        } else {
+            failCount++;
+        }
+        
+        setUpgradeCounter(itemStack, "Passive Upgrade", currentCounter);
+    }
+    
+    player.sendMessage(`§6Bulk Passive Upgrade Complete: §a${successCount} success, §c${failCount} failed`);
+}
+
+function performBulkPassiveReroll(equipment, player, itemStack, adjustedCost, attempts, startingCounter) {
+    let successCount = 0;
+    let currentCounter = startingCounter;
+    
+    for (let i = 0; i < attempts; i++) {
+        const currentCost = calculateCostWithCounter(adjustedCost, currentCounter);
+        
+        if (!hasRequiredItems(player, currentCost)) {
+            player.sendMessage(`§cInsufficient materials for attempt ${i + 1}/${attempts}. Stopping bulk reroll.`);
+            break;
+        }
+        
+        consumeRequiredItems(player, currentCost);
+        currentCounter++;
+        
+        // Call original passive reroll logic here
+        passiveReroll(equipment, player, itemStack);
+        successCount++;
+        
+        setUpgradeCounter(itemStack, "Passive Reroll", currentCounter);
+    }
+    
+    player.sendMessage(`§6Bulk Passive Reroll Complete: §a${successCount} rerolls`);
+}
