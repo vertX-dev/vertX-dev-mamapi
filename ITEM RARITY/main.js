@@ -583,12 +583,12 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
                 system.runTimeout(() => msifMenu(sender), 60);
                 break;
             case '.help':
-                system.runTimeout(() => sender.sendMessage("§7Available commands: §a.menu, .stats, .settings, .help, .disablepc"), 0);
+                system.runTimeout(() => sender.sendMessage("§7Available commands: §a.menu, .stats, .settings, .disablepc, .help, .disablepc"), 0);
                 break;
             case '.upgrade':
                 system.runTimeout(() => upgradeMenu(sender), 60);            
             default:
-                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .settings, .help or .disablepc'), 0);
+                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .settings, .disablepc, .help or .disablepc'), 0);
         }
     }
 });
