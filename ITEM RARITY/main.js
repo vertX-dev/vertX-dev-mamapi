@@ -535,7 +535,7 @@ function displayUpgradeOptions(equipment, player, itemStack) {
     const currentRarity = getItemRarity(itemStack);
     const itemName = itemStack.nameTag ?? itemStack.typeId.split("_").join(" ").split(":").pop();
     
-    form.body(`§7Item: §e${itemName}\n§7Current Rarity: §e${currentRarity}\n§7Your RRS Upgrades: §a${upgradeTemplates}\n\n§7Select an upgrade option:`);
+    form.body(`§7Item: §e${itemName}\n§7Current Rarity: §e${currentRarity}\n§7Your Upgrades: §a${upgradeTemplates}\n\n§7Select an upgrade option:`);
 
     // Add upgrade buttons with appropriate icons
     form.button("§dRarity Upgrade", "textures/ui/smithing_icon");
@@ -547,7 +547,12 @@ function displayUpgradeOptions(equipment, player, itemStack) {
     form.button("§6Passive Upgrade", "textures/ui/hammer_l");
 
     form.show(player).then((response) => {
-        if (response.canceled || response.selection === undefined) return;
+        if (response.canceled || response.selection === undefined) {
+            if (!player.hasTag("pc_mode")) {
+                msifMenu(player);
+            }
+            return;
+        }
         
         switch (response.selection) {
             case 0:
