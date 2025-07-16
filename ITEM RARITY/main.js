@@ -503,17 +503,10 @@ function upgradeMenu(player) {
 function displayUpgradeOptions(equipment, player, itemStack) {
     const form = new ActionFormData();
     form.title("§6Item Upgrade Menu");
-    form.body(`§7Item: §e${itemStack.nameTag ?? itemStack.typeId.split("_").spit(":")}\n§7Select an upgrade option:`);
+    form.body(`§7Item: §e${itemStack.nameTag ?? itemStack.typeId.split("_").spit(":").toUpperCase()}\n§7Select an upgrade option:`);
     
-    // Add upgrade buttons with appropriate icons
-    form.button("§dRarity Upgrade", "textures/items/diamond");
-    form.button("§aStats Reroll", "textures/items/enchanted_book");
-    form.button("§2Stats Upgrade", "textures/items/experience_bottle");
-    form.button("§bSkill Reroll", "textures/items/book");
-    form.button("§9Skill Upgrade", "textures/items/nether_star");
-    form.button("§6Passive Upgrade", "textures/items/totem");
-    form.button("§ePassive Reroll", "textures/items/blaze_powder");
-    form.button("§cCancel", "textures/blocks/barrier");
+    form.button(`§a[Rarity Upgrade]`, "textures/ui/smithing_icon");
+    form.button("§cCancel", "textures/ui/cancel");
     
     form.show(player).then((response) => {
         if (response.canceled) {
@@ -529,24 +522,6 @@ function displayUpgradeOptions(equipment, player, itemStack) {
                 rarityUpgrade(equipment, player, itemStack);
                 break;
             case 1:
-                statsReroll(equipment, player, itemStack);
-                break;
-            case 2:
-                statsUpgrade(equipment, player, itemStack);
-                break;
-            case 3:
-                skillReroll(equipment, player, itemStack);
-                break;
-            case 4:
-                skillUpgrade(equipment, player, itemStack);
-                break;
-            case 5:
-                passiveUpgrade(equipment, player, itemStack);
-                break;
-            case 6:
-                passiveReroll(equipment, player, itemStack);
-                break;
-            case 7:
                 player.sendMessage("§7Upgrade cancelled.");
                 break;
         }
@@ -555,6 +530,12 @@ function displayUpgradeOptions(equipment, player, itemStack) {
             msifMenu(player);
         }
     });
+}
+
+function rarityUpgrade(equipment, player, itemStack) {
+    const upgrades = getUpgradeTemplates(player);
+    const form = new ModalFormData()
+        .dropdown()
 }
 
 // Chat commands
