@@ -133,7 +133,7 @@ function getUpgradeRarityIcon(rarity) {
 }
 
 function getUpgradeTemplates(player) {
-    return `${countItemInInventory(player, "rss:common_upgrade")}   ${countItemInInventory(player, "rss:uncommon_upgrade")}   ${countItemInInventory(player, "rss:rare_upgrade")}   ${countItemInInventory(player, "rss:epic_upgrade")}   ${countItemInInventory(player, "rss:legendary_upgrade")}   ${countItemInInventory(player, "rss:mythic_upgrade")}`;
+    return `${countItemInInventory(player, "rrs:common_upgrade")}   ${countItemInInventory(player, "rrs:uncommon_upgrade")}   ${countItemInInventory(player, "rrs:rare_upgrade")}   ${countItemInInventory(player, "rrs:epic_upgrade")}   ${countItemInInventory(player, "rrs:legendary_upgrade")}   ${countItemInInventory(player, "rrs:mythic_upgrade")}`;
 }
 
 function countItemInInventory(player, itemId) {
@@ -267,9 +267,9 @@ async function msifMenu(player) {
                 break;
         }
     } else {
-        // Retry menu unless PC Mode is active
+        // Retry menu unless PC Mode is active with a delay to prevent blocking
         if (!player.hasTag("pc_mode")) {
-            msifMenu(player);
+            system.runTimeout(() => msifMenu(player), 20);
         }
     }
 }
@@ -558,9 +558,13 @@ function rarityUpgrade(equipment, player, itemStack) {
                 }
                 return;
             }
-            const raritySelected = r.formValues[0] ?? r.formValues[1] ?? r.formValues[2] ?? rarity[0];
+            const raritySelectedIndex = r.formValues[0]; // dropdown selection index
             const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
-            const RR = Object.values(RARITY).find(r => r.sid === raritySelected.slice(0, -2));
+            
+            // Map dropdown index to rarity sid
+            const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
+            const raritySelected = rarityMap[raritySelectedIndex];
+            const RR = Object.values(RARITY).find(r => r.sid === raritySelected);
             
             const upgrades = [
                 "rrs:common_upgrade",
@@ -574,11 +578,13 @@ function rarityUpgrade(equipment, player, itemStack) {
                 player.runCommand("clear @s " + upgrades[RR.id - 1] + " 0 1");
                 rarityItemTest(item, player, RR.sid);
             }
+            
+            // Return to main menu after processing
+            if (!player.hasTag("pc_mode")) {
+                uiManager.closeAllForms(player);
+                system.runTimeout(() => msifMenu(player), 20);
+            }
         });
-    if (!player.hasTag("pc_mode")) {
-        uiManager.closeAllForms(player);
-        msifMenu(player);
-    }
 }
 
 // Chat commands
@@ -778,16 +784,18 @@ function randomPassiveAbility(rarity, type) {
     return result;
 }
 
-function rarityItemTest(itemStack, player, rarityUp = "§7Common") {
+function rarityItemTest(itemStack, player, rarityUp = "Common") {
     if (!itemStack || !player) return;
 
     const lore = itemStack.getLore() ?? [];
 
-    if (lore.length === 0 || rarityUp != "§7Common") {
+    if (lore.length === 0 || rarityUp != "Common") {
         const Tags = parseTags(itemStack.typeId);
 
-        if (Tags && Tags.rarity && rarity === "§7Common") {
-            const rarity = randomRarity();
+        if (Tags && Tags.rarity) {
+            if (rarityUp === "Common") {
+                // New item gets random rarity
+                const rarity = randomRarity();
 
             const stats = randomStats(rarity.sid, Tags.data);
 
@@ -807,26 +815,28 @@ function rarityItemTest(itemStack, player, rarityUp = "§7Common") {
             } catch (error) {
                 console.warn("Error applying rarity:", error);
             }
-        } else {
-            const rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
-            
-            const stats = randomStats(rarity.sid, Tags.data);
+            } else {
+                // Upgrade to specific rarity
+                const rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
+                
+                const stats = randomStats(rarity.sid, Tags.data);
 
-            const skill = randomSkill(rarity.sid, Tags.data);
+                const skill = randomSkill(rarity.sid, Tags.data);
 
-            const passive = randomPassiveAbility(rarity.sid, Tags.data);
+                const passive = randomPassiveAbility(rarity.sid, Tags.data);
 
-            const newLore = [rarity.dName, ...stats, ...skill, ...passive];
+                const newLore = [rarity.dName, ...stats, ...skill, ...passive];
 
-            try {
-                let newItem = itemStack.clone();
-                newItem.setLore(newLore);
-                const equippable = player.getComponent("minecraft:equippable");
-                if (equippable) {
-                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                try {
+                    let newItem = itemStack.clone();
+                    newItem.setLore(newLore);
+                    const equippable = player.getComponent("minecraft:equippable");
+                    if (equippable) {
+                        equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                    }
+                } catch (error) {
+                    console.warn("Error applying rarity:", error);
                 }
-            } catch (error) {
-                console.warn("Error applying rarity:", error);
             }
         }
     }
