@@ -579,6 +579,9 @@ function displayUpgradeOptions(equipment, player, itemStack) {
             default:
                 player.sendMessage("§7Upgrade cancelled.");
         }
+        if (!player.hasTag("pc_mode")) {
+                msifMenu(player);
+            }
     });
 }
 
