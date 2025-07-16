@@ -344,14 +344,10 @@ system.runTimeout(() => {
 function statsMainMenu(player) {
 const menu = new ActionFormData()
 .title('SELECT OPTION')
-.button('STATS',
-'textures/ui/gamerpic')
-.button('SETTINGS',
-'textures/ui/automation_glyph_color')
-.button('PC MODE',
-'textures/ui/addServer')
-.button('FORGE',
-'textures/ui/smithing_icon');
+.button('STATS', 'textures/ui/gamerpic')
+.button('SETTINGS', 'textures/ui/automation_glyph_color')
+.button('PC MODE', 'textures/ui/addServer')
+.button('FORGE', 'textures/ui/smithing_icon');
 
 menu.show(player).then((r) => {
 if (!r.canceled) {
