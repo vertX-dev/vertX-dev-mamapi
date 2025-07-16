@@ -629,6 +629,12 @@ function randomRarity(RR = RR_BASE) {
 }
 
 function randomStats(rarity, type) {
+    // Ensure BOOST_COEF is initialized
+    if (!BOOST_COEF || BOOST_COEF == 0) {
+        BOOST_COEF = 10;
+        console.log(`Initialized BOOST_COEF to 10 in randomStats`);
+    }
+    
     // Filter available stats that match the item type
     const availableStats = Object.values(stats).filter(stat => stat.type.includes(type));
     
@@ -1257,7 +1263,8 @@ function statsUpgrade(equipment, player, itemStack) {
                 if (valueMatch) {
                     const currentValue = parseInt(valueMatch[1]);
                     const newValue = Math.floor(currentValue * upgradeCost.upgradeMultiplier);
-                    newLore[i] = statLine.replace(/§w[+-]?\d+§w/, `§w${newValue >= 0 ? '+' : ''}${newValue}§w`);
+                    const sign = newValue >= 0 ? '+' : '';
+                    newLore[i] = statLine.replace(/§w[+-]?\d+§w/, `§w${sign}${Math.abs(newValue)}§w`);
                 }
                 i++;
             }
@@ -1425,11 +1432,13 @@ function skillReroll(equipment, player, itemStack) {
     const newSkill = randomSkill(currentRarity, Tags.data);
     const currentLore = itemStack.getLore() ?? [];
     let newLore = [];
+    let skillFound = false;
 
     // Keep rarity and non-skill sections
     let i = 0;
     while (i < currentLore.length) {
         if (currentLore[i] === "§8Skill") {
+            skillFound = true;
             // Skip old skill section
             while (i < currentLore.length && currentLore[i] !== "§s§k§l§e§n§d§r") {
                 i++;
@@ -1441,6 +1450,11 @@ function skillReroll(equipment, player, itemStack) {
             newLore.push(currentLore[i]);
             i++;
         }
+    }
+
+    // If no skill section was found, add the new skill at the end
+    if (!skillFound && newSkill && newSkill.length > 0) {
+        newLore.push(...newSkill);
     }
 
     let newItem = itemStack.clone();
@@ -1543,11 +1557,13 @@ function passiveReroll(equipment, player, itemStack) {
     const newPassive = randomPassiveAbility(currentRarity, Tags.data);
     const currentLore = itemStack.getLore() ?? [];
     let newLore = [];
+    let passiveFound = false;
 
     // Keep rarity and non-passive sections
     let i = 0;
     while (i < currentLore.length) {
         if (currentLore[i] === "§8Passive ability") {
+            passiveFound = true;
             // Skip old passive section
             while (i < currentLore.length && currentLore[i] !== "§p§v§a§e§n§d§r") {
                 i++;
@@ -1559,6 +1575,11 @@ function passiveReroll(equipment, player, itemStack) {
             newLore.push(currentLore[i]);
             i++;
         }
+    }
+
+    // If no passive section was found, add the new passive at the end
+    if (!passiveFound && newPassive && newPassive.length > 0) {
+        newLore.push(...newPassive);
     }
 
     let newItem = itemStack.clone();
@@ -2445,7 +2466,8 @@ function performBulkStatsUpgrade(equipment, player, itemStack, adjustedCost, upg
                         if (valueMatch) {
                             const currentValue = parseInt(valueMatch[1]);
                             const newValue = Math.floor(currentValue * upgradeCost.upgradeMultiplier);
-                            newLore[j] = statLine.replace(/§w[+-]?\d+§w/, `§w${newValue >= 0 ? '+' : ''}${newValue}§w`);
+                            const sign = newValue >= 0 ? '+' : '';
+                            newLore[j] = statLine.replace(/§w[+-]?\d+§w/, `§w${sign}${Math.abs(newValue)}§w`);
                         }
                         j++;
                     }
