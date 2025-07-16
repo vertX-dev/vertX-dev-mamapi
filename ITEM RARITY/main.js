@@ -567,12 +567,10 @@ function rarityUpgrade(equipment, player, itemStack) {
                 "rrs:legendary_upgrade",
                 "rrs:mythic_upgrade"
             ]
-            if (item && item.typeId && countItemInInventory(player, upgrades[RR.id - 1])) {
-                
+            if (item && item.typeId && countItemInInventory(player, upgrades[RR.id - 1]) >= 1) {
+                player.runCommand("clear @s " + upgrades[RR.id - 1] + " 0 1");
+                rarityItemTest(item, player, RR.sid);
             }
-            
-            
-            
             if (!player.hasTag("pc_mode")) {
                 uiManager.closeAllForms(player);
                 msifMenu(player);
