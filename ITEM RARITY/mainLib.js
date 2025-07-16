@@ -145,8 +145,8 @@ export const TagMapping = {
     "mace": ["mace", "club", "hammer", "warhammer", "maul", "flail", "cudgel", "bludgeon"],
     "helmet": ["helmet", "hat", "cap", "crown", "circlet", "headpiece", "headgear", "coif", "casque"],
     "chestplate": ["chestplate", "armor", "tunic", "vest", "breastplate", "jerkin", "cuirass", "mail", "chainmail"],
-    "leggings": ["leggings", "pants", "trousers", "greaves", "leg_armor", "breeches", "chaps"],
-    "boots": ["boots", "shoes", "sandals", "footwear", "sabatons", "foot_armor", "slippers"],
+    "leggings": ["leggings", "pants", "trousers", "greaves", "breeches", "chaps"],
+    "boots": ["boots", "shoes", "sandals", "footwear", "sabatons", "slippers"],
     "bow": ["bow", "longbow", "shortbow", "crossbow", "recurve", "composite_bow"],
     "trident": ["trident", "fork", "spear", "lance", "javelin", "harpoon", "pitchfork"],
     "shield": ["shield", "buckler", "targe", "defender", "barrier", "guard"],
@@ -160,4 +160,4 @@ export const tools = ["pickaxe", "shovel", "hoe", "axe"];
 export const rangedWeapons = ["bow"];
 export const allWeapons = [...meleeWeapons, ...rangedWeapons];
 export const allArmor = ["helmet", "chestplate", "leggings", "boots", "shield", "elytra"];
-export const allItems = [...allWeapons, ...tools, ...allArmor];
+export const allItems = [...allWeapons, ...tools, ...allArmor, "totem"];

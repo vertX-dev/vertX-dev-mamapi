@@ -76,12 +76,12 @@ export const stats = {
     LIFESTEAL_MYTHIC: { name: "§cLifesteal", type: allItems, rarity: "Mythic", min: 8, max: 12, scoreboardTracker: "lifesteal", measure: "%" },
 
     // HEALTH PERCENT - Armor and accessories
-    HEALTH_PERCENT_COMMON: { name: "§8Health %", type: allItems, rarity: "Common", min: 1, max: 3, scoreboardTracker: "healthpercent", measure: "%" },
-    HEALTH_PERCENT_UNCOMMON: { name: "§aHealth %", type: allItems, rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "healthpercent", measure: "%" },
-    HEALTH_PERCENT_RARE: { name: "§1Health %", type: allItems, rarity: "Rare", min: 3, max: 7, scoreboardTracker: "healthpercent", measure: "%" },
-    HEALTH_PERCENT_EPIC: { name: "§5Health %", type: allItems, rarity: "Epic", min: 5, max: 10, scoreboardTracker: "healthpercent", measure: "%" },
-    HEALTH_PERCENT_LEGENDARY: { name: "§6Health %", type: allItems, rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "healthpercent", measure: "%" },
-    HEALTH_PERCENT_MYTHIC: { name: "§cHealth %", type: allItems, rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "healthpercent", measure: "%" }
+    HEALTH_PERCENT_COMMON: { name: "§8Health§x", type: allItems, rarity: "Common", min: 1, max: 3, scoreboardTracker: "healthpercent", measure: "%" },
+    HEALTH_PERCENT_UNCOMMON: { name: "§aHealth§x", type: allItems, rarity: "Uncommon", min: 2, max: 5, scoreboardTracker: "healthpercent", measure: "%" },
+    HEALTH_PERCENT_RARE: { name: "§1Health§x", type: allItems, rarity: "Rare", min: 3, max: 7, scoreboardTracker: "healthpercent", measure: "%" },
+    HEALTH_PERCENT_EPIC: { name: "§5Health§x", type: allItems, rarity: "Epic", min: 5, max: 10, scoreboardTracker: "healthpercent", measure: "%" },
+    HEALTH_PERCENT_LEGENDARY: { name: "§6Health§x", type: allItems, rarity: "Legendary", min: 8, max: 15, scoreboardTracker: "healthpercent", measure: "%" },
+    HEALTH_PERCENT_MYTHIC: { name: "§cHealth§x", type: allItems, rarity: "Mythic", min: 12, max: 20, scoreboardTracker: "healthpercent", measure: "%" }
 
 /*    // STUN CHANCE - Weapons and some accessories
     STUN_CHANCE_RARE: { name: "§1Stun Chance", type: allItems, rarity: "Rare", min: 1, max: 3, scoreboardTracker: "stunchance", measure: "%" },

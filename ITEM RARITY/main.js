@@ -30,6 +30,8 @@ import {
 let BOOST_COEF; //default 10
 let RR_BASE; // default common
 
+const HEALTH_BAR_FONT = "";//32 values
+
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
         name: "damage",
@@ -70,6 +72,10 @@ const PREDEFINED_SCOREBOARDS = [{
     {
         name: "healthpercent",
         displayName: "Health percent bonus"
+    },
+    {
+        name: "hawkeyerange",
+        displayName: "Hawk eye range"
     }
 ];
 
@@ -106,6 +112,10 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
         displayName: "Void Pierce"
     }
 ];
+
+const hpBar = {
+    
+}
 
 //=====================================UTILITY FUNCTIONS===========================================
 
@@ -219,8 +229,10 @@ async function forceShow(player, form, timeout = Infinity) {
 async function msifMenu(player) {
     const menu = new ActionFormData()
         .title('rssp_buttons')
-        .button('', 'textures/ui/gamerpic')
+        .button('', 'textures/ui/gamerpic');
+    
     const response = await forceShow(player, menu, 200);
+    
     if (response.selection >= 0) {
         switch (response.selection) {
             case 0:
@@ -228,60 +240,60 @@ async function msifMenu(player) {
                 break;
         }
     } else {
-        msifMenu(player);
+        // Retry menu unless PC Mode is active
+        if (!player.hasTag("pc_mode")) {
+            msifMenu(player);
+        }
     }
 }
 
 world.afterEvents.playerSpawn.subscribe((ev) => {
     const player = ev.player;
     uiManager.closeAllForms(player);
-
-    // Check if player has creative mode
-    try {
-        const gameModeResult = player.runCommand("testfor @s[m=creative]");
-        const isCreative = gameModeResult.successCount > 0;
-
-        if (isCreative) {
-            // Check if any other players have admin tag
-            const adminCheckResult = player.runCommand("testfor @a[tag=admin]");
-            const hasAdminPlayers = adminCheckResult.successCount > 0;
-
-            if (!hasAdminPlayers) {
-                // Add admin tag to this player
-                player.runCommand("tag @s add admin");
-                console.log(`Added admin tag to player: ${player.name}`);
-            }
-        }
-    } catch (error) {
-        console.warn("Error checking player gamemode or admin status:", error);
+    if (!player.hasTag("pc_mode")) {
+        msifMenu(player);
     }
-
-    // Check and initialize variables if they don't exist
-    try {
-        // Check BOOST_COEF variable
-        if (!BOOST_COEF) {
-            BOOST_COEF = 10;
-            console.log(`Initialized BOOST_COEF to 10`);
-        }
-
-        // Check RR_BASE variable
-        if (!RR_BASE) {
-            RR_BASE = RARITY.COMMON;
-            console.log(`Initialized RR_BASE to RARITY.COMMON`);
-        }
-    } catch (error) {
-        console.warn("Error initializing variables:", error);
-    }
-
-    msifMenu(player);
 });
-
 
 system.runTimeout(() => {
     const players = world.getPlayers();
     for (const player of players) {
         uiManager.closeAllForms(player);
-        msifMenu(player);
+
+        try {
+            const gameModeResult = player.runCommand("testfor @s[m=creative]");
+            const isCreative = gameModeResult.successCount > 0;
+
+            if (isCreative) {
+                const adminCheckResult = player.runCommand("testfor @a[tag=admin]");
+                const hasAdminPlayers = adminCheckResult.successCount > 0;
+
+                if (!hasAdminPlayers) {
+                    player.runCommand("tag @s add admin");
+                    console.log(`Added admin tag to player: ${player.name}`);
+                }
+            }
+        } catch (error) {
+            console.warn("Error checking player gamemode or admin status:", error);
+        }
+
+        try {
+            if (!BOOST_COEF || BOOST_COEF == 0) {
+                BOOST_COEF = 10;
+                console.log(`Initialized BOOST_COEF to 10`);
+            }
+
+            if (!RR_BASE || !RR_BASE.id) {
+                RR_BASE = RARITY.COMMON;
+                console.log(`Initialized RR_BASE to RARITY.COMMON`);
+            }
+        } catch (error) {
+            console.warn("Error initializing variables:", error);
+        }
+
+        if (!player.hasTag("pc_mode")) {
+            msifMenu(player);
+        }
     }
 }, 20);
 
@@ -290,21 +302,32 @@ function statsMainMenu(player) {
         .title('SELECT OPTION')
         .button('STATS', 'textures/ui/gamerpic')
         .button('SETTINGS', 'textures/ui/automation_glyph_color')
-
+        .button('PC MODE', 'textures/ui/addServer')
+        .button('FORGE', 'textures/ui/smithing_icon');
 
     menu.show(player).then((r) => {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
-                    showStatsForm(player);
+                    showStatsForm(player, true);
                     break;
                 case 1:
-                    showSettingsForm(player);
+                    showSettingsForm(player, true);
+                    break;
+                case 2:
+                    uiManager.closeAllForms(player);
+                    player.addTag("pc_mode");
+                    player.sendMessage("PC MODE ENABLED\nUse .help for additional info\nYou need to enable beta API");
+                    break;
+                case 3:
+                    upgradeMenu(player);
                     break;
             }
         } else {
             uiManager.closeAllForms(player);
-            msifMenu(player);
+            if (!player.hasTag("pc_mode")) {
+                msifMenu(player);
+            }
         }
     });
 }
@@ -320,10 +343,7 @@ function showStatsForm(player) {
         critchance: getScoreboardValue("critchance", player) + 5,
         critdamage: getScoreboardValue("critdamage", player) + 50,
         lifesteal: getScoreboardValue("lifesteal", player),
-        //stunchance: getScoreboardValue("stunchance", player),
-        //stuntime: getScoreboardValue("stunchance", player),
         healthpercent: getScoreboardValue("healthpercent", player)
-
     };
 
     const form = new ActionFormData()
@@ -331,7 +351,7 @@ function showStatsForm(player) {
         .body(
             `§7Damage: §f${stats.damage}\n` +
             `§7Damage: §f${stats.damagepercent}%%\n` +
-            `§7Defense: §f${stats.defense}\n` +
+            `§7Defense: §f${stats.defense}%%\n` +
             `§7Health: §f${stats.health}\n` +
             `§7Speed: §f${stats.speed}\n` +
             `§7Regeneration: §f${stats.regeneration}\n` +
@@ -345,62 +365,46 @@ function showStatsForm(player) {
     form.show(player).then((r) => {
         if (r.canceled) {
             uiManager.closeAllForms(player);
-            msifMenu(player);
+            if (!player.hasTag("pc_mode")) {
+                msifMenu(player);
+            }
         } else if (r.selection == 0) {
             uiManager.closeAllForms(player);
-            msifMenu(player);
+            if (!player.hasTag("pc_mode")) {
+                msifMenu(player);
+            }
         }
     });
 }
 
-function upgradeMenu(player) {
-    const equipment = player.getComponent("minecraft:equippable");
-    const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
-
-    const loreArray = itemStack.getLore();
-    const tag = parseTags(itemStack.typeId);
-
-    const stats = parseLoreToStats(equipment, EquipmentSlot.Mainhand)
-}
-
 function showSettingsForm(player) {
-
     if (!player.hasTag("admin")) {
         uiManager.closeAllForms(player);
-        msifMenu(player);
+        if (!player.hasTag("pc_mode")) {
+            msifMenu(player);
+        }
+        return;
     }
-    const rarityOptions = [{
-            name: "§7Common",
-            value: RARITY.COMMON
-        },
-        {
-            name: "§aUncommon",
-            value: RARITY.UNCOMMON
-        },
-        {
-            name: "§9Rare",
-            value: RARITY.RARE
-        },
-        {
-            name: "§5Epic",
-            value: RARITY.EPIC
-        },
-        {
-            name: "§6Legendary",
-            value: RARITY.LEGENDARY
-        },
-        {
-            name: "§cMythic",
-            value: RARITY.MYTHIC
-        },
+
+    const rarityOptions = [
+        { name: "§7Common", value: RARITY.COMMON },
+        { name: "§aUncommon", value: RARITY.UNCOMMON },
+        { name: "§9Rare", value: RARITY.RARE },
+        { name: "§5Epic", value: RARITY.EPIC },
+        { name: "§6Legendary", value: RARITY.LEGENDARY },
+        { name: "§cMythic", value: RARITY.MYTHIC },
     ];
 
-    const currentRarityIndex = rarityOptions.findIndex(opt => opt.value === RR_BASE) || 0;
+    const sliderParam = {
+        defaultValue: BOOST_COEF ?? 10,
+        tooltip: "10 - default value",
+        valueStep: 1
+    };
 
     const form = new ModalFormData()
         .title("Settings")
-        .slider("Boost Coefficient", 1, 50, 1, BOOST_COEF)
-        .dropdown("Minimum Rarity", rarityOptions.map(opt => opt.name), currentRarityIndex);
+        .slider("Boost Coefficient", 1, 50, sliderParam)
+        .dropdown("Minimum Rarity", rarityOptions.map(opt => opt.name));
 
     form.show(player).then(response => {
         if (!response.canceled) {
@@ -410,18 +414,66 @@ function showSettingsForm(player) {
             player.sendMessage(`§aSettings updated:\n§fBoost Coef: §e${BOOST_COEF}\n§fMin Rarity: ${rarityOptions[rarityIndex].name}`);
         }
 
-        uiManager.closeAllForms(player);
-        msifMenu(player);
+        if (!player.hasTag("pc_mode")) {
+            uiManager.closeAllForms(player);
+            msifMenu(player);
+        }
     });
 }
 
+function upgradeMenu(player) {
+    
+    const equipment = player.getComponent("minecraft:equippable");
+    const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
+
+    const loreArray = itemStack.getLore();
+    const tag = parseTags(itemStack.typeId);
+
+    const stats = parseLoreToStats(equipment, EquipmentSlot.Mainhand);
+}
+
+// Chat commands
+world.beforeEvents.chatSend.subscribe((eventData) => {
+    const { sender, message } = eventData;
+
+    if (message.startsWith('.')) {
+        eventData.cancel = true;
+
+        const args = message.split(' ');
+        const command = args[0].toLowerCase();
+
+        switch (command) {
+            case '.menu':
+                system.runTimeout(() => statsMainMenu(sender), 60);
+                break;
+            case '.stats':
+                system.runTimeout(() => showStatsForm(sender), 60);
+                break;
+            case '.settings':
+                system.runTimeout(() => showSettingsForm(sender), 60);
+                break;
+            case '.disablepc':
+                system.runTimeout(() => {sender.removeTag("pc_mode")},20);
+                sender.sendMessage("§cPC MODE disabled.");
+                system.runTimeout(() => msifMenu(sender), 60);
+                break;
+            case '.help':
+                system.runTimeout(() => sender.sendMessage("§7Available commands: §a.menu, .stats, .settings, .help, .disablepc"), 0);
+                break;
+            case '.upgrade':
+                system.runTimeout(() => upgradeMenu(sender), 60);            
+            default:
+                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .settings, .help or .disablepc'), 0);
+        }
+    }
+});
 
 
 //=====================================CORE GAME LOGIC===========================================
 
 function randomRarity(RR = RR_BASE) {
-    let rarity = RR;
-    let currentId = rarity.id;
+    let rarity = RR ?? RARITY.COMMON;
+    let currentId = rarity.id ?? 1;
 
     while (true) {
         const nextRarity = Object.values(RARITY).find(r => r.id === currentId + 1);
@@ -675,26 +727,27 @@ function healEntity(entity, value = getScoreboardValue("regeneration", entity)) 
 
 function setMainStats(player) {
     //get all stats
-    let health = Math.floor(getScoreboardValue("health", player));
+    let health = Math.floor(getScoreboardValue("health", player) / 4);
     let defense = Math.floor(Math.min(getScoreboardValue("defense", player), 80) / 20) - 1;
     let speed = Math.floor(Math.min(getScoreboardValue("speed", player), 200) / 20) - 1;
-
-    health = Math.floor(health * (1 + (getScoreboardValue("healthpercent", player) / 100)) / 4) - 1;
+    let healthBoost = (getScoreboardValue("healthpercent", player) / 100) + 1;
+    
+    health = Math.floor(((health + 5) * healthBoost) - 6);
 
     if (health >= 0) {
-        player.addEffect("health_boost", 50, {
+        player.addEffect("health_boost", 62, {
             amplifier: health,
             showParticles: false
         });
     }
     if (defense >= 0) {
-        player.addEffect("resistance", 50, {
+        player.addEffect("resistance", 62, {
             amplifier: defense,
             showParticles: false
         });
     }
     if (speed >= 0) {
-        player.addEffect("speed", 50, {
+        player.addEffect("speed", 62, {
             amplifier: speed,
             showParticles: false
         });
@@ -975,7 +1028,7 @@ world.afterEvents.playerBreakBlock.subscribe((ev) => {
 //=====================================INITIALIZATION===========================================
 
 // Initialize scoreboards immediately when the script loads
-initializeScoreboards();
+system.runTimeout(() => {initializeScoreboards()}, 50);
 
 //=====================================SKILLS FUNCTIONALITY===========================================
 /**
@@ -1148,8 +1201,8 @@ function skillFlameArc(player, skill) {
 
     const arcPositions = [
         "^^^2", "^^^3", "^^^4", "^^^5",
-        "^^1^2", "^^1^3", "^^1^4",
-        "^^-1^2", "^^-1^3", "^^-1^4"
+        "^1^^2", "^1^^3", "^1^^4",
+        "^-1^^2", "^-1^^3", "^-1^^4"
     ];
 
     for (const pos of arcPositions) {
@@ -1204,3 +1257,36 @@ function skillVoidPierce(player, skill) {
 
 
 //=====================================PASSIVES FUNCTIONALITY===========================================
+
+/*function hawkEye(player) {
+    const range = 6 + (getScoreboardValue("hawkeyerange", player) ?? 0);
+    const hitData = getEntitiesFromViewDirection();
+    const entity = hitData[0].entity;
+    const distance = hitData[0].distance;
+
+    if (!entity || !player) return;
+
+    // Health
+    const healthComp = entity.getComponent("minecraft:health");
+    const currentHealth = healthComp?.currentValue ?? 0;
+    const maxHealth = healthComp?.effectiveValue ?? 0;
+
+    // Get nameTag or generate from typeId
+    let name = entity.nameTag;
+    if (!name || name.trim() === "") {
+        // Parse typeId into readable name
+        let rawType = entity.typeId.replace("minecraft:", "");
+        name = rawType
+            .split("_")
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(" ");
+    }
+
+    let healthPercent = Math.floor((currentHealth / maxHealth) * 33);
+    
+    const healthBar = HEALTH_BAR_FONT.charAt(healthPercent);
+    
+    
+    
+
+}*/
