@@ -723,7 +723,7 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
                 // Upgrade to specific rarity
                 let rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
                 if (!upGuarant) {
-                    const id = Math.min(rarity.id + Math.floor((Math.random() * 2) - 1), 6);
+                    const id = Math.max(Math.min(rarity.id + Math.floor((Math.random() * 2) - 1), 6));
                     
                 }
                 
