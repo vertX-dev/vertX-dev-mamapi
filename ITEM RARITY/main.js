@@ -28,8 +28,8 @@ import {
 
 //=====================================CONFIGURATION & CONSTANTS===========================================
 
-let BOOST_COEF; //default 10
-let RR_BASE; // default common
+let BOOST_COEF = 10;
+let RR_BASE = RARITY.COMMON; // default common
 
 const HEALTH_BAR_FONT = "";//32 values
 const RARITY_UPGRADES_GLYPS = "";//6 values
@@ -244,92 +244,12 @@ function initializeScoreboards() {
     console.log("Static scoreboards initialization complete.");
 }
 //=======================================UI MENU=========================================================
-async function forceShow(player, form, timeout = Infinity) {
-    const startTick = system.currentTick;
-    while ((system.currentTick - startTick) < timeout) {
-        const response = await form.show(player);
-        if (response.cancelationReason !== FormCancelationReason.UserBusy) return response;
-    };
-    throw new Error(`Timed out after ${timeout} ticks`);
-}
 
-async function msifMenu(player) {
-    const menu = new ActionFormData()
-        .title('rssp_buttons')
-        .button('', 'textures/ui/gamerpic');
-    
-    const response = await forceShow(player, menu, 200);
-    
-    if (response.selection >= 0) {
-        switch (response.selection) {
-            case 0:
-                statsMainMenu(player);
-                break;
-        }
-    } else {
-        // Retry menu unless PC Mode is active with a delay to prevent blocking
-        if (!player.hasTag("pc_mode")) {
-            system.runTimeout(() => msifMenu(player), 20);
-        }
-    }
-}
-
-world.afterEvents.playerSpawn.subscribe((ev) => {
-    const player = ev.player;
-    uiManager.closeAllForms(player);
-    if (!player.hasTag("pc_mode")) {
-        msifMenu(player);
-    }
-});
-
-system.runTimeout(() => {
-    const players = world.getPlayers();
-    for (const player of players) {
-        uiManager.closeAllForms(player);
-
-        try {
-            const gameModeResult = player.runCommand("testfor @s[m=creative]");
-            const isCreative = gameModeResult.successCount > 0;
-
-            if (isCreative) {
-                const adminCheckResult = player.runCommand("testfor @a[tag=admin]");
-                const hasAdminPlayers = adminCheckResult.successCount > 0;
-
-                if (!hasAdminPlayers) {
-                    player.runCommand("tag @s add admin");
-                    console.log(`Added admin tag to player: ${player.name}`);
-                }
-            }
-        } catch (error) {
-            console.warn("Error checking player gamemode or admin status:", error);
-        }
-
-        try {
-            if (!BOOST_COEF || BOOST_COEF == 0) {
-                BOOST_COEF = 10;
-                console.log(`Initialized BOOST_COEF to 10`);
-            }
-
-            if (!RR_BASE || !RR_BASE.id) {
-                RR_BASE = RARITY.COMMON;
-                console.log(`Initialized RR_BASE to RARITY.COMMON`);
-            }
-        } catch (error) {
-            console.warn("Error initializing variables:", error);
-        }
-
-        if (!player.hasTag("pc_mode")) {
-            msifMenu(player);
-        }
-    }
-}, 20);
 
 function statsMainMenu(player) {
     const menu = new ActionFormData()
         .title('SELECT OPTION')
         .button('STATS', 'textures/ui/gamerpic')
-        .button('SETTINGS', 'textures/ui/automation_glyph_color')
-        .button('PC MODE', 'textures/ui/addServer')
         .button('FORGE', 'textures/ui/smithing_icon');
 
     menu.show(player).then((r) => {
@@ -339,21 +259,9 @@ function statsMainMenu(player) {
                     showStatsForm(player, true);
                     break;
                 case 1:
-                    showSettingsForm(player, true);
-                    break;
-                case 2:
-                    uiManager.closeAllForms(player);
-                    player.addTag("pc_mode");
-                    player.sendMessage("PC MODE ENABLED\nUse .help for additional info\nYou need to enable beta API");
-                    break;
-                case 3:
                     upgradeMenu(player);
                     break;
             }
-        }
-        if (!player.hasTag("pc_mode")) {
-            uiManager.closeAllForms(player);
-            msifMenu(player);
         }
     });
 }
@@ -388,64 +296,9 @@ function showStatsForm(player) {
         )
         .button("§aOK");
 
-    form.show(player).then((r) => {
-        if (r.canceled) {
-            uiManager.closeAllForms(player);
-            if (!player.hasTag("pc_mode")) {
-                msifMenu(player);
-            }
-        } else if (r.selection == 0) {
-            uiManager.closeAllForms(player);
-            if (!player.hasTag("pc_mode")) {
-                msifMenu(player);
-            }
-        }
-    });
+    form.show(player);
 }
 
-function showSettingsForm(player) {
-    if (!player.hasTag("admin")) {
-        uiManager.closeAllForms(player);
-        if (!player.hasTag("pc_mode")) {
-            msifMenu(player);
-        }
-        return;
-    }
-
-    const rarityOptions = [
-        { name: "§7Common", value: RARITY.COMMON },
-        { name: "§aUncommon", value: RARITY.UNCOMMON },
-        { name: "§9Rare", value: RARITY.RARE },
-        { name: "§5Epic", value: RARITY.EPIC },
-        { name: "§6Legendary", value: RARITY.LEGENDARY },
-        { name: "§cMythic", value: RARITY.MYTHIC },
-    ];
-
-    const sliderParam = {
-        defaultValue: BOOST_COEF ?? 10,
-        tooltip: "10 - default value",
-        valueStep: 1
-    };
-
-    const form = new ModalFormData()
-        .title("Settings")
-        .slider("Boost Coefficient", 1, 50, sliderParam)
-        .dropdown("Minimum Rarity", rarityOptions.map(opt => opt.name));
-
-    form.show(player).then(response => {
-        if (!response.canceled) {
-            const [boostCoef, rarityIndex] = response.formValues;
-            BOOST_COEF = boostCoef;
-            RR_BASE = rarityOptions[rarityIndex].value;
-            player.sendMessage(`§aSettings updated:\n§fBoost Coef: §e${BOOST_COEF}\n§fMin Rarity: ${rarityOptions[rarityIndex].name}`);
-        }
-
-        if (!player.hasTag("pc_mode")) {
-            uiManager.closeAllForms(player);
-            msifMenu(player);
-        }
-    });
-}
 
 function upgradeMenu(player) {
     // Check if there's an anvil nearby
@@ -454,9 +307,9 @@ function upgradeMenu(player) {
     
     // Search for anvil in a 3x3x3 area around the player
     let anvilFound = false;
-    for (let x = -1; x <= 1; x++) {
-        for (let y = -1; y <= 1; y++) {
-            for (let z = -1; z <= 1; z++) {
+    for (let x = -2; x <= 2; x++) {
+        for (let y = -2; y <= 2; y++) {
+            for (let z = -2; z <= 2; z++) {
                 const checkLocation = {
                     x: playerLocation.x + x,
                     y: playerLocation.y + y,
@@ -512,13 +365,7 @@ function displayUpgradeOptions(equipment, player, itemStack) {
     form.button("§cCancel", "textures/ui/cancel");
     
     form.show(player).then((response) => {
-        if (response.canceled) {
-            if (!player.hasTag("pc_mode")) {
-                uiManager.closeAllForms(player);
-                msifMenu(player);
-            }
-            return;
-        }
+        if (response.canceled) return;
         
         switch (response.selection) {
             case 0:
@@ -527,10 +374,6 @@ function displayUpgradeOptions(equipment, player, itemStack) {
             case 1:
                 player.sendMessage("§7Upgrade canceled.");
                 break;
-        }
-        if (!player.hasTag("pc_mode")) {
-            uiManager.closeAllForms(player);
-            msifMenu(player);
         }
     });
 }
@@ -551,13 +394,7 @@ function rarityUpgrade(equipment, player, itemStack) {
         .dropdown("Rarity upgrades", rarity)
         .submitButton("UPGRADE");
         form.show(player).then((r) => {
-            if (r.canceled) {
-                if (!player.hasTag("pc_mode")) {
-                    uiManager.closeAllForms(player);
-                    msifMenu(player);
-                }
-                return;
-            }
+            if (r.canceled) return;
             const raritySelectedIndex = r.formValues[0]; // dropdown selection index
             const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
             
@@ -578,12 +415,6 @@ function rarityUpgrade(equipment, player, itemStack) {
                 
                 ] + " 0 1");
                 rarityItemTest(item, player, rariryMap[raritySelectedIndex]);
-            }
-            
-            // Return to main menu after processing
-            if (!player.hasTag("pc_mode")) {
-                uiManager.closeAllForms(player);
-                system.runTimeout(() => msifMenu(player), 20);
             }
         });
 }
@@ -614,12 +445,13 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
                 system.runTimeout(() => msifMenu(sender), 60);
                 break;
             case '.help':
-                system.runTimeout(() => sender.sendMessage("§7Available commands: §a.menu, .stats, .settings, .disablepc, .help, .disablepc"), 0);
+                system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .upgrade, .help"), 0);
                 break;
             case '.upgrade':
-                system.runTimeout(() => upgradeMenu(sender), 60);            
+                system.runTimeout(() => upgradeMenu(sender), 60);
+                break;
             default:
-                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .settings, .disablepc, .help or .disablepc'), 0);
+                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .upgrade, .help'), 0);
         }
     }
 });
