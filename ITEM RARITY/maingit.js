@@ -973,6 +973,12 @@ world.afterEvents.entityHurt.subscribe((ev) => {
                 case 'Lightning Strike':
                     passiveLightningStrike(player, passive, mob);
                     break;
+                case 'Vampiric':
+                    passiveVampiric(player, passive, damage);
+                    break;
+                case 'Poison Blade':
+                    passivePoisonBlade(player, passive, mob);
+                    break;
             }
         }
     }
@@ -996,13 +1002,16 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
     }
     
     const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
-        if (passive && passive.name) {
+    if (passive && passive.name) {
             switch (passive.name.slice(2)) {
                 case 'Ender Arrow':
                     passiveEnderArrow(player, passive, mob);
                     break;
                 case 'Lightning Strike':
                     passiveLightningStrike(player, passive, mob, damage);
+                    break;
+                case: 'Explosive Arrows':
+                    passiveExplosiveArrows(player, passive, ev);
                     break;
             }
         }
@@ -1370,8 +1379,8 @@ function passiveLightningStrike(player, passive, entity) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
-    ccd.obj.setScore(player, passive.cooldown * 10);
     if (Math.random() <= passive.value) {
+        ccd.obj.setScore(player, passive.cooldown * 10);
         entity.dimension.spawnEntity("lightning_bolt", entity.location);
     }
 }
@@ -1387,4 +1396,37 @@ function passiveEnderArrow(player, passive, entity, damage) {
         entity.applyDamage(damage);
         ccd.obj.setScore(player, passive.cooldown * 10);
     }
+}
+
+function passiveVampiric(player, passive, damage) {
+    const ccd = testCooldown(player, passive.name, passives);
+    if (ccd.time > 0) {
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    ccd.obj.setScore(player, passive.cooldown * 10);
+    
+    healEntity(player, damage * passive.value / 100);
+}
+
+function passivePoisonBlade(player, passive, entity) {
+    const ccd = testCooldown(player, passive.name, passives);
+    if (ccd.time > 0) {
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    ccd.obj.setScore(player, passive.cooldown * 10);
+    
+    entity.addEffect("poison", passive.value * 20, {amplifier: passive.value)});
+}
+
+function passiveExplosiveArrows(player, passive, event) {
+    const ccd = testCooldown(player, passive.name, passives);
+    if (ccd.time > 0) {
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    ccd.obj.setScore(player, passive.cooldown * 10);
+    
+    
 }
