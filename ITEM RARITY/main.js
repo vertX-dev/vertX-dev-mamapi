@@ -403,7 +403,7 @@ function rarityUpgrade(equipment, player, itemStack) {
         const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
         
         const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
-        console.log("Selection: " + raritySelectedIndex);
+        console.log(raritySelectedIndex);
         
         const upgradeCommands = [
             "rrs:common_upgrade",
@@ -440,27 +440,23 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
 
         switch (command) {
             case '.menu':
+                sender.runCommand("tell @s Your menu will open in 3 seconds.");
                 system.runTimeout(() => statsMainMenu(sender), 60);
                 break;
             case '.stats':
+                sender.runCommand("tell @s Your stats will open in 3 seconds.");
                 system.runTimeout(() => showStatsForm(sender), 60);
                 break;
-            case '.settings':
-                system.runTimeout(() => showSettingsForm(sender), 60);
-                break;
-            case '.disablepc':
-                system.runTimeout(() => {sender.removeTag("pc_mode")},20);
-                sender.sendMessage("§cPC MODE disabled.");
-                system.runTimeout(() => msifMenu(sender), 60);
-                break;
             case '.help':
+                sender.runCommand("tell @s You will see the available commands instantly.");
                 system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .upgrade, .help"), 0);
                 break;
             case '.upgrade':
+                sender.runCommand("tell @s Your upgrade menu will open in 3 seconds.");
                 system.runTimeout(() => upgradeMenu(sender), 60);
                 break;
             default:
-                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .upgrade, .help'), 0);
+                sender.runCommand("tell @s Unknown command. Use .stats, .menu, .upgrade, .help");
         }
     }
 });
