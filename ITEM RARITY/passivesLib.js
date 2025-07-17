@@ -207,37 +207,37 @@ export const passives = {
         min: 2,
         max: 3,
         description: "§7Arrows explode with power §x{x} §7on impact.",
-        cooldown: 100,
+        cooldown: 1000,
         scoreboard: "explosivearrows"
     },
     EXPLOSIVE_ARROWS_EPIC: {
         name: "§5Explosive Arrows",
         type: rangedWeapons,
         rarity: "Epic",
-        min: 3,
-        max: 4,
+        min: 4,
+        max: 5,
         description: "§7Arrows explode with power §x{x} §7on impact.",
-        cooldown: 80,
+        cooldown: 800,
         scoreboard: "explosivearrows"
     },
     EXPLOSIVE_ARROWS_LEGENDARY: {
         name: "§6Explosive Arrows",
         type: rangedWeapons,
         rarity: "Legendary",
-        min: 4,
-        max: 5,
+        min: 6,
+        max: 7,
         description: "§7Arrows explode with power §x{x} §7on impact.",
-        cooldown: 60,
+        cooldown: 600,
         scoreboard: "explosivearrows"
     },
     EXPLOSIVE_ARROWS_MYTHIC: {
         name: "§cExplosive Arrows",
         type: rangedWeapons,
         rarity: "Mythic",
-        min: 5,
-        max: 6,
+        min: 8,
+        max: 10,
         description: "§7Arrows explode with power §x{x} §7on impact.",
-        cooldown: 45,
+        cooldown: 450,
         scoreboard: "explosivearrows"
     },
 
