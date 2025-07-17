@@ -516,16 +516,24 @@ function blockUiAnvil(player) {
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
         .body(`${upgradeResource}\n ${lore}`)
-        .button(`§a§lUPGRADE§r ${rarity.color}${resourceAmount}`);
+        .button(`§a§lUPGRADE§r ${amountStatusColor}${resourceAmount}`)
+        .button('§c§lCLOSE', 'textures/ui/cancel');
         
         reforgeMenu.show(player).then((r) => {
-            if (!r.canceled && r.selection == 0) {
-                if (upgradeResource >= resourceAmount) {
+            if (!r.canceled) {
+                if (upgradeResource >= resourceAmount && r.selection == 0) {
                     player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
                     rarityItemTest(itemStack, player, rarity.sid, false);
+                    blockUiAnvil(player);
+                } else if (upgradeResource < resourceAmount) {
+                    system.runTimeout(() => player.sendMessage("Not enough resources for reforge"), 5);
+                    return;
                 }
-                system.runTimeout(() => blockUiAnvil(player), 2);
+                if (r.selection == 1) {
+                    return;
+               }
             }
+            return;
         });
 }
 //=====================================CORE GAME LOGIC===========================================
