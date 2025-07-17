@@ -497,6 +497,19 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
     }
 });
 
+world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
+    const block = ev.block;
+    const player = ev.player;
+    const itemStack = ev.itemStack;
+    if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
+    const loreArray = itemStack.getLore();
+    const lore = loreArray.join("\n");
+    let upgradeResource;
+    
+    const reforgeMenu = new ActionFormData()
+        .title("REFORGE MENU")
+        .body(`${upgradeResource}\n `)
+});
 
 //=====================================CORE GAME LOGIC===========================================
 
@@ -1109,6 +1122,7 @@ world.afterEvents.playerBreakBlock.subscribe((ev) => {
 
 // Initialize scoreboards immediately when the script loads
 system.runTimeout(() => {initializeScoreboards()}, 50);
+
 
 //=====================================SKILLS FUNCTIONALITY===========================================
 /**
