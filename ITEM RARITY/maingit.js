@@ -125,9 +125,6 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
     }
 ];
 
-const hpBar = {
-    
-}
 
 //=====================================UTILITY FUNCTIONS===========================================
 
@@ -168,7 +165,7 @@ function parseTags(itemId = "minecraft:apple") {
         if (itemId == blItem) {
             return {
                 rarity: false
-            }
+            };
         }
     }
 
@@ -1313,7 +1310,7 @@ function skillVoidPierce(player, skill) {
 }*/
 
 function passiveFrostTouch(player, passive, entity) {
-    const ccd = testCooldown(player, passive.name);
+    const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
