@@ -931,6 +931,12 @@ world.afterEvents.entityHurt.subscribe((ev) => {
         healEntity(player, (getScoreboardValue("lifesteal", player) / 100) * damage);
 
         const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
+        if (passive && passive.name) {
+            switch (passive.name.slice(2)) {
+                case 'Frost Touch':
+                    passiveFrostTouch(player, passive);
+            }
+        }
     }
 });
 
@@ -1301,3 +1307,13 @@ function skillVoidPierce(player, skill) {
     
 
 }*/
+
+function passiveFrostTouch(player, passive) {
+    const ccd = testCooldown(player, passive.name);
+    if (ccd.time > 0) {
+        player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    ccd.obj.setScore(player, passive.cooldown * 10);
+    
+}
