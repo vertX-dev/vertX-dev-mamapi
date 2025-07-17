@@ -126,6 +126,30 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
     {
         name: "lightningstrike",
         displayName: "lightning Strike"
+    },
+    {
+        name: "enderarrow",
+        displayName: "Ender Arrow"
+    },
+    {
+        name: "vampiric",
+        displayName: "Vampiric"
+    },
+    {
+        name: "berserker",
+        displayName: "Berserker"
+    },
+    {
+        name: "poisonblade",
+        displayName: "Poison Blade"
+    },
+    {
+        name: "explosivearrows",
+        displayName: "Explosive Arrows"
+    },
+    {
+        name: "dragonarmor",
+        displayName: "Dragon Armor"
     }
     
 ];
