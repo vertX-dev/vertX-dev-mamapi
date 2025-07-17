@@ -516,7 +516,8 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
         form.show(player).then((r) => {
             if (!r.canceled && r.selection == 0) {
                 if (upgradeResource >= 1) {
-                    
+                    player.runCommand(`clear @s minecraft:amethyst_shard 0 1`);
+                    rarityItemTest(item, player, rarityMap[raritySelectedIndex]);
                     
                     
                     
