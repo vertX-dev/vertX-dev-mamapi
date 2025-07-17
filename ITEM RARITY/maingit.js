@@ -515,7 +515,13 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
         
         form.show(player).then((r) => {
             if (!r.canceled && r.selection == 0) {
-                
+                if (upgradeResource >= 1) {
+                    
+                    
+                    
+                    
+                    
+                }
             }
         });
         
