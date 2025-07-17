@@ -563,8 +563,7 @@ function rarityUpgrade(equipment, player, itemStack) {
             
             // Map dropdown index to rarity sid
             const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
-            const raritySelected = rarityMap[raritySelectedIndex];
-            const RR = Object.values(RARITY).find(r => r.sid === raritySelected);
+            console.log("selection: " + raritySelectedIndex);
             
             const upgrades = [
                 "rrs:common_upgrade",
@@ -574,9 +573,11 @@ function rarityUpgrade(equipment, player, itemStack) {
                 "rrs:legendary_upgrade",
                 "rrs:mythic_upgrade"
             ]
-            if (item && item.typeId && countItemInInventory(player, upgrades[RR.id - 1]) >= 1) {
-                player.runCommand("clear @s " + upgrades[RR.id - 1] + " 0 1");
-                rarityItemTest(item, player, RR.sid);
+            if (item && item.typeId && countItemInInventory(player, upgrades[raritySelectedIndex]) >= 1) {
+                player.runCommand("clear @s " + upgrades[raritySelectedIndex] - 1
+                
+                ] + " 0 1");
+                rarityItemTest(item, player, rariryMap[raritySelectedIndex]);
             }
             
             // Return to main menu after processing
