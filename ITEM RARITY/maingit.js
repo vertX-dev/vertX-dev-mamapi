@@ -1428,5 +1428,5 @@ function passiveExplosiveArrows(player, passive, event) {
     }
     ccd.obj.setScore(player, passive.cooldown * 10);
     
-    
+    event.dimension.createExplosion(event.location, passive.value);
 }
