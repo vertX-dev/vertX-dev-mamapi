@@ -8,6 +8,7 @@ import {
 } from './mainLib.js';
 
 export const passives = {
+    // Existing Frost Touch passives
     FROST_TOUCH_RARE: {
         name: "§1Frost Touch",
         type: meleeWeapons,
@@ -47,5 +48,289 @@ export const passives = {
         description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powder snow below enemy§7.",
         cooldown: 30,
         scoreboard: "frosttouch"
+    },
+
+    // Lightning Strike passives
+    LIGHTNING_STRIKE_RARE: {
+        name: "§1Lightning Strike",
+        type: meleeWeapons,
+        rarity: "Rare",
+        min: 15,
+        max: 25,
+        description: "§7§x{x}% §7chance to strike lightning on enemy hit.",
+        cooldown: 80,
+        scoreboard: "lightningstrike"
+    },
+    LIGHTNING_STRIKE_EPIC: {
+        name: "§5Lightning Strike",
+        type: meleeWeapons,
+        rarity: "Epic",
+        min: 20,
+        max: 35,
+        description: "§7§x{x}% §7chance to strike lightning on enemy hit.",
+        cooldown: 60,
+        scoreboard: "lightningstrike"
+    },
+    LIGHTNING_STRIKE_LEGENDARY: {
+        name: "§6Lightning Strike",
+        type: meleeWeapons,
+        rarity: "Legendary",
+        min: 30,
+        max: 45,
+        description: "§7§x{x}% §7chance to strike lightning on enemy hit.",
+        cooldown: 40,
+        scoreboard: "lightningstrike"
+    },
+    LIGHTNING_STRIKE_MYTHIC: {
+        name: "§cLightning Strike",
+        type: meleeWeapons,
+        rarity: "Mythic",
+        min: 40,
+        max: 55,
+        description: "§7§x{x}% §7chance to strike lightning on enemy hit.",
+        cooldown: 30,
+        scoreboard: "lightningstrike"
+    },
+
+    // Vampiric passives (only during full moon)
+    VAMPIRIC_RARE: {
+        name: "§1Vampiric",
+        type: meleeWeapons,
+        rarity: "Rare",
+        min: 15,
+        max: 25,
+        description: "§7During full moon: Heal §x{x}% §7of damage dealt.",
+        cooldown: 0,
+        scoreboard: "vampiric"
+    },
+    VAMPIRIC_EPIC: {
+        name: "§5Vampiric",
+        type: meleeWeapons,
+        rarity: "Epic",
+        min: 20,
+        max: 35,
+        description: "§7During full moon: Heal §x{x}% §7of damage dealt.",
+        cooldown: 0,
+        scoreboard: "vampiric"
+    },
+    VAMPIRIC_LEGENDARY: {
+        name: "§6Vampiric",
+        type: meleeWeapons,
+        rarity: "Legendary",
+        min: 30,
+        max: 45,
+        description: "§7During full moon: Heal §x{x}% §7of damage dealt.",
+        cooldown: 0,
+        scoreboard: "vampiric"
+    },
+    VAMPIRIC_MYTHIC: {
+        name: "§cVampiric",
+        type: meleeWeapons,
+        rarity: "Mythic",
+        min: 40,
+        max: 60,
+        description: "§7During full moon: Heal §x{x}% §7of damage dealt.",
+        cooldown: 0,
+        scoreboard: "vampiric"
+    },
+
+    // Berserker passives
+    BERSERKER_RARE: {
+        name: "§1Berserker",
+        type: meleeWeapons,
+        rarity: "Rare",
+        min: 8,
+        max: 12,
+        description: "§7When below 30% health: Gain Speed I and Strength I for §x{x} §7seconds.",
+        cooldown: 120,
+        scoreboard: "berserker"
+    },
+    BERSERKER_EPIC: {
+        name: "§5Berserker",
+        type: meleeWeapons,
+        rarity: "Epic",
+        min: 10,
+        max: 15,
+        description: "§7When below 35% health: Gain Speed I and Strength I for §x{x} §7seconds.",
+        cooldown: 90,
+        scoreboard: "berserker"
+    },
+    BERSERKER_LEGENDARY: {
+        name: "§6Berserker",
+        type: meleeWeapons,
+        rarity: "Legendary",
+        min: 12,
+        max: 18,
+        description: "§7When below 40% health: Gain Speed II and Strength II for §x{x} §7seconds.",
+        cooldown: 70,
+        scoreboard: "berserker"
+    },
+    BERSERKER_MYTHIC: {
+        name: "§cBerserker",
+        type: meleeWeapons,
+        rarity: "Mythic",
+        min: 15,
+        max: 22,
+        description: "§7When below 45% health: Gain Speed II and Strength II for §x{x} §7seconds.",
+        cooldown: 50,
+        scoreboard: "berserker"
+    },
+
+    // Poison Blade passives
+    POISON_BLADE_RARE: {
+        name: "§1Poison Blade",
+        type: meleeWeapons,
+        rarity: "Rare",
+        min: 3,
+        max: 5,
+        description: "§7Apply Poison I for §x{x} §7seconds on hit.",
+        cooldown: 60,
+        scoreboard: "poisonblade"
+    },
+    POISON_BLADE_EPIC: {
+        name: "§5Poison Blade",
+        type: meleeWeapons,
+        rarity: "Epic",
+        min: 4,
+        max: 7,
+        description: "§7Apply Poison I for §x{x} §7seconds on hit.",
+        cooldown: 45,
+        scoreboard: "poisonblade"
+    },
+    POISON_BLADE_LEGENDARY: {
+        name: "§6Poison Blade",
+        type: meleeWeapons,
+        rarity: "Legendary",
+        min: 5,
+        max: 8,
+        description: "§7Apply Poison II for §x{x} §7seconds on hit.",
+        cooldown: 35,
+        scoreboard: "poisonblade"
+    },
+
+    // Explosive Arrows passives
+    EXPLOSIVE_ARROWS_RARE: {
+        name: "§1Explosive Arrows",
+        type: rangedWeapons,
+        rarity: "Rare",
+        min: 2,
+        max: 3,
+        description: "§7Arrows explode with power §x{x} §7on impact.",
+        cooldown: 100,
+        scoreboard: "explosivearrows"
+    },
+    EXPLOSIVE_ARROWS_EPIC: {
+        name: "§5Explosive Arrows",
+        type: rangedWeapons,
+        rarity: "Epic",
+        min: 3,
+        max: 4,
+        description: "§7Arrows explode with power §x{x} §7on impact.",
+        cooldown: 80,
+        scoreboard: "explosivearrows"
+    },
+    EXPLOSIVE_ARROWS_LEGENDARY: {
+        name: "§6Explosive Arrows",
+        type: rangedWeapons,
+        rarity: "Legendary",
+        min: 4,
+        max: 5,
+        description: "§7Arrows explode with power §x{x} §7on impact.",
+        cooldown: 60,
+        scoreboard: "explosivearrows"
+    },
+    EXPLOSIVE_ARROWS_MYTHIC: {
+        name: "§cExplosive Arrows",
+        type: rangedWeapons,
+        rarity: "Mythic",
+        min: 5,
+        max: 6,
+        description: "§7Arrows explode with power §x{x} §7on impact.",
+        cooldown: 45,
+        scoreboard: "explosivearrows"
+    },
+
+    // Ender Arrow passives
+    ENDER_ARROW_RARE: {
+        name: "§1Ender Arrow",
+        type: rangedWeapons,
+        rarity: "Rare",
+        min: 25,
+        max: 35,
+        description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
+        cooldown: 0,
+        scoreboard: "enderarrow"
+    },
+    ENDER_ARROW_EPIC: {
+        name: "§5Ender Arrow",
+        type: rangedWeapons,
+        rarity: "Epic",
+        min: 35,
+        max: 50,
+        description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
+        cooldown: 0,
+        scoreboard: "enderarrow"
+    },
+    ENDER_ARROW_LEGENDARY: {
+        name: "§6Ender Arrow",
+        type: rangedWeapons,
+        rarity: "Legendary",
+        min: 50,
+        max: 70,
+        description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
+        cooldown: 0,
+        scoreboard: "enderarrow"
+    },
+    ENDER_ARROW_MYTHIC: {
+        name: "§cEnder Arrow",
+        type: rangedWeapons,
+        rarity: "Mythic",
+        min: 70,
+        max: 90,
+        description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
+        cooldown: 0,
+        scoreboard: "enderarrow"
+    },
+
+    // Dragon Armor passives
+    DRAGON_ARMOR_RARE: {
+        name: "§1Dragon Armor",
+        type: allArmor,
+        rarity: "Rare",
+        min: 8,
+        max: 12,
+        description: "§7When receiving fire damage: Gain Fire Resistance I, Resistance I, and Regeneration I for §x{x} §7seconds.",
+        cooldown: 180,
+        scoreboard: "dragonarmor"
+    },
+    DRAGON_ARMOR_EPIC: {
+        name: "§5Dragon Armor",
+        type: allArmor,
+        rarity: "Epic",
+        min: 10,
+        max: 15,
+        description: "§7When receiving fire damage: Gain Fire Resistance I, Resistance I, and Regeneration I for §x{x} §7seconds.",
+        cooldown: 150,
+        scoreboard: "dragonarmor"
+    },
+    DRAGON_ARMOR_LEGENDARY: {
+        name: "§6Dragon Armor",
+        type: allArmor,
+        rarity: "Legendary",
+        min: 12,
+        max: 18,
+        description: "§7When receiving fire damage: Gain Fire Resistance II, Resistance II, and Regeneration II for §x{x} §7seconds.",
+        cooldown: 120,
+        scoreboard: "dragonarmor"
+    },
+    DRAGON_ARMOR_MYTHIC: {
+        name: "§cDragon Armor",
+        type: allArmor,
+        rarity: "Mythic",
+        min: 15,
+        max: 22,
+        description: "§7When receiving fire damage: Gain Fire Resistance II, Resistance II, and Regeneration II for §x{x} §7seconds.",
+        cooldown: 90,
+        scoreboard: "dragonarmor"
     }
 };
