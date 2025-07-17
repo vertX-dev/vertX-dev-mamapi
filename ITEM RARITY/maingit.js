@@ -1420,8 +1420,9 @@ function passiveVampiric(player, passive, damage) {
         return;
     }
     ccd.obj.setScore(player, passive.cooldown * 10);
-    
-    healEntity(player, damage * passive.value / 100);
+    if (world.getMoonPhase() == MoonPhase.FullMoon && world.getTimeOfDay() >= 13500) {
+        healEntity(player, damage * passive.value / 100);
+    }
 }
 
 function passivePoisonBlade(player, passive, entity) {
