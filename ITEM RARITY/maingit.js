@@ -501,8 +501,8 @@ world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
     const block = ev.block;
     const player = ev.player;
     const itemStack = ev.itemStack;
-    if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
-    system.runTimeout(() => blockUiAnvil(block, player), 10);
+    if (!itemStack || !block || !player || block.typeId != "minecraft:diamond_block") return;
+    system.runTimeout(() => blockUiAnvil(player), 10);
 });
 
 function blockUiAnvil(player) {
@@ -518,7 +518,7 @@ function blockUiAnvil(player) {
         .body(`${upgradeResource}\n ${lore}`)
         .button(`§a§lUPGRADE§r ${rarity.color}${resourceAmount}`);
         
-        form.show(player).then((r) => {
+        reforgeMenu.show(player).then((r) => {
             if (!r.canceled && r.selection == 0) {
                 if (upgradeResource >= resourceAmount) {
                     player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
