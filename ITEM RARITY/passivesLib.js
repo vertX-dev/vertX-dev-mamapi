@@ -27,5 +27,25 @@ export const passives = {
         description: "§7Slow enemy for §x{x} \n§7seconds on hit",
         cooldown: 30,
         scoreboard: "frosttouch"
+    },
+    FROST_TOUCH_LEGENDARY: {
+        name: "§6Frost Touch",
+        type: meleeWeapons,
+        rarity: "Legendary",
+        min: 2,
+        max: 3,
+        description: "§7Slow enemy for §x{x} \n§7seconds on hit",
+        cooldown: 30,
+        scoreboard: "frosttouch"
+    },
+    FROST_TOUCH_MYTHIC: {
+        name: "§cFrost Touch",
+        type: meleeWeapons,
+        rarity: "Mythic",
+        min: 3,
+        max: 3,
+        description: "§7Slow enemy for §x{x} \n§7seconds on hit",
+        cooldown: 30,
+        scoreboard: "frosttouch"
     }
 };
