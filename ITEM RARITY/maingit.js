@@ -122,7 +122,12 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
     {
         name: "frosttouch",
         displayName: "Frost Touch"
+    },
+    {
+        name: "lightningstrike",
+        displayName: "lightning Strike"
     }
+    
 ];
 
 
@@ -940,6 +945,10 @@ world.afterEvents.entityHurt.subscribe((ev) => {
             switch (passive.name.slice(2)) {
                 case 'Frost Touch':
                     passiveFrostTouch(player, passive, mob);
+                    break;
+                case 'Lightning Strike':
+                    passiveLightningStrike(player, passive, mob);
+                    break;
             }
         }
     }
@@ -955,23 +964,24 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
 
     const mob = entityHit.entity;
 
+    let damage = calculateDamage(player, 6);
     if (mob.typeId !== "minecraft:enderman") {
-        let damage = calculateDamage(player, 8);
-
         mob.applyDamage(damage);
 
         healEntity(player, ((getScoreboardValue("lifesteal", player) / 100) * damage) / 2);
-
-        // DO: Trigger passive abilities on shooting projectile
-        // const equipment = player.getComponent("minecraft:equippable");
-        // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
-        // for (const slot of slots) {
-        //     const passive = parseLoreToPassive(equipment, slot);
-        //     if (passive.name) {
-        //         // Apply passive effects that trigger on shooting projectiles
-        //     }
-        // }
     }
+    
+    const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
+        if (passive && passive.name) {
+            switch (passive.name.slice(2)) {
+                case 'Ender Arrow':
+                    passiveEnderArrow(player, passive, mob);
+                    break;
+                case 'Lightning Strike':
+                    passiveLightningStrike(player, passive, mob, damage);
+                    break;
+            }
+        }
 });
 
 // Skill activation event handler
@@ -1327,5 +1337,31 @@ function passiveFrostTouch(player, passive, entity) {
         const posY = entity.position.y;
         const posZ = entity.position.z;
         entity.runCommand(`setblock ${posX} ${posY - 1} ${posZ} powder_snow`);
+    }
+}
+
+function passiveLightningStrike(player, passive, entity) {
+    const ccd = testCooldown(player, passive.name, passives);
+    if (ccd.time > 0) {
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    ccd.obj.setScore(player, passive.cooldown * 10);
+    if (Math.random() <= passive.value) {
+        entity.dimension.spawnEntity("lightning_bolt", entity.location);
+    }
+}
+
+function passiveEnderArrow(player, passive, entity, damage) {
+    const ccd = testCooldown(player, passive.name, passives);
+    if (ccd.time > 0) {
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    
+    if (entity.typeId == "minecraft:enderman" && Math.random() <= passive.value) {
+        entity.applyDamage(damage);
+        ccd.obj.setScore(player, passive.cooldown * 10);
+        entity.runCommand("particle minecraft:")
     }
 }
