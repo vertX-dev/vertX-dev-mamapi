@@ -504,11 +504,14 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
     if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
     const loreArray = itemStack.getLore();
     const lore = loreArray.join("\n");
-    let upgradeResource;
+    const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
-        .body(`${upgradeResource}\n `)
+        .body(`${upgradeResource}\n `)
+        
+        
+        
 });
 
 //=====================================CORE GAME LOGIC===========================================
