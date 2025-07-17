@@ -512,6 +512,8 @@ function blockUiAnvil(player) {
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     const resourceAmount = rarity.id * 3;
+    let amountStatusColor = "§a";
+    if (upgradeResource < resourceAmount) amountStatusColor = "§c";
     
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
