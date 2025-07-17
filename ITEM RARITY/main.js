@@ -133,7 +133,7 @@ function getUpgradeRarityIcon(rarity) {
 }
 
 function getUpgradeTemplates(player) {
-    return `${countItemInInventory(player, "rss:common_upgrade")}   ${countItemInInventory(player, "rss:uncommon_upgrade")}   ${countItemInInventory(player, "rss:rare_upgrade")}   ${countItemInInventory(player, "rss:epic_upgrade")}   ${countItemInInventory(player, "rss:legendary_upgrade")}   ${countItemInInventory(player, "rss:mythic_upgrade")}`;
+    return `${countItemInInventory(player, "rrs:common_upgrade")}   ${countItemInInventory(player, "rrs:uncommon_upgrade")}   ${countItemInInventory(player, "rrs:rare_upgrade")}   ${countItemInInventory(player, "rrs:epic_upgrade")}   ${countItemInInventory(player, "rrs:legendary_upgrade")}   ${countItemInInventory(player, "rrs:mythic_upgrade")}`;
 }
 
 function countItemInInventory(player, itemId) {
@@ -379,7 +379,8 @@ function displayUpgradeOptions(equipment, player, itemStack) {
 }
 
 function rarityUpgrade(equipment, player, itemStack) {
-    const upgrades = getUpgradeTemplates(player);
+    const upgradesTemplates = getUpgradeTemplates(player);
+
     let rarity = [
         "§7Common ",
         "§aUncommon ",
@@ -387,36 +388,44 @@ function rarityUpgrade(equipment, player, itemStack) {
         "§5Epic ",
         "§6Legendary ",
         "§cMythic "
-    ]
+    ];
+    
     const form = new ModalFormData()
         .title("§aRARITY UPGRADE")
-        .label(`${getUpgradeTemplates(player)}`)
+        .label(`${upgradesTemplates}`) // Double-check if this displays correctly.
         .dropdown("Rarity upgrades", rarity)
         .submitButton("UPGRADE");
-        form.show(player).then((r) => {
-            if (r.canceled) return;
-            const raritySelectedIndex = r.formValues[0]; // dropdown selection index
-            const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+
+    form.show(player).then((r) => {
+        if (r.canceled) return;
+        
+        const raritySelectedIndex = r.formValues[0]; // dropdown selection index
+        const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+        
+        const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
+        console.log("Selection: " + raritySelectedIndex);
+        
+        const upgradeCommands = [
+            "rrs:common_upgrade",
+            "rrs:uncommon_upgrade",
+            "rrs:rare_upgrade",
+            "rrs:epic_upgrade",
+            "rrs:legendary_upgrade",
+            "rrs:mythic_upgrade"
+        ];
+
+        // Ensure item is valid and player has enough upgrade items in inventory
+        if (item && item.typeId && countItemInInventory(player, upgradeCommands[raritySelectedIndex]) >= 1) {
+            player.runCommand(`clear @s ${upgradeCommands[raritySelectedIndex]} 0 1`);
+            rarityItemTest(item, player, rarityMap[raritySelectedIndex]);
             
-            // Map dropdown index to rarity sid
-            const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
-            console.log("selection: " + raritySelectedIndex);
-            
-            const upgrades = [
-                "rrs:common_upgrade",
-                "rrs:uncommon_upgrade",
-                "rrs:rare_upgrade",
-                "rrs:epic_upgrade",
-                "rrs:legendary_upgrade",
-                "rrs:mythic_upgrade"
-            ]
-            if (item && item.typeId && countItemInInventory(player, upgrades[raritySelectedIndex]) >= 1) {
-                player.runCommand("clear @s " + upgrades[raritySelectedIndex] - 1
-                
-                ] + " 0 1");
-                rarityItemTest(item, player, rariryMap[raritySelectedIndex]);
-            }
-        });
+            // Inform the player of the successful upgrade
+            player.sendMessage(`§aSuccess! Your item has been upgraded to ${rarityMap[raritySelectedIndex]}!`);
+        } else {
+            // Inform the player they lack the required item
+            player.sendMessage("§cError: You do not have the required upgrade item in your inventory.");
+        }
+    });
 }
 
 // Chat commands
