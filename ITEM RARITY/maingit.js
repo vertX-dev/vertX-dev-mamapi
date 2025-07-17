@@ -1003,20 +1003,35 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
     
     const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
     if (passive && passive.name) {
-            switch (passive.name.slice(2)) {
-                case 'Ender Arrow':
-                    passiveEnderArrow(player, passive, mob);
-                    break;
-                case 'Lightning Strike':
-                    passiveLightningStrike(player, passive, mob, damage);
-                    break;
-                case: 'Explosive Arrows':
-                    passiveExplosiveArrows(player, passive, ev);
-                    break;
-            }
+        switch (passive.name.slice(2)) {
+            case 'Ender Arrow':
+                passiveEnderArrow(player, passive, mob);
+                break;
+            case 'Lightning Strike':
+                passiveLightningStrike(player, passive, mob, damage);
+                break;
+            case: 'Explosive Arrows':
+                passiveExplosiveArrows(player, passive, ev);
+                break;
         }
+    }
 });
 
+world.afterEvents.projectileHitBlock.subscribe((ev) => {
+    if (!ev.source || ev.source.typeId !== "minecraft:player") return;
+
+    
+    
+    
+    const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
+    if (passive && passive.name) {
+        switch (passive.name.slice(2)) {
+            case: 'Explosive Arrows':
+                passiveExplosiveArrows(player, passive, ev);
+                break;
+        }
+    }
+});
 // Skill activation event handler
 world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
