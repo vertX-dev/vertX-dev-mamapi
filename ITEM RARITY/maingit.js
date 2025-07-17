@@ -503,12 +503,13 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
     const itemStack = ev.itemStack;
     if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
     const loreArray = itemStack.getLore();
+    const costMultiplier = Object.values(RARITY).find(r => r.dName == loreArray[0]);
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
-        .body(`${upgradeResource}\n `)
+        .body(`${upgradeResource}\n ${lore}`)
         
         
         
