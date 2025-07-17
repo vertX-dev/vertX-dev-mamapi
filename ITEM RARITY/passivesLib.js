@@ -258,7 +258,7 @@ export const passives = {
         min: 25,
         max: 35,
         description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
-        cooldown: 0,
+        cooldown: 150,
         scoreboard: "enderarrow"
     },
     ENDER_ARROW_EPIC: {
@@ -268,7 +268,7 @@ export const passives = {
         min: 35,
         max: 50,
         description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
-        cooldown: 0,
+        cooldown: 110,
         scoreboard: "enderarrow"
     },
     ENDER_ARROW_LEGENDARY: {
@@ -278,17 +278,17 @@ export const passives = {
         min: 50,
         max: 70,
         description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
-        cooldown: 0,
+        cooldown: 70,
         scoreboard: "enderarrow"
     },
     ENDER_ARROW_MYTHIC: {
         name: "§cEnder Arrow",
         type: rangedWeapons,
         rarity: "Mythic",
-        min: 70,
-        max: 90,
+        min: 90,
+        max: 100,
         description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
-        cooldown: 0,
+        cooldown: 30,
         scoreboard: "enderarrow"
     }
 
