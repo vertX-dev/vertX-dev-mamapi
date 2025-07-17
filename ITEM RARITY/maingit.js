@@ -1005,10 +1005,10 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
     if (passive && passive.name) {
         switch (passive.name.slice(2)) {
             case 'Ender Arrow':
-                passiveEnderArrow(player, passive, mob);
+                passiveEnderArrow(player, passive, mob, damage);
                 break;
             case 'Lightning Strike':
-                passiveLightningStrike(player, passive, mob, damage);
+                passiveLightningStrike(player, passive, mob);
                 break;
             case 'Explosive Arrows':
                 passiveExplosiveArrows(player, passive, ev);
@@ -1019,7 +1019,7 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
 
 world.afterEvents.projectileHitBlock.subscribe((ev) => {
     if (!ev.source || ev.source.typeId !== "minecraft:player") return;
-
+    const player = ev.source;
     
     
     
@@ -1394,7 +1394,7 @@ function passiveLightningStrike(player, passive, entity) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
-    if (Math.random() <= passive.value) {
+    if (Math.random() <= (passive.value / 100)) {
         ccd.obj.setScore(player, passive.cooldown * 10);
         entity.dimension.spawnEntity("lightning_bolt", entity.location);
     }
