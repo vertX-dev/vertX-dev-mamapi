@@ -14,7 +14,7 @@ export const passives = {
         rarity: "Rare",
         min: 1,
         max: 2,
-        description: "§7Slow enemy for §x{x} \n§7seconds on hit",
+        description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powdered snow below enemy§7.",
         cooldown: 50,
         scoreboard: "frosttouch"
     },
@@ -24,7 +24,7 @@ export const passives = {
         rarity: "Epic",
         min: 1,
         max: 3,
-        description: "§7Slow enemy for §x{x} \n§7seconds on hit",
+        description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powdered snow below enemy§7.",
         cooldown: 30,
         scoreboard: "frosttouch"
     },
@@ -34,7 +34,7 @@ export const passives = {
         rarity: "Legendary",
         min: 2,
         max: 3,
-        description: "§7Slow enemy for §x{x} \n§7seconds on hit",
+        description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powdered snow below enemy§7.",
         cooldown: 30,
         scoreboard: "frosttouch"
     },
@@ -44,7 +44,7 @@ export const passives = {
         rarity: "Mythic",
         min: 3,
         max: 3,
-        description: "§7Slow enemy for §x{x} \n§7seconds on hit",
+        description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powdered snow below enemy§7.",
         cooldown: 30,
         scoreboard: "frosttouch"
     }
