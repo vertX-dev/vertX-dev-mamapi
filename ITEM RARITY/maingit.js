@@ -511,24 +511,25 @@ function blockUiAnvil(player) {
     const rarity = Object.values(RARITY).find(r => r.dName == loreArray[0]);
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
+    const resourceAmount = rarity.id * 3;
     //TODO: add xp cost
     
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
         .body(`${upgradeResource}\n ${lore}`)
-        .button(`§a§lUPGRADE§r ${rarity.color}$1`);
+        .button(`§a§lUPGRADE§r ${rarity.color}${resourceAmount}`);
         
         form.show(player).then((r) => {
             if (!r.canceled && r.selection == 0) {
-                if (upgradeResource >= 1) {
-                    player.runCommand(`clear @s minecraft:amethyst_shard 0 1`);
+                if (upgradeResource >= resourceAmount) {
+                    player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
                     rarityItemTest(itemStack, player, rarity.sid, false);
                     
                     
                     
                     
                 }
-                blockUiAnvil(player);
+                system.runTimeout(() => blockUiAnvil(player), 2);
             }
         });
 }
