@@ -512,7 +512,6 @@ function blockUiAnvil(player) {
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     const resourceAmount = rarity.id * 3;
-    //TODO: add xp cost
     
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
@@ -524,10 +523,6 @@ function blockUiAnvil(player) {
                 if (upgradeResource >= resourceAmount) {
                     player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
                     rarityItemTest(itemStack, player, rarity.sid, false);
-                    
-                    
-                    
-                    
                 }
                 system.runTimeout(() => blockUiAnvil(player), 2);
             }
