@@ -934,7 +934,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
         if (passive && passive.name) {
             switch (passive.name.slice(2)) {
                 case 'Frost Touch':
-                    passiveFrostTouch(player, passive);
+                    passiveFrostTouch(player, passive, mob);
             }
         }
     }
@@ -1308,7 +1308,7 @@ function skillVoidPierce(player, skill) {
 
 }*/
 
-function passiveFrostTouch(player, passive) {
+function passiveFrostTouch(player, passive, entity) {
     const ccd = testCooldown(player, passive.name);
     if (ccd.time > 0) {
         player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1316,4 +1316,11 @@ function passiveFrostTouch(player, passive) {
     }
     ccd.obj.setScore(player, passive.cooldown * 10);
     
+    entity.addEffect("slowness", passive.value * 20, {amplifier: 2})
+    if (Math.random() > 0.95) {
+        const posX = entity.position.x;
+        const posY = entity.position.y;
+        const posZ = entity.position.z;
+        entity.runCommand(`setblock ${posX} ${posY - 1} ${posZ} powdered_snow`);
+    }
 }
