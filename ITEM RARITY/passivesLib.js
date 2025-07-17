@@ -173,7 +173,7 @@ export const passives = {
         rarity: "Rare",
         min: 3,
         max: 5,
-        description: "§7Apply Poison §x{x} for §x{x} §7seconds on hit.",
+        description: "§7Apply Poison for §x{x} §7seconds on hit.",
         cooldown: 100,
         scoreboard: "poisonblade"
     },
@@ -183,7 +183,7 @@ export const passives = {
         rarity: "Epic",
         min: 4,
         max: 7,
-        description: "§7Apply Poison §x{x} for §x{x} §7seconds on hit.",
+        description: "§7Apply Poison for §x{x} §7seconds on hit.",
         cooldown: 50,
         scoreboard: "poisonblade"
     },
@@ -193,7 +193,7 @@ export const passives = {
         rarity: "Legendary",
         min: 5,
         max: 8,
-        description: "§7Apply Poison §x{x} for §x{x} §7seconds on hit.",
+        description: "§7Apply Poison for §x{x} §7seconds on hit.",
         cooldown: 15,
         scoreboard: "poisonblade"
     },
