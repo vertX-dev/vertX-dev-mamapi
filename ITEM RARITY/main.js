@@ -133,7 +133,7 @@ function getUpgradeRarityIcon(rarity) {
 }
 
 function getUpgradeTemplates(player) {
-    return `${countItemInInventory(player, "rrs:common_upgrade")}   ${countItemInInventory(player, "rrs:uncommon_upgrade")}   ${countItemInInventory(player, "rrs:rare_upgrade")}   ${countItemInInventory(player, "rrs:epic_upgrade")}   ${countItemInInventory(player, "rrs:legendary_upgrade")}   ${countItemInInventory(player, "rrs:mythic_upgrade")}`;
+    return `${countItemInInventory(player, "rss:common_upgrade")}   ${countItemInInventory(player, "rss:uncommon_upgrade")}   ${countItemInInventory(player, "rss:rare_upgrade")}   ${countItemInInventory(player, "rss:epic_upgrade")}   ${countItemInInventory(player, "rss:legendary_upgrade")}   ${countItemInInventory(player, "rss:mythic_upgrade")}`;
 }
 
 function countItemInInventory(player, itemId) {
