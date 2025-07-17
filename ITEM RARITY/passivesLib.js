@@ -53,7 +53,7 @@ export const passives = {
     // Lightning Strike passives
     LIGHTNING_STRIKE_RARE: {
         name: "§1Lightning Strike",
-        type: meleeWeapons,
+        type: allWeapons,
         rarity: "Rare",
         min: 5,
         max: 7,
@@ -63,7 +63,7 @@ export const passives = {
     },
     LIGHTNING_STRIKE_EPIC: {
         name: "§5Lightning Strike",
-        type: meleeWeapons,
+        type: allWeapons,
         rarity: "Epic",
         min: 7,
         max: 10,
@@ -73,7 +73,7 @@ export const passives = {
     },
     LIGHTNING_STRIKE_LEGENDARY: {
         name: "§6Lightning Strike",
-        type: meleeWeapons,
+        type: allWeapons,
         rarity: "Legendary",
         min: 10,
         max: 15,
@@ -83,7 +83,7 @@ export const passives = {
     },
     LIGHTNING_STRIKE_MYTHIC: {
         name: "§cLightning Strike",
-        type: meleeWeapons,
+        type: allWeapons,
         rarity: "Mythic",
         min: 15,
         max: 25,
