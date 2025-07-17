@@ -1362,6 +1362,5 @@ function passiveEnderArrow(player, passive, entity, damage) {
     if (entity.typeId == "minecraft:enderman" && Math.random() <= passive.value) {
         entity.applyDamage(damage);
         ccd.obj.setScore(player, passive.cooldown * 10);
-        entity.runCommand("particle minecraft:mob_portal ~~~");
     }
 }
