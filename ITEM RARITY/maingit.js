@@ -11,7 +11,13 @@ import {
     FormCancelationReason,
     uiManager
 } from "@minecraft/server-ui";
-import {
+import { 
+    allWeapons, 
+    allArmor, 
+    meleeWeapons,
+    rangedWeapons,
+    tools,
+    allItems,
     RARITY,
     blackList,
     TagMapping
@@ -918,22 +924,13 @@ world.afterEvents.entityHurt.subscribe((ev) => {
     const mob = ev.hurtEntity;
     let damage = calculateDamage(player, ev.damage);
 
-    let canMelee = ["sword", "axe", "pickaxe", "trident", "mace"];
-    if (canMelee.includes(parseTags(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand)?.typeId).data)) {
+    if (meleeWeapons.includes(parseTags(player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand)?.typeId).data)) {
 
         mob.applyDamage(damage);
 
         healEntity(player, (getScoreboardValue("lifesteal", player) / 100) * damage);
 
-        // DO: Trigger passive abilities on hitting entity
-        // const equipment = player.getComponent("minecraft:equippable");
-        // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
-        // for (const slot of slots) {
-        //     const passive = parseLoreToPassive(equipment, slot);
-        //     if (passive.name) {
-        //         // Apply passive effects that trigger on hitting entities
-        //     }
-        // }
+        const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
     }
 });
 
