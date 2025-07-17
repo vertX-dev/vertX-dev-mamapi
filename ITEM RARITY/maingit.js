@@ -1432,7 +1432,7 @@ function passivePoisonBlade(player, passive, entity) {
     }
     ccd.obj.setScore(player, passive.cooldown * 10);
     
-    entity.addEffect("poison", passive.value * 20, {amplifier: passive.value)});
+    entity.addEffect("poison", passive.value * 20, {amplifier: passive.value});
 }
 
 function passiveExplosiveArrows(player, passive, event) {
