@@ -173,8 +173,8 @@ export const passives = {
         rarity: "Rare",
         min: 3,
         max: 5,
-        description: "§7Apply Poison I for §x{x} §7seconds on hit.",
-        cooldown: 60,
+        description: "§7Apply Poison §x{x} for §x{x} §7seconds on hit.",
+        cooldown: 100,
         scoreboard: "poisonblade"
     },
     POISON_BLADE_EPIC: {
@@ -183,8 +183,8 @@ export const passives = {
         rarity: "Epic",
         min: 4,
         max: 7,
-        description: "§7Apply Poison I for §x{x} §7seconds on hit.",
-        cooldown: 45,
+        description: "§7Apply Poison §x{x} for §x{x} §7seconds on hit.",
+        cooldown: 50,
         scoreboard: "poisonblade"
     },
     POISON_BLADE_LEGENDARY: {
@@ -193,10 +193,11 @@ export const passives = {
         rarity: "Legendary",
         min: 5,
         max: 8,
-        description: "§7Apply Poison II for §x{x} §7seconds on hit.",
-        cooldown: 35,
+        description: "§7Apply Poison §x{x} for §x{x} §7seconds on hit.",
+        cooldown: 15,
         scoreboard: "poisonblade"
     },
+    
 
     // Explosive Arrows passives
     EXPLOSIVE_ARROWS_RARE: {
