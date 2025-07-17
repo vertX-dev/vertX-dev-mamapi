@@ -688,37 +688,37 @@ function randomPassiveAbility(rarity, type) {
     return result;
 }
 
-function rarityItemTest(itemStack, player, rarityUp = "Common") {
+function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false) {
     if (!itemStack || !player) return;
 
     const lore = itemStack.getLore() ?? [];
 
-    if (lore.length === 0 || rarityUp != "Common") {
+    if (lore.length === 0 || rarityUp != "None") {
         const Tags = parseTags(itemStack.typeId);
 
         if (Tags && Tags.rarity) {
-            if (rarityUp === "Common") {
+            if (rarityUp === "None") {
                 // New item gets random rarity
                 const rarity = randomRarity();
 
-            const stats = randomStats(rarity.sid, Tags.data);
+                const stats = randomStats(rarity.sid, Tags.data);
 
-            const skill = randomSkill(rarity.sid, Tags.data);
+                const skill = randomSkill(rarity.sid, Tags.data);
 
-            const passive = randomPassiveAbility(rarity.sid, Tags.data);
+                const passive = randomPassiveAbility(rarity.sid, Tags.data);
 
-            const newLore = [rarity.dName, ...stats, ...skill, ...passive];
+                const newLore = [rarity.dName, ...stats, ...skill, ...passive];
 
-            try {
-                let newItem = itemStack.clone();
-                newItem.setLore(newLore);
-                const equippable = player.getComponent("minecraft:equippable");
-                if (equippable) {
-                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                try {
+                    let newItem = itemStack.clone();
+                    newItem.setLore(newLore);
+                    const equippable = player.getComponent("minecraft:equippable");
+                    if (equippable) {
+                        equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                    }
+                } catch (error) {
+                    console.warn("Error applying rarity:", error);
                 }
-            } catch (error) {
-                console.warn("Error applying rarity:", error);
-            }
             } else {
                 // Upgrade to specific rarity
                 const rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
