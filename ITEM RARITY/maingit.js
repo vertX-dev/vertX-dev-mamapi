@@ -453,7 +453,7 @@ function rarityUpgrade(equipment, player, itemStack) {
         // Ensure item is valid and player has enough upgrade items in inventory
         if (item && item.typeId && countItemInInventory(player, upgradeCommands[raritySelectedIndex]) >= 1) {
             player.runCommand(`clear @s ${upgradeCommands[raritySelectedIndex]} 0 1`);
-            rarityItemTest(item, player, rarityMap[raritySelectedIndex]);
+            rarityItemTest(item, player, rarityMap[raritySelectedIndex], true);
             
             // Inform the player of the successful upgrade
             player.sendMessage(`§aSuccess! Your item has been upgraded to ${rarityMap[raritySelectedIndex]}!`);
@@ -721,7 +721,11 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
                 }
             } else {
                 // Upgrade to specific rarity
-                const rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
+                let rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
+                if (!upGuarant) {
+                    const id = rarity.id - Math.floor(Math.random() * 2);
+                    
+                }
                 
                 const stats = randomStats(rarity.sid, Tags.data);
 
