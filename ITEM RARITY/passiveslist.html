@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Passives Display</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Orbitron', monospace;
+            min-height: 100vh;
+            color: #ecf0f1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 2px solid #444;
+        }
+        
+        .title {
+            text-align: center;
+            color: #ecf0f1;
+            font-size: 2.5em;
+            font-weight: 900;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        .passives-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+        
+        .passive-category {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .category-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #3498db;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .passive-item {
+            display: flex;
+            flex-direction: column;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .passive-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(3px);
+        }
+        
+        .passive-name {
+            font-size: 1.1em;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            margin-bottom: 8px;
+        }
+        
+        .passive-values {
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .passive-description {
+            font-size: 0.85em;
+            opacity: 0.9;
+            line-height: 1.4;
+            margin-bottom: 5px;
+        }
+        
+        .passive-cooldown {
+            font-size: 0.8em;
+            opacity: 0.7;
+            font-style: italic;
+        }
+        
+        .rarity-label {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        
+        /* Rarity Colors */
+        .common {
+            color: #95a5a6;
+            border-left-color: #95a5a6;
+        }
+        .common .passive-values {
+            color: #95a5a6;
+        }
+        
+        .uncommon {
+            color: #2ecc71;
+            border-left-color: #2ecc71;
+        }
+        .uncommon .passive-values {
+            color: #2ecc71;
+        }
+        
+        .rare {
+            color: #3498db;
+            border-left-color: #3498db;
+        }
+        .rare .passive-values {
+            color: #3498db;
+        }
+        
+        .epic {
+            color: #9b59b6;
+            border-left-color: #9b59b6;
+        }
+        .epic .passive-values {
+            color: #9b59b6;
+        }
+        
+        .legendary {
+            color: #f39c12;
+            border-left-color: #f39c12;
+        }
+        .legendary .passive-values {
+            color: #f39c12;
+        }
+        
+        .mythic {
+            color: #e74c3c;
+            border-left-color: #e74c3c;
+        }
+        .mythic .passive-values {
+            color: #e74c3c;
+        }
+        
+        .frost-category { background: rgba(52, 152, 219, 0.1); }
+        .lightning-category { background: rgba(241, 196, 15, 0.1); }
+        .vampiric-category { background: rgba(231, 76, 60, 0.1); }
+        .poison-category { background: rgba(46, 204, 113, 0.1); }
+        .explosive-category { background: rgba(230, 126, 34, 0.1); }
+        .ender-category { background: rgba(155, 89, 182, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">MINECRAFT PASSIVES SYSTEM</div>
+        
+        <div class="passives-grid">
+            <!-- FROST TOUCH -->
+            <div class="passive-category frost-category">
+                <div class="category-title">❄️ FROST TOUCH</div>
+                <div class="passive-item rare">
+                    <div class="passive-name">Frost Touch <span class="rarity-label">RARE</span></div>
+                    <div class="passive-values">Duration: 1-2 seconds</div>
+                    <div class="passive-description">Slow enemy on hit. 5% chance to set powdered snow below enemy.</div>
+                    <div class="passive-cooldown">Cooldown: 50 ticks</div>
+                </div>
+                <div class="passive-item epic">
+                    <div class="passive-name">Frost Touch <span class="rarity-label">EPIC</span></div>
+                    <div class="passive-values">Duration: 1-3 seconds</div>
+                    <div class="passive-description">Slow enemy on hit. 5% chance to set powdered snow below enemy.</div>
+                    <div class="passive-cooldown">Cooldown: 30 ticks</div>
+                </div>
+                <div class="passive-item legendary">
+                    <div class="passive-name">Frost Touch <span class="rarity-label">LEGENDARY</span></div>
+                    <div class="passive-values">Duration: 2-3 seconds</div>
+                    <div class="passive-description">Slow enemy on hit. 5% chance to set powdered snow below enemy.</div>
+                    <div class="passive-cooldown">Cooldown: 30 ticks</div>
+                </div>
+                <div class="passive-item mythic">
+                    <div class="passive-name">Frost Touch <span class="rarity-label">MYTHIC</span></div>
+                    <div class="passive-values">Duration: 3 seconds</div>
+                    <div class="passive-description">Slow enemy on hit. 5% chance to set powder snow below enemy.</div>
+                    <div class="passive-cooldown">Cooldown: 30 ticks</div>
+                </div>
+            </div>
+            
+            <!-- LIGHTNING STRIKE -->
+            <div class="passive-category lightning-category">
+                <div class="category-title">⚡ LIGHTNING STRIKE</div>
+                <div class="passive-item rare">
+                    <div class="passive-name">Lightning Strike <span class="rarity-label">RARE</span></div>
+                    <div class="passive-values">Chance: 5-7%</div>
+                    <div class="passive-description">Strike lightning on enemy hit.</div>
+                    <div class="passive-cooldown">Cooldown: 20 ticks</div>
+                </div>
+                <div class="passive-item epic">
+                    <div class="passive-name">Lightning Strike <span class="rarity-label">EPIC</span></div>
+                    <div class="passive-values">Chance: 7-10%</div>
+                    <div class="passive-description">Strike lightning on enemy hit.</div>
+                    <div class="passive-cooldown">Cooldown: 20 ticks</div>
+                </div>
+                <div class="passive-item legendary">
+                    <div class="passive-name">Lightning Strike <span class="rarity-label">LEGENDARY</span></div>
+                    <div class="passive-values">Chance: 10-15%</div>
+                    <div class="passive-description">Strike lightning on enemy hit.</div>
+                    <div class="passive-cooldown">Cooldown: 20 ticks</div>
+                </div>
+                <div class="passive-item mythic">
+                    <div class="passive-name">Lightning Strike <span class="rarity-label">MYTHIC</span></div>
+                    <div class="passive-values">Chance: 15-25%</div>
+                    <div class="passive-description">Strike lightning on enemy hit.</div>
+                    <div class="passive-cooldown">Cooldown: 20 ticks</div>
+                </div>
+            </div>
+            
+            <!-- VAMPIRIC -->
+            <div class="passive-category vampiric-category">
+                <div class="category-title">🩸 VAMPIRIC</div>
+                <div class="passive-item epic">
+                    <div class="passive-name">Vampiric <span class="rarity-label">EPIC</span></div>
+                    <div class="passive-values">Heal: 13-20%</div>
+                    <div class="passive-description">During full moon: Heal % of damage dealt.</div>
+                    <div class="passive-cooldown">Cooldown: 90 ticks</div>
+                </div>
+                <div class="passive-item legendary">
+                    <div class="passive-name">Vampiric <span class="rarity-label">LEGENDARY</span></div>
+                    <div class="passive-values">Heal: 21-30%</div>
+                    <div class="passive-description">During full moon: Heal % of damage dealt.</div>
+                    <div class="passive-cooldown">Cooldown: 60 ticks</div>
+                </div>
+                <div class="passive-item mythic">
+                    <div class="passive-name">Vampiric <span class="rarity-label">MYTHIC</span></div>
+                    <div class="passive-values">Heal: 30-50%</div>
+                    <div class="passive-description">During full moon: Heal % of damage dealt.</div>
+                    <div class="passive-cooldown">Cooldown: 30 ticks</div>
+                </div>
+            </div>
+            
+            <!-- POISON BLADE -->
+            <div class="passive-category poison-category">
+                <div class="category-title">☠️ POISON BLADE</div>
+                <div class="passive-item rare">
+                    <div class="passive-name">Poison Blade <span class="rarity-label">RARE</span></div>
+                    <div class="passive-values">Level: 3-5 | Duration: 3-5 seconds</div>
+                    <div class="passive-description">Apply Poison on hit.</div>
+                    <div class="passive-cooldown">Cooldown: 100 ticks</div>
+                </div>
+                <div class="passive-item epic">
+                    <div class="passive-name">Poison Blade <span class="rarity-label">EPIC</span></div>
+                    <div class="passive-values">Level: 4-7 | Duration: 4-7 seconds</div>
+                    <div class="passive-description">Apply Poison on hit.</div>
+                    <div class="passive-cooldown">Cooldown: 50 ticks</div>
+                </div>
+                <div class="passive-item legendary">
+                    <div class="passive-name">Poison Blade <span class="rarity-label">LEGENDARY</span></div>
+                    <div class="passive-values">Level: 5-8 | Duration: 5-8 seconds</div>
+                    <div class="passive-description">Apply Poison on hit.</div>
+                    <div class="passive-cooldown">Cooldown: 15 ticks</div>
+                </div>
+            </div>
+            
+            <!-- EXPLOSIVE ARROWS -->
+            <div class="passive-category explosive-category">
+                <div class="category-title">💥 EXPLOSIVE ARROWS</div>
+                <div class="passive-item rare">
+                    <div class="passive-name">Explosive Arrows <span class="rarity-label">RARE</span></div>
+                    <div class="passive-values">Power: 2-3</div>
+                    <div class="passive-description">Arrows explode on impact.</div>
+                    <div class="passive-cooldown">Cooldown: 1000 ticks</div>
+                </div>
+                <div class="passive-item epic">
+                    <div class="passive-name">Explosive Arrows <span class="rarity-label">EPIC</span></div>
+                    <div class="passive-values">Power: 4-5</div>
+                    <div class="passive-description">Arrows explode on impact.</div>
+                    <div class="passive-cooldown">Cooldown: 800 ticks</div>
+                </div>
+                <div class="passive-item legendary">
+                    <div class="passive-name">Explosive Arrows <span class="rarity-label">LEGENDARY</span></div>
+                    <div class="passive-values">Power: 6-7</div>
+                    <div class="passive-description">Arrows explode on impact.</div>
+                    <div class="passive-cooldown">Cooldown: 600 ticks</div>
+                </div>
+                <div class="passive-item mythic">
+                    <div class="passive-name">Explosive Arrows <span class="rarity-label">MYTHIC</span></div>
+                    <div class="passive-values">Power: 8-10</div>
+                    <div class="passive-description">Arrows explode on impact.</div>
+                    <div class="passive-cooldown">Cooldown: 450 ticks</div>
+                </div>
+            </div>
+            
+            <!-- ENDER ARROW -->
+            <div class="passive-category ender-category">
+                <div class="category-title">🔮 ENDER ARROW</div>
+                <div class="passive-item rare">
+                    <div class="passive-name">Ender Arrow <span class="rarity-label">RARE</span></div>
+                    <div class="passive-values">Hit Chance: 25-35%</div>
+                    <div class="passive-description">Can shoot Endermen. Increased hit chance against Endermen.</div>
+                    <div class="passive-cooldown">Cooldown: 150 ticks</div>
+                </div>
+                <div class="passive-item epic">
+                    <div class="passive-name">Ender Arrow <span class="rarity-label">EPIC</span></div>
+                    <div class="passive-values">Hit Chance: 35-50%</div>
+                    <div class="passive-description">Can shoot Endermen. Increased hit chance against Endermen.</div>
+                    <div class="passive-cooldown">Cooldown: 110 ticks</div>
+                </div>
+                <div class="passive-item legendary">
+                    <div class="passive-name">Ender Arrow <span class="rarity-label">LEGENDARY</span></div>
+                    <div class="passive-values">Hit Chance: 50-70%</div>
+                    <div class="passive-description">Can shoot Endermen. Increased hit chance against Endermen.</div>
+                    <div class="passive-cooldown">Cooldown: 70 ticks</div>
+                </div>
+                <div class="passive-item mythic">
+                    <div class="passive-name">Ender Arrow <span class="rarity-label">MYTHIC</span></div>
+                    <div class="passive-values">Hit Chance: 90-100%</div>
+                    <div class="passive-description">Can shoot Endermen. Increased hit chance against Endermen.</div>
+                    <div class="passive-cooldown">Cooldown: 30 ticks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
