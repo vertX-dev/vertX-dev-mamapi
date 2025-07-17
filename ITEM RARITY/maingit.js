@@ -503,15 +503,21 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
     const itemStack = ev.itemStack;
     if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
     const loreArray = itemStack.getLore();
-    const costMultiplier = Object.values(RARITY).find(r => r.dName == loreArray[0]);
+    const rarity = Object.values(RARITY).find(r => r.dName == loreArray[0]);
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
+    //TODO: add xp cost
     
     const reforgeMenu = new ActionFormData()
         .title("REFORGE MENU")
         .body(`${upgradeResource}\n ${lore}`)
+        .button(`§a§lUPGRADE§r ${rarity.color}$1`);
         
-        
+        form.show(player).then((r) => {
+            if (!r.canceled && r.selection == 0) {
+                
+            }
+        });
         
 });
 
