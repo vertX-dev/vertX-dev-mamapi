@@ -505,7 +505,7 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
     blockUiAnvil(block, player);
 });
 
-function blockUiAnvil(block, player) {
+function blockUiAnvil(player) {
     const itemStack = player.getComponent("minecraft:equippable").getEquipment(EquipmentSlot.Mainhand);
     const loreArray = itemStack.getLore();
     const rarity = Object.values(RARITY).find(r => r.dName == loreArray[0]);
@@ -522,7 +522,7 @@ function blockUiAnvil(block, player) {
             if (!r.canceled && r.selection == 0) {
                 if (upgradeResource >= 1) {
                     player.runCommand(`clear @s minecraft:amethyst_shard 0 1`);
-                    rarityItemTest(item, player, rarity.sid, false);
+                    rarityItemTest(itemStack, player, rarity.sid, false);
                     
                     
                     
