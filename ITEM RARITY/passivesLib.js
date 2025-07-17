@@ -44,7 +44,7 @@ export const passives = {
         rarity: "Mythic",
         min: 3,
         max: 3,
-        description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powdered snow below enemy§7.",
+        description: "§7Slow enemy for §x{x} §7seconds on hit. \n§75% chance to set powder snow below enemy§7.",
         cooldown: 30,
         scoreboard: "frosttouch"
     }
