@@ -399,7 +399,7 @@ function rarityUpgrade(equipment, player, itemStack) {
     form.show(player).then((r) => {
         if (r.canceled) return;
         
-        const raritySelectedIndex = r.formValues[0]; // dropdown selection index
+        const raritySelectedIndex = r.formValues[1]; // dropdown selection index
         const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
         
         const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
@@ -440,23 +440,19 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
 
         switch (command) {
             case '.menu':
-                sender.runCommand("tell @s Your menu will open in 3 seconds.");
                 system.runTimeout(() => statsMainMenu(sender), 60);
                 break;
             case '.stats':
-                sender.runCommand("tell @s Your stats will open in 3 seconds.");
                 system.runTimeout(() => showStatsForm(sender), 60);
                 break;
             case '.help':
-                sender.runCommand("tell @s You will see the available commands instantly.");
                 system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .upgrade, .help"), 0);
                 break;
             case '.upgrade':
-                sender.runCommand("tell @s Your upgrade menu will open in 3 seconds.");
                 system.runTimeout(() => upgradeMenu(sender), 60);
                 break;
             default:
-                sender.runCommand("tell @s Unknown command. Use .stats, .menu, .upgrade, .help");
+                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .upgrade, .help'), 0);
         }
     }
 });
