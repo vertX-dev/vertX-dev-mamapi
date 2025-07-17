@@ -93,16 +93,6 @@ export const passives = {
     },
 
     // Vampiric passives (only during full moon)
-    VAMPIRIC_RARE: {
-        name: "§1Vampiric",
-        type: meleeWeapons,
-        rarity: "Rare",
-        min: 7,
-        max: 12,
-        description: "§7During full moon: \n§7Heal §x{x}% §7of damage dealt.",
-        cooldown: 120,
-        scoreboard: "vampiric"
-    },
     VAMPIRIC_EPIC: {
         name: "§5Vampiric",
         type: meleeWeapons,
