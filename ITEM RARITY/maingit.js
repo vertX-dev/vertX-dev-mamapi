@@ -453,13 +453,18 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
                 system.runTimeout(() => showStatsForm(sender), 60);
                 break;
             case '.help':
-                system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .upgrade, .help"), 0);
+                system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .upgrade, .displayCooldownPassive"), 0);
                 break;
             case '.upgrade':
                 system.runTimeout(() => upgradeMenu(sender), 60);
                 break;
+            case: '.displayCooldownPassive':
+                if (!args[1] || args[1] == 'true') system.runTimeout(() => sender.addTag("displayCooldownPassive"), 2);
+                if (args[1] == 'false') system.runTimeout(() => sender.removeTag("displayCooldownPassive"), 2);
+                
+           
             default:
-                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .stats, .menu, .upgrade, .help'), 0);
+                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .help'), 0);
         }
     }
 });
@@ -1312,7 +1317,7 @@ function skillVoidPierce(player, skill) {
 function passiveFrostTouch(player, passive, entity) {
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, passive.cooldown * 10);
