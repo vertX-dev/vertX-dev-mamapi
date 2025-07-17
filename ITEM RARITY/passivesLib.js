@@ -124,47 +124,47 @@ export const passives = {
         scoreboard: "vampiric"
     },
 
-    // Berserker passives
-    BERSERKER_RARE: {
-        name: "§1Berserker",
-        type: meleeWeapons,
-        rarity: "Rare",
-        min: 8,
-        max: 12,
-        description: "§7When below 30% health: Gain Speed I and Strength I for §x{x} §7seconds.",
-        cooldown: 120,
-        scoreboard: "berserker"
-    },
-    BERSERKER_EPIC: {
-        name: "§5Berserker",
-        type: meleeWeapons,
-        rarity: "Epic",
-        min: 10,
-        max: 15,
-        description: "§7When below 35% health: Gain Speed I and Strength I for §x{x} §7seconds.",
-        cooldown: 90,
-        scoreboard: "berserker"
-    },
-    BERSERKER_LEGENDARY: {
-        name: "§6Berserker",
-        type: meleeWeapons,
-        rarity: "Legendary",
-        min: 12,
-        max: 18,
-        description: "§7When below 40% health: Gain Speed II and Strength II for §x{x} §7seconds.",
-        cooldown: 70,
-        scoreboard: "berserker"
-    },
-    BERSERKER_MYTHIC: {
-        name: "§cBerserker",
-        type: meleeWeapons,
-        rarity: "Mythic",
-        min: 15,
-        max: 22,
-        description: "§7When below 45% health: Gain Speed II and Strength II for §x{x} §7seconds.",
-        cooldown: 50,
-        scoreboard: "berserker"
-    },
+//     // Berserker passives
+//     BERSERKER_RARE: {
+//         name: "§1Berserker",
+//         type: meleeWeapons,
+//         rarity: "Rare",
+//         min: 8,
+//         max: 12,
+//         description: "§7When below 30% health: Gain Speed I and Strength I for §x{x} §7seconds.",
+//         cooldown: 120,
+//         scoreboard: "berserker"
+//     },
+//     BERSERKER_EPIC: {
+//         name: "§5Berserker",
+//         type: meleeWeapons,
+//         rarity: "Epic",
+//         min: 10,
+//         max: 15,
+//         description: "§7When below 35% health: Gain Speed I and Strength I for §x{x} §7seconds.",
+//         cooldown: 90,
+//         scoreboard: "berserker"
+//     },
+//     BERSERKER_LEGENDARY: {
+//         name: "§6Berserker",
+//         type: meleeWeapons,
+//         rarity: "Legendary",
+//         min: 12,
+//         max: 18,
+//         description: "§7When below 40% health: Gain Speed II and Strength II for §x{x} §7seconds.",
+//         cooldown: 70,
+//         scoreboard: "berserker"
+//     },
+//     BERSERKER_MYTHIC: {
+//         name: "§cBerserker",
+//         type: meleeWeapons,
+//         rarity: "Mythic",
+//         min: 15,
+//         max: 22,
+//         description: "§7When below 45% health: Gain Speed II and Strength II for §x{x} §7seconds.",
+//         cooldown: 50,
+//         scoreboard: "berserker"
+//     },
 
     // Poison Blade passives
     POISON_BLADE_RARE: {
