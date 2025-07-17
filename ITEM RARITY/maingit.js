@@ -497,12 +497,12 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
     }
 });
 
-world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
+world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
     const block = ev.block;
     const player = ev.player;
     const itemStack = ev.itemStack;
     if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
-    blockUiAnvil(block, player);
+    system.runTimeout(() => blockUiAnvil(block, player), 10);
 });
 
 function blockUiAnvil(player) {
