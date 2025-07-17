@@ -502,6 +502,11 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
     const player = ev.player;
     const itemStack = ev.itemStack;
     if (!itemStack || !block || !player || block != "rrs:heavy_anvil") return;
+    blockUiAnvil(block, player);
+});
+
+function blockUiAnvil(block, player) {
+    const itemStack = player.getComponent("minecraft:equippable").getEquipment(EquipmentSlot.Mainhand);
     const loreArray = itemStack.getLore();
     const rarity = Object.values(RARITY).find(r => r.dName == loreArray[0]);
     const lore = loreArray.join("\n");
@@ -523,11 +528,10 @@ world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
                     
                     
                 }
+                blockUiAnvil(player);
             }
         });
-        
-});
-
+}
 //=====================================CORE GAME LOGIC===========================================
 
 function randomRarity(RR = RR_BASE) {
