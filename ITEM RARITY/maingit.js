@@ -724,7 +724,7 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
                 let rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
                 if (!upGuarant) {
                     const id = Math.min(6, Math.max(1, Math.floor((Math.random() * 6) + rarity.id / 2)));
-                    
+                    rarity = Object.values(RARITY).find(r => r.id == id);
                 }
                 
                 const stats = randomStats(rarity.sid, Tags.data);
