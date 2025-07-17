@@ -458,7 +458,7 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
             case '.upgrade':
                 system.runTimeout(() => upgradeMenu(sender), 60);
                 break;
-            case: '.displayCooldownPassive':
+            case '.displayCooldownPassive':
                 if (!args[1] || args[1] == 'true') system.runTimeout(() => sender.addTag("displayCooldownPassive"), 2);
                 if (args[1] == 'false') system.runTimeout(() => sender.removeTag("displayCooldownPassive"), 2);
                 break;
