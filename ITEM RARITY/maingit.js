@@ -118,6 +118,10 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
     {
         name: "voidpierce",
         displayName: "Void Pierce"
+    },
+    {
+        name: "frosttouch",
+        displayName: "Frost Touch"
     }
 ];
 
@@ -1321,6 +1325,6 @@ function passiveFrostTouch(player, passive, entity) {
         const posX = entity.position.x;
         const posY = entity.position.y;
         const posZ = entity.position.z;
-        entity.runCommand(`setblock ${posX} ${posY - 1} ${posZ} powdered_snow`);
+        entity.runCommand(`setblock ${posX} ${posY - 1} ${posZ} powder_snow`);
     }
 }
