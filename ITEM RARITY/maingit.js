@@ -1239,7 +1239,7 @@ function skillFlameArc(player, skill) {
 
     for (const pos of arcPositions) {
         player.runCommand(`execute at @s positioned${pos} run fill ~ ~ ~ ~ ~ ~ fire replace air`);
-        player.runCommand(`execute at @s positioned${pos} run particle minecraft:mobflame_emitter ~ ~ ~`);
+        player.runCommand(`execute at @s positioned${pos} run particle minecraft:mobflame_single ~ ~ ~`);
         player.runCommand(`execute at @s positioned${pos} run damage @e[r=1,type=!player] ${damage} fire`);
     }
 }
@@ -1362,6 +1362,6 @@ function passiveEnderArrow(player, passive, entity, damage) {
     if (entity.typeId == "minecraft:enderman" && Math.random() <= passive.value) {
         entity.applyDamage(damage);
         ccd.obj.setScore(player, passive.cooldown * 10);
-        entity.runCommand("particle minecraft:")
+        entity.runCommand("particle minecraft:mob_portal ~~~");
     }
 }
