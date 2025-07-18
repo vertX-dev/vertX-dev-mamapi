@@ -45,4 +45,8 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     const player = ev.entity;
     
     const hpcomponent = player.getComponent("minecraft:health");
+    const maxHp = hpcomponent.effectiveValue;
+    const currentHp = ev.newValue;
+    
+    
 });
