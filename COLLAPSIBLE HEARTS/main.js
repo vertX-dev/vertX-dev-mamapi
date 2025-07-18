@@ -36,5 +36,5 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     
     player.runCommand("title @s times 0 0 0");
     player.onScreenDisplay();
-    player.runCommand(`title @s times ${fadeIn} ${stay} ${fadeOut}`)
+    player.runCommand(`title @s times ${fadeIn} ${stay} ${fadeOut}`);
 });
