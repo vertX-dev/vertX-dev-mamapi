@@ -575,6 +575,7 @@ function blockUiAnvil(player) {
         }
     });
 }
+
 //=====================================CORE GAME LOGIC===========================================
 
 function randomRarity(RR = RR_BASE) {
@@ -735,12 +736,63 @@ function randomPassiveAbility(rarity, type) {
     return result;
 }
 
+function clearLore(lore) {
+    const clearedLore = [];
+    let inSection = false; // To track if we're within a section to remove
+
+    // Define the rarity strings to remove
+    const rarities = [
+        "§7Common",
+        "§aUncommon",
+        "§9Rare",
+        "§5Epic",
+        "§6Legendary",
+        "§cMythic"
+    ];
+
+    // Iterate through each entry in the lore array
+    for (const line of lore) {
+        // Check the starting and ending conditions for each section to clear
+        if (line.includes("§8Attributes")) {
+            inSection = true; // We are now in the Attributes section
+        } else if (line.includes("§a§t§b§e§n§d§r") && inSection) {
+            inSection = false; // End of Attributes section
+            continue; // Skip this line
+        } else if (line.includes("§8Skill")) {
+            inSection = true; // We are now in the Skill section
+        } else if (line.includes("§s§k§l§e§n§d§r") && inSection) {
+            inSection = false; // End of Skill section
+            continue; // Skip this line
+        } else if (line.includes("§8Passive ability")) {
+            inSection = true; // We are now in the Passive ability section
+        } else if (line.includes("§p§v§a§e§n§d§r") && inSection) {
+            inSection = false; // End of Passive ability section
+            continue; // Skip this line
+        }
+
+        // If we're not in a section to remove and the line doesn't contain unwanted text, add the line
+        if (!inSection && !line.includes("§r§r§s§v§e§r§t") && !rarities.some(rarity => line.includes(rarity))) {
+            clearedLore.push(line); // Only add lines that shouldn't be removed
+        }
+    }
+
+    return clearedLore; // Return the cleaned lore
+}
+
 function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false) {
     if (!itemStack || !player) return;
 
     const lore = itemStack.getLore() ?? [];
+    let myLore = false;
+    for (const loreStr of lore) {
+        if (loreStr == "§r§r§s§v§e§r§t") {
+            myLore = true;
+            break;
+        }
+    }
+    const clearedLore = clearLore(lore);
 
-    if (lore.length === 0 || rarityUp != "None") {
+    if (!myLore || rarityUp != "None") {
         const Tags = parseTags(itemStack.typeId);
 
         if (Tags && Tags.rarity) {
@@ -754,7 +806,7 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
 
                 const passive = randomPassiveAbility(rarity.sid, Tags.data);
 
-                const newLore = [rarity.dName, ...stats, ...skill, ...passive];
+                const newLore = [...clearedLore, rarity.dName, ...stats, ...skill, ...passive, "§r§r§s§v§e§r§t"];
 
                 try {
                     let newItem = itemStack.clone();
@@ -780,7 +832,7 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
 
                 const passive = randomPassiveAbility(rarity.sid, Tags.data);
 
-                const newLore = [rarity.dName, ...stats, ...skill, ...passive];
+                const newLore = [...clearedLore, rarity.dName, ...stats, ...skill, ...passive, "§r§r§s§v§e§r§t"];
 
                 try {
                     let newItem = itemStack.clone();
