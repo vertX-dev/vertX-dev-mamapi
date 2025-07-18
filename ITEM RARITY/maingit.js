@@ -502,9 +502,23 @@ world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
     const block = ev.block;
     const player = ev.player;
     const itemStack = ev.itemStack;
-    if (!itemStack || !block || !player || block.typeId != "minecraft:diamond_block") return;
-    system.runTimeout(() => {blockUiAnvil(player)}, 1);
+    if (!itemStack || !block || !player || block.typeId != "rrs:heavy_anvil") return;
+    
+    // Use system.runTimeout to add tag
+    system.runTimeout(() => {
+        player.addTag("reforge_ui");
+    }, 1);
 });
+
+// System interval to handle UI for tagged players
+system.runInterval(() => {
+    for (const player of world.getAllPlayers()) {
+        if (player.hasTag("reforge_ui")) {
+            player.removeTag("reforge_ui");
+            blockUiAnvil(player);
+        }
+    }
+}, 10);
 
 function blockUiAnvil(player) {
     const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
@@ -527,11 +541,12 @@ function blockUiAnvil(player) {
 
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
-    const resourceAmount = rarity.id * 3;
+    const resourceMap = [1, 1, 3, 5, 8, 12];
+    const resourceAmount = resourceMap[rarity.id];
     const amountStatusColor = upgradeResource < resourceAmount ? "§c" : "§a";
 
     const reforgeMenu = new ActionFormData()
-        .title("§6REFORGE MENU")
+        .title("§c§b§t§6§lREFORGE MENU")
         .body(`§7Cost: ${amountStatusColor}${resourceAmount} (You have: ${upgradeResource})\n\n§f${lore}`)
         .button(`§a§lUPGRADE§r ${amountStatusColor}${resourceAmount}`)
         .button("§c§lCLOSE", "textures/ui/cancel");
@@ -551,7 +566,6 @@ function blockUiAnvil(player) {
                     }, 5);
                 }
                 break;
-
             case 1:
                 uiManager.closeAllForms(player);
                 break;
