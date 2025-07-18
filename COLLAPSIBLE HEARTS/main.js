@@ -1,5 +1,10 @@
 import { world, system } from "@minecraft:server";
 
+const baseValues = {
+    fadeIn: 1,
+    stay: 75,
+    fadeOut: 1
+}
 
 const healthBars = [
   ["","","","","","","","","","", "","","","","","","","","",""],
@@ -33,6 +38,11 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     const rowAbs = Math.floor(maxHp / 20);
     let row = rowAbs % 13;
     if (rowAbs > 13) row + 1;
+    
+    const fadeIn = getScoreboardValue("fadeIn", player) ?? baseValues.fadeIn;
+    const stay = getScoreboardValue("stay", player) ?? baseValues.stay;
+    const fadeOut= getScoreboardValue("fadeOut", player) ?? baseValues.fadeOut;
+    
     
     player.runCommand("title @s times 0 0 0");
     player.onScreenDisplay();
