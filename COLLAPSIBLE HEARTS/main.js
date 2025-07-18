@@ -34,4 +34,7 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     let row = rowAbs % 13;
     if (rowAbs > 13) row + 1;
     
+    player.runCommand("title @s times 0 0 0");
+    player.onScreenDisplay();
+    player.runCommand(`title @s times ${fadeIn} ${stay} ${fadeOut}`)
 });
