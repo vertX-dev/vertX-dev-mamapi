@@ -1,10 +1,5 @@
 import { world, system } from "@minecraft:server";
 
-const baseValues = {
-    fadeIn: 1,
-    stay: 75,
-    fadeOut: 1
-}
 
 const healthBars = [
   ["","","","","","","","","","", "","","","","","","","","",""],
@@ -25,6 +20,11 @@ const healthBars = [
   ["","","","","","","","","","", "","","","","","","","","",""]
 ];
 
+function getScoreboardValue(scoreboard, player) {
+    const scoreboardObj = world.scoreboard.getObjective(scoreboard);
+    const scoreboardValue = scoreboardObj.getScore(player);
+    return scoreboardValue;
+}
 
 world.afterEvents.healthChanged.subscribe((ev) => {
     if (ev.entity.typeId != "minecraft:player") return;
@@ -39,12 +39,8 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     let row = rowAbs % 13;
     if (rowAbs > 13) row + 1;
     
-    const fadeIn = getScoreboardValue("fadeIn", player) ?? baseValues.fadeIn;
-    const stay = getScoreboardValue("stay", player) ?? baseValues.stay;
-    const fadeOut= getScoreboardValue("fadeOut", player) ?? baseValues.fadeOut;
     
     
-    player.runCommand("title @s times 0 0 0");
-    player.onScreenDisplay();
-    player.runCommand(`title @s times ${fadeIn} ${stay} ${fadeOut}`);
+    player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 0, fadeInDuration: 0, fadeOutDuration: 0});
+    
 });
