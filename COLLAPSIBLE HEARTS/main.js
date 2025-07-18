@@ -44,3 +44,7 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     
     player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 0, fadeInDuration: 0, fadeOutDuration: 0});
 });
+
+world.afterEvents.playerSpawn((ev) =>{
+    
+});
