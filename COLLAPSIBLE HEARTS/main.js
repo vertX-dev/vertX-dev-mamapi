@@ -29,8 +29,9 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     const maxHp = hpcomponent.effectiveValue;
     const currentHp = ev.newValue;
     
-    
-    let rowCoutMulti = 0;
     const col = currentHp % 20;
-    const row = Math.floor(maxHp / 20);
+    const rowAbs = Math.floor(maxHp / 20);
+    let row = rowAbs % 13;
+    if (rowAbs > 13) row + 1;
+    
 });
