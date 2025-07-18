@@ -15,16 +15,12 @@ const healthBars = [
   ["","","","","","","","","","", "","","","","","","","","",""],
   ["","","","","","","","","","", "","","","","","","","","",""],
   ["","","","","","","","","","", "","","","","","","","","",""],
+  //Armor & effects
   ["","","","","","","","","","", "","","","","","","","","",""],
   ["","","","","","","","","","", "","","","","","","","","",""],
   ["","","","","","","","","","", "","","","","","","","","",""]
 ];
 
-function getScoreboardValue(scoreboard, player) {
-    const scoreboardObj = world.scoreboard.getObjective(scoreboard);
-    const scoreboardValue = scoreboardObj.getScore(player);
-    return scoreboardValue;
-}
 
 world.afterEvents.healthChanged.subscribe((ev) => {
     if (ev.entity.typeId != "minecraft:player") return;
@@ -36,8 +32,13 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     
     const col = currentHp % 20;
     const rowAbs = Math.floor(maxHp / 20);
-    let row = rowAbs % 13;
-    if (rowAbs > 13) row + 1;
+    let row;
+
+    if (rowAbs <= 12) {
+        row = rowAbs;
+    } else {
+        row = ((rowAbs - 13) % 12) + 1;
+    }
     
     const healthBarString = `${healthBars[row][col]} x${rowAbs}`;
     
