@@ -23,12 +23,17 @@ const healthBars = [
 
 
 world.afterEvents.healthChanged.subscribe((ev) => {
-    if (ev.entity.typeId != "minecraft:player") return;
-    const player = ev.entity;
-    
+    if (ev.entity.typeId == "minecraft:player") displayHp(ev.entity);
+});
+
+world.afterEvents.playerSpawn((ev) =>{
+    displayHp(ev.player);
+});
+
+function displayHp(player) {
     const hpcomponent = player.getComponent("minecraft:health");
     const maxHp = hpcomponent.effectiveValue;
-    const currentHp = ev.newValue;
+    const currentHp = hpcomponent.currentValue;
     
     const col = currentHp % 20;
     const rowAbs = Math.floor(maxHp / 20);
@@ -43,8 +48,5 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     const healthBarString = `${healthBars[row][col]} x${rowAbs}`;
     
     player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 0, fadeInDuration: 0, fadeOutDuration: 0});
-});
-
-world.afterEvents.playerSpawn((ev) =>{
     
-});
+}
