@@ -18,7 +18,6 @@ world.afterEvents.healthChanged.subscribe((ev) => {
 });
 
 world.afterEvents.playerSpawn((ev) =>{
-    player.onScreenDisplay.setHudVisibility(HudVisibility.Hide, [HudElement.Health, HudElement.Armor]);
     displayHp(ev.player);
 });
 
@@ -28,7 +27,7 @@ function displayHp(player) {
     const currentHp = hpcomponent.currentValue;
     
     const col = currentHp % 20;
-    const rowAbs = Math.floor(maxHp / 20);
+    const rowAbs = Math.floor(currentHp / 20);
     let row;
 
     if (rowAbs <= 12) {
@@ -37,7 +36,6 @@ function displayHp(player) {
         row = ((rowAbs - 13) % 12) + 1;
     }
     
-    const healthBarString = `${healthBars[row][col]} x${rowAbs}`;
+    const healthBarString = `${healthBars[row][col]} x${rowAbs.toString()}`;
     player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 1, fadeInDuration: 0, fadeOutDuration: 0});
-
 }
