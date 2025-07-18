@@ -46,7 +46,7 @@ function displayHp(player) {
     }
     
     const healthBarString = `${healthBars[row][col]} x${rowAbs}`;
-    
+    player.onScreenDisplay.setHudVisibility(0, [6, 1]);
     player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 0, fadeInDuration: 0, fadeOutDuration: 0});
     
 }
