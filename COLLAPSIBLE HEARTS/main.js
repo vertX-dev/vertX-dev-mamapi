@@ -39,7 +39,7 @@ world.afterEvents.healthChanged.subscribe((ev) => {
     let row = rowAbs % 13;
     if (rowAbs > 13) row + 1;
     
-    
+    const healthBarString = `${healthBars[row][col]} x${rowAbs}`;
     
     player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 0, fadeInDuration: 0, fadeOutDuration: 0});
 });
