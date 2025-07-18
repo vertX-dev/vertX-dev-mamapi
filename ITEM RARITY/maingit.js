@@ -3,7 +3,8 @@ import {
     system,
     EquipmentSlot,
     GameMode,
-    ItemStack
+    ItemStack,
+    MoonPhase
 } from "@minecraft/server";
 import {
     ActionFormData,
@@ -496,47 +497,66 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
         }
     }
 });
-
+//TODO: fix infinite loops
 world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
     const block = ev.block;
     const player = ev.player;
     const itemStack = ev.itemStack;
     if (!itemStack || !block || !player || block.typeId != "minecraft:diamond_block") return;
-    system.runTimeout(() => blockUiAnvil(player), 10);
+    system.runTimeout(() => {blockUiAnvil(player)}, 1);
 });
 
 function blockUiAnvil(player) {
-    const itemStack = player.getComponent("minecraft:equippable").getEquipment(EquipmentSlot.Mainhand);
+    const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+    if (!itemStack) {
+        player.sendMessage("§cYou must hold an item to reforge.");
+        return;
+    }
+
     const loreArray = itemStack.getLore();
-    const rarity = Object.values(RARITY).find(r => r.dName == loreArray[0]);
+    if (!loreArray || loreArray.length === 0) {
+        player.sendMessage("§cThis item cannot be reforged.");
+        return;
+    }
+
+    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[0]);
+    if (!rarity) {
+        player.sendMessage("§cUnknown rarity. Cannot reforge this item.");
+        return;
+    }
+
     const lore = loreArray.join("\n");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     const resourceAmount = rarity.id * 3;
-    let amountStatusColor = "§a";
-    if (upgradeResource < resourceAmount) amountStatusColor = "§c";
-    
+    const amountStatusColor = upgradeResource < resourceAmount ? "§c" : "§a";
+
     const reforgeMenu = new ActionFormData()
-        .title("REFORGE MENU")
-        .body(`${upgradeResource}\n ${lore}`)
+        .title("§6REFORGE MENU")
+        .body(`§7Cost: ${amountStatusColor}${resourceAmount} (You have: ${upgradeResource})\n\n§f${lore}`)
         .button(`§a§lUPGRADE§r ${amountStatusColor}${resourceAmount}`)
-        .button('§c§lCLOSE', 'textures/ui/cancel');
-        
-        reforgeMenu.show(player).then((r) => {
-            if (!r.canceled) {
-                if (upgradeResource >= resourceAmount && r.selection == 0) {
+        .button("§c§lCLOSE", "textures/ui/cancel");
+
+    reforgeMenu.show(player).then((r) => {
+        if (r.canceled) return;
+
+        switch (r.selection) {
+            case 0:
+                if (upgradeResource >= resourceAmount) {
                     player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
                     rarityItemTest(itemStack, player, rarity.sid, false);
-                    blockUiAnvil(player);
-                } else if (upgradeResource < resourceAmount) {
-                    system.runTimeout(() => player.sendMessage("Not enough resources for reforge"), 5);
-                    return;
+                    blockUiAnvil(player); // refresh the UI
+                } else {
+                    system.runTimeout(() => {
+                        player.sendMessage("§cNot enough amethyst shards to reforge.");
+                    }, 5);
                 }
-                if (r.selection == 1) {
-                    return;
-               }
-            }
-            return;
-        });
+                break;
+
+            case 1:
+                uiManager.closeAllForms(player);
+                break;
+        }
+    });
 }
 //=====================================CORE GAME LOGIC===========================================
 
@@ -1079,7 +1099,7 @@ world.afterEvents.projectileHitBlock.subscribe((ev) => {
 // Skill activation event handler
 world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
-
+    if (!player.hasTag("safeSkills") && player.isSneaking) return;
     const equipment = player.getComponent("minecraft:equippable");
 
     const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
