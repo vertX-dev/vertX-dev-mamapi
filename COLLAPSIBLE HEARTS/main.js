@@ -1,4 +1,4 @@
-import { world, system } from "@minecraft:server";
+import { world, system, HudElement, HudVisibility } from "@minecraft:server";
 
 
 const healthBars = [
@@ -27,6 +27,7 @@ world.afterEvents.healthChanged.subscribe((ev) => {
 });
 
 world.afterEvents.playerSpawn((ev) =>{
+    player.onScreenDisplay.setHudVisibility(HudVisibility.Hide, [HudElement.Health, HudElement.Armor]);
     displayHp(ev.player);
 });
 
@@ -46,7 +47,6 @@ function displayHp(player) {
     }
     
     const healthBarString = `${healthBars[row][col]} x${rowAbs}`;
-    player.onScreenDisplay.setHudVisibility(0, [6, 1]);
     player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 1, fadeInDuration: 0, fadeOutDuration: 0});
-    
+
 }
