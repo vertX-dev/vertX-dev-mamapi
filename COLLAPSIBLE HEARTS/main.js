@@ -60,7 +60,7 @@ world.beforeEvents.chatSend.subscibe((ev) =>{
     const message = ev.message;
     
     if (message.startsWith(".")) {
-        if (message == ".rrs") {
+        if (message == ".chb") {
             
         }
     }
