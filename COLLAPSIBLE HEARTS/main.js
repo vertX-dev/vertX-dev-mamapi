@@ -25,7 +25,7 @@ system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
         displayHp(player);
-        if (!player.hasTag("rrsvertx")) player.addTag("rrsvertx")
+        if (!player.hasTag("chbvertx")) player.addTag("chbvertx");
     }
 }, 5);
 
