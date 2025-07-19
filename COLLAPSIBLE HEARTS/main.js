@@ -65,3 +65,29 @@ world.beforeEvents.chatSend.subscibe((ev) =>{
         }
     }
 });
+
+const PREDEFINED_SCOREBOARDS = [
+    {
+        name: "health",
+        displayName: "Health"
+    },
+    {
+        name: "hpforrrs",
+        displayName: "Health"
+    }
+];
+function initializeScoreboards() {
+    console.log("Initializing static scoreboards...");
+    for (const scoreboard of PREDEFINED_SCOREBOARDS) {
+        try {
+            const existing = world.scoreboard.getObjective(scoreboard.name);
+            if (!existing) {
+                world.scoreboard.addObjective(scoreboard.name, scoreboard.displayName);
+                console.log(`Scoreboard '${scoreboard.name}' (${scoreboard.displayName}) added.`);
+            }
+        } catch (e) {
+            console.warn(`Failed to add scoreboard '${scoreboard.name}':`, e.message);
+        }
+    }
+}
+system.runTimeout(() => {initializeScoreboards()}, 50);
