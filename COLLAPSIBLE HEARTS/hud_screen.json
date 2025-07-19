@@ -1,0 +1,58 @@
+{
+"namespace": "hud",
+"hpc": {
+    "$update_string": "hpc:",
+    "type": "label",
+    "text": "#text",
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "offset": [10, 5],
+    "controls": [
+        {
+            "data_control_hpc": {
+                "type": "panel",
+                "size": [0, 0],
+                "property_bag": {
+                    "#preserved_text": ""
+                },
+                "bindings": [
+                    {
+                        "binding_name": "#hud_title_text_string"
+                    },
+                    {
+                        "binding_name": "#hud_title_text_string",
+                        "binding_name_override": "#preserved_text",
+                        "binding_condition": "visibility_changed"
+                    },
+                    {
+                        "binding_type": "view",
+                        "source_property_name": "(not (#hud_title_text_string = #preserved_text) and not ((#hud_title_text_string - $update_string) = #hud_title_text_string))",
+                        "target_property_name": "#visible"
+                    }
+                ]
+            }
+        }
+    ],
+    "bindings": [
+        {
+            "binding_type": "view",
+            "source_control_name": "data_control_hpc",
+            "source_property_name": "(#preserved_text - $update_string)",
+            "target_property_name": "#text"
+        }
+    ]
+},
+"root_panel": {
+  "modifications": [
+    {
+      "array_name": "controls",
+      "operation": "insert_front",
+      "value": [
+        {
+          "hpc@hud.hpc": {}
+        }
+      ]
+    }
+  ]
+}
+}
