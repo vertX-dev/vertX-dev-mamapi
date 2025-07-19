@@ -1,3 +1,16 @@
-const col = 39% 20;
-const reverse = 20 - 1 - col;
-console.log(reverse);
+async function setup() {
+    console.log("load");
+    let pyodide = await loadPyodideAndPackages();
+    // Now the requests library is available for use
+    console.log("install");
+    let code = `
+        import requests
+
+        response = requests.get('https://api.github.com')
+        print(response.json())
+    `;
+    pyodide.runPython(code);
+    console.log("finish");
+}
+
+setup();
