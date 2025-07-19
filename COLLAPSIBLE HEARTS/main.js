@@ -25,6 +25,7 @@ system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
         displayHp(player);
+        if (!player.hasTag("rrsvertx")) player.addTag("rrsvertx")
     }
 }, 5);
 
@@ -53,3 +54,14 @@ function displayHp(player) {
     player.runCommand("title @s times 0 0 0");
     player.runCommand("title @s title hpc:" + healthBarString);
 }
+
+world.beforeEvents.chatSend.subscibe((ev) =>{
+    const player = ev.sender;
+    const message = ev.message;
+    
+    if (message.startsWith(".")) {
+        if (message == ".rrs") {
+            
+        }
+    }
+});
