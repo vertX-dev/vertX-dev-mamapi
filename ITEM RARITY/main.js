@@ -4,7 +4,8 @@ import {
     EquipmentSlot,
     GameMode,
     ItemStack,
-    MoonPhase
+    MoonPhase,
+    EntityDamageCause
 } from "@minecraft/server";
 import {
     ActionFormData,
@@ -341,48 +342,58 @@ function toTitleCase(str) {
 }
 
 // Chat commands
-
-//TODO: CUSTOM COMMANDS BINDING
 world.beforeEvents.chatSend.subscribe((eventData) => {
     const { sender, message } = eventData;
-    const Tags = sender.getTags().filter(tag => tag.startsWith("ccb:"));
-    if (Tags.length > 0) {
-        for (const tag of Tags) {
-            const params = tag.split(":");
-            if (params[2] == message) {
-                switch (params[1]) {
-                    case 'enableSkills':
-                        system.runTimeout(() => enableSkills(sender), 60);
-                }
-            }
-        }
-    }
 
+    // Cancel default chat event for recognized commands
     if (message.startsWith('.')) {
-        eventData.cancel = true;
+        eventData.cancel = true; // Cancel the default chat event
 
         const args = message.split(' ');
         const command = args[0].toLowerCase();
 
         switch (command) {
+            // Built-in commands
+            case '.enableSkills':
+                system.runTimeout(() => enableSkills(sender), 1);
+                break;
+            case '.disableSkills':
+                system.runTimeout(() => disableSkills(sender), 1);
+                break;
+            case '.enableDisplayCooldownSkills':
+                system.runTimeout(() => enableDisplayCooldownSkills(sender), 1);
+                break;
+            case '.disableDisplayCooldownSkills':
+                system.runTimeout(() => disableDisplayCooldownSkills(sender), 1);
+                break;
+            case '.enablePassives':
+                system.runTimeout(() => enablePassives(sender), 1);
+                break;
+            case '.disablePassives':
+                system.runTimeout(() => disablePassives(sender), 1);
+                break;
+            case '.enableDisplayCooldownPassives':
+                system.runTimeout(() => enableDisplayCooldownPassives(sender), 1);
+                break;
+            case '.disableDisplayCooldownPassives':
+                system.runTimeout(() => disableDisplayCooldownPassives(sender), 1);
+                break;
             case '.menu':
                 system.runTimeout(() => statsMainMenu(sender), 60);
                 break;
             case '.stats':
                 system.runTimeout(() => showStatsForm(sender), 60);
                 break;
-            case '.help':
-                system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .displayCooldownPassive, .settings"), 0);
-                break;
             case '.settings':
                 system.runTimeout(() => settings(sender), 60);
                 break;
-            case '.displayCooldownPassive':
-                if (!args[1] || args[1] == 'true') system.runTimeout(() => sender.addTag("displayCooldownPassive"), 2);
-                if (args[1] == 'false') system.runTimeout(() => sender.removeTag("displayCooldownPassive"), 2);
+            case '.help':
+                system.runTimeout(() => sender.sendMessage("§7Available commands: §a.enableSkills, .disableSkills, .enableDisplayCooldownSkills, .disableDisplayCooldownSkills, .enablePassives, .disablePassives, .enableDisplayCooldownPassives, .disableDisplayCooldownPassives, .menu, .stats, .settings"), 1);
                 break;
             default:
-                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .help'), 0);
+                // Unknown command message
+                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .help for available commands.'), 1);
+                break;
         }
     }
 });
@@ -465,21 +476,113 @@ function blockUiAnvil(player) {
     });
 }
 
-function enableSkills(player) {
-    
+//CUSTOM COMMANDS BINDING
+function settings(player) {
+    let settingsConfig = {
+        "skills": {
+            displayName: "Skills",
+            tagToCheck: "disabledSkills",
+            inverseLogic: true // true means tag exists = setting is OFF
+        },
+        "displayCooldownSkills": {
+            displayName: "Display Cooldown Skills",
+            tagToCheck: "disabledCooldownSkills",
+            inverseLogic: true
+        },
+        "passives": {
+            displayName: "Passives",
+            tagToCheck: "disabledPassives",
+            inverseLogic: true
+        },
+        "displayCooldownPassives": {
+            displayName: "Display Cooldown Passives",
+            tagToCheck: "showCooldownPassives",
+            inverseLogic: false
+        }
+    };
+
+    // Split object into arrays to ensure consistent index-based access
+    const keys = Object.keys(settingsConfig);
+
+    const settingsMenu = new ModalFormData()
+        .title("SETTINGS");
+
+    // Add toggle switches based on current tag states
+    for (let i = 0; i < keys.length; i++) {
+        const setting = settingsConfig[keys[i]];
+        const hasTag = player.hasTag(setting.tagToCheck);
+        
+        // Determine toggle state based on logic
+        let toggleState;
+        if (setting.inverseLogic) {
+            toggleState = !hasTag; // If inverse logic, toggle is ON when tag is absent
+        } else {
+            toggleState = hasTag; // If normal logic, toggle is ON when tag is present
+        }
+        
+        settingsMenu.toggle(setting.displayName, {defaultValue: toggleState});
+    }
+
+    settingsMenu.submitButton("SAVE");
+
+    settingsMenu.show(player).then((r) => {
+        if (r.canceled) {
+            return; // Exit early if canceled
+        }
+
+        // Process toggle values and update tags accordingly
+        for (let i = 0; i < keys.length; i++) {
+            const setting = settingsConfig[keys[i]];
+            const toggleValue = r.formValues[i];
+            const shouldHaveTag = setting.inverseLogic ? !toggleValue : toggleValue;
+            
+            if (shouldHaveTag) {
+                if (!player.hasTag(setting.tagToCheck)) {
+                    player.addTag(setting.tagToCheck);
+                }
+            } else {
+                if (player.hasTag(setting.tagToCheck)) {
+                    player.removeTag(setting.tagToCheck);
+                }
+            }
+        }
+    });
 }
 
-function settings(player) {
-    let customCommandsBind = {
-        "enableSkills": '.enableSkills'
-    };
-    
-    const tags = player.getTags().filter(tag => tag.startsWith("ccb:"));
-    for (const tag of tags) {
-        const params = tag.split(":");
-        customCommandsBind[params[1]] = params[2];
-    }
+function enableSkills(player) {
+    player.removeTag("disabledSkills");
 }
+
+function disableSkills(player) {
+    player.addTag("disabledSkills");
+}
+
+function enableDisplayCooldownSkills(player) {
+    player.removeTag("disabledCooldownSkills");
+}
+
+function disableDisplayCooldownSkills(player) {
+    player.addTag("disabledCooldownSkills");
+}
+
+function enablePassives(player) {
+    player.removeTag("disabledPassives");
+}
+
+function disablePassives(player) {
+    player.addTag("disabledPassives");
+}
+
+function enableDisplayCooldownPassives(player) {
+    player.addTag("showCooldownPassives");
+}
+
+function disableDisplayCooldownPassives(player) {
+    player.removeTag("showCooldownPassives");
+}
+
+
+
 //=====================================CORE GAME LOGIC===========================================
 
 function randomRarity(RR = RR_BASE) {
@@ -823,6 +926,18 @@ function setMainStats(player) {
     let speed = Math.floor(Math.min(getScoreboardValue("speed", player), 200) / 20) - 1;
     let healthBoost = (getScoreboardValue("healthpercent", player) / 100) + 1;
     
+    
+    
+    //stats from other addons
+    if (player.hasTag("chbvertx")) {
+        const hpFromCHB = Math.floor(getScoreboardValue("hpForRRS")); //Compact health bar
+        health = health + hpFromCHB;
+    }
+    
+    
+    
+    
+
     health = Math.floor(((health + 5) * healthBoost) - 6);
 
     if (health >= 0) {
@@ -963,7 +1078,14 @@ system.runInterval(() => {
 system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
-        healEntity(player);
+        try {
+            healEntity(player);
+            //DO NOT DELETE LINE BELLOW, IT NEEDED FOR COMPATIBILITY WITH OTHER ADDONS
+            if (!player.hasTag("rrsvertX")) player.addTag("rrsvertx")
+        } catch (error) {
+            // Handle the error, e.g., log it to the console
+            console.error(`Failed to heal player ${player.name}: ${error.message}`);
+        }
     }
 }, 200);
 
@@ -1045,7 +1167,7 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
                 passiveEnderArrow(player, passive, mob, damage);
                 break;
             case 'Lightning Strike':
-                passiveLightningStrike(player, passive, mob);
+                passiveLightningStrike(player, passive, ev);
                 break;
             case 'Explosive Arrows':
                 passiveExplosiveArrows(player, passive, ev);
@@ -1066,13 +1188,16 @@ world.afterEvents.projectileHitBlock.subscribe((ev) => {
             case 'Explosive Arrows':
                 passiveExplosiveArrows(player, passive, ev);
                 break;
+            case 'Lightning Strike':
+                passiveLightningStrike(player, passive, ev);
+                break;
         }
     }
 });
 // Skill activation event handler
 world.afterEvents.itemUse.subscribe((ev) => {
     const player = ev.source;
-    if (!player.hasTag("safeSkills") && player.isSneaking) return;
+    if ((!player.hasTag("safeSkills") && player.isSneaking) || player.hasTag("disabledSkills")) return;
     const equipment = player.getComponent("minecraft:equippable");
 
     const skill = parseLoreToSkills(equipment, EquipmentSlot.Mainhand);
@@ -1113,17 +1238,19 @@ world.afterEvents.entityHurt.subscribe((ev) => {
     // Check if player is receiving damage
     if (ev.hurtEntity.typeId === "minecraft:player") {
         const player = ev.hurtEntity;
-
-        // DO: Trigger passive abilities on receiving damage
-        // const equipment = player.getComponent("minecraft:equippable");
-        // const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand, EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet];
-        // for (const slot of slots) {
-        //     const passive = parseLoreToPassive(equipment, slot);
-        //     if (passive.name) {
-        //         // Apply passive effects that trigger on receiving damage
-        //         // Examples: thorns, damage reflection, temporary buffs, etc.
-        //     }
-        // }
+        
+        const slots = [EquipmentSlot.Chest];
+        
+        for (const slot of slots) {
+            const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), slot);
+            if (passive && passive.name) {
+                switch (passive.name.slice(2)) {
+                    case 'Dragon Armor':
+                        passiveDragonArmor(player, passive, ev);
+                        break;
+                }
+            }
+        }
     }
 });
 
@@ -1160,7 +1287,7 @@ system.runTimeout(() => {initializeScoreboards()}, 50);
 function skillSmashLeap(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1182,7 +1309,7 @@ function skillSmashLeap(player, skill) {
 function skillSpinStrike(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1209,7 +1336,7 @@ function skillSpinStrike(player, skill) {
 function skillExplosiveMining(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1218,7 +1345,7 @@ function skillExplosiveMining(player, skill) {
     player.addEffect("resistance", 50, {
         amplifier: 4
     });
-    player.dimension.createExplosion(player.location, size * 2, {
+    player.dimension.createExplosion(player.location, size, {
         breaksBlocks: true
     });
 
@@ -1231,7 +1358,7 @@ function skillExplosiveMining(player, skill) {
 function skillRayMiner(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1267,7 +1394,7 @@ function skillRayMiner(player, skill) {
 function skillExcavator(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1308,7 +1435,7 @@ function skillExcavator(player, skill) {
 function skillFlameArc(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1327,13 +1454,14 @@ function skillFlameArc(player, skill) {
         player.runCommand(`execute at @s positioned${pos} run fill ~ ~ ~ ~ ~ ~ fire replace air`);
         player.runCommand(`execute at @s positioned${pos} run particle minecraft:mobflame_single ~ ~ ~`);
         player.runCommand(`execute at @s positioned${pos} run damage @e[r=1,type=!player] ${damage} fire`);
+        player.runCommand(`execute at @s positioned${pos} run effect @e[r=1,type=!player] slowness 2 2 true`);
     }
 }
 
 function skillShadowDash(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1355,7 +1483,7 @@ function skillShadowDash(player, skill) {
 function skillVoidPierce(player, skill) {
     const ccd = testCooldown(player, skill.name);
     if (ccd.time > 0) {
-        player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
         return;
     }
     ccd.obj.setScore(player, skill.cooldown * 10);
@@ -1410,6 +1538,7 @@ function skillVoidPierce(player, skill) {
 }*/
 
 function passiveFrostTouch(player, passive, entity) {
+    if (player.hasTag("disabledPassives")) return;
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1426,7 +1555,8 @@ function passiveFrostTouch(player, passive, entity) {
     }
 }
 
-function passiveLightningStrike(player, passive, entity) {
+function passiveLightningStrike(player, passive, event) {
+    if (player.hasTag("disabledPassives")) return;
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1434,11 +1564,12 @@ function passiveLightningStrike(player, passive, entity) {
     }
     if (Math.random() <= (passive.value / 100)) {
         ccd.obj.setScore(player, passive.cooldown * 10);
-        entity.dimension.spawnEntity("lightning_bolt", entity.location);
+        event.dimension.spawnEntity("lightning_bolt", event.location);
     }
 }
 
 function passiveEnderArrow(player, passive, entity, damage) {
+    if (player.hasTag("disabledPassives")) return;
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1452,6 +1583,7 @@ function passiveEnderArrow(player, passive, entity, damage) {
 }
 
 function passiveVampiric(player, passive, damage) {
+    if (player.hasTag("disabledPassives")) return;
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1464,6 +1596,7 @@ function passiveVampiric(player, passive, damage) {
 }
 
 function passivePoisonBlade(player, passive, entity) {
+    if (player.hasTag("disabledPassives")) return;
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1475,6 +1608,7 @@ function passivePoisonBlade(player, passive, entity) {
 }
 
 function passiveExplosiveArrows(player, passive, event) {
+    if (player.hasTag("disabledPassives")) return;
     const ccd = testCooldown(player, passive.name, passives);
     if (ccd.time > 0) {
         if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
@@ -1483,4 +1617,20 @@ function passiveExplosiveArrows(player, passive, event) {
     ccd.obj.setScore(player, passive.cooldown * 10);
     
     event.dimension.createExplosion(event.location, passive.value);
+}
+
+function passiveDragonArmor(player, passive, ev) {
+    if (player.hasTag("disabledPassives")) return;
+    const ccd = testCooldown(player, passive.name, passives);
+    if (ccd.time > 0) {
+        if (player.hasTag("showCooldownPassives")) player.runCommand(`title @s actionbar ${passive.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        return;
+    }
+    const damageCause = ev.damageSource.cause;
+    if (damageCause == EntityDamageCause.fireTick || damageCause == EntityDamageCause.fire || damageCause == EntityDamageCause.lava) {
+        ccd.obj.setScore(player, passive.cooldown * 10);
+        player.addEffect("fire_resistance", passive.value * 20);
+        player.addEffect("regeneration", 40);
+        player.addEffect("resistance", passive.value * 20);
+    }
 }
