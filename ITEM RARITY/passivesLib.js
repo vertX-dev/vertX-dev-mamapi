@@ -281,47 +281,47 @@ export const passives = {
         description: "§7Can shoot Endermen. §x{x}% §7increased hit chance against Endermen.",
         cooldown: 30,
         scoreboard: "enderarrow"
+    },
+    
+    // Dragon Armor passives
+    DRAGON_ARMOR_RARE: {
+        name: "§1Dragon Armor",
+        type: "chestplate",
+        rarity: "Rare",
+        min: 5,
+        max: 10,
+        description: "§7When receiving fire damage: Gain Fire Resistance for §x{x} §7seconds.",
+        cooldown: 900,
+        scoreboard: "dragonarmor"
+    },
+    DRAGON_ARMOR_EPIC: {
+        name: "§5Dragon Armor",
+        type: "chestplate",
+        rarity: "Epic",
+        min: 10,
+        max: 20,
+        description: "§7When receiving fire damage: Gain Fire Resistance for §x{x} §7seconds.",
+        cooldown: 800,
+        scoreboard: "dragonarmor"
+    },
+    DRAGON_ARMOR_LEGENDARY: {
+        name: "§6Dragon Armor",
+        type: "chestplate",
+        rarity: "Legendary",
+        min: 20,
+        max: 35,
+        description: "§7When receiving fire damage: Gain Fire Resistance for §x{x} §7seconds.",
+        cooldown: 700,
+        scoreboard: "dragonarmor"
+    },
+    DRAGON_ARMOR_MYTHIC: {
+        name: "§cDragon Armor",
+        type: "chestplate",
+        rarity: "Mythic",
+        min: 35,
+        max: 60,
+        description: "§7When receiving fire damage: Gain Fire Resistance for §x{x} §7seconds.",
+        cooldown: 600,
+        scoreboard: "dragonarmor"
     }
-
-//     // Dragon Armor passives
-//     DRAGON_ARMOR_RARE: {
-//         name: "§1Dragon Armor",
-//         type: allArmor,
-//         rarity: "Rare",
-//         min: 8,
-//         max: 12,
-//         description: "§7When receiving fire damage: Gain Fire Resistance I, Resistance I, and Regeneration I for §x{x} §7seconds.",
-//         cooldown: 180,
-//         scoreboard: "dragonarmor"
-//     },
-//     DRAGON_ARMOR_EPIC: {
-//         name: "§5Dragon Armor",
-//         type: allArmor,
-//         rarity: "Epic",
-//         min: 10,
-//         max: 15,
-//         description: "§7When receiving fire damage: Gain Fire Resistance I, Resistance I, and Regeneration I for §x{x} §7seconds.",
-//         cooldown: 150,
-//         scoreboard: "dragonarmor"
-//     },
-//     DRAGON_ARMOR_LEGENDARY: {
-//         name: "§6Dragon Armor",
-//         type: allArmor,
-//         rarity: "Legendary",
-//         min: 12,
-//         max: 18,
-//         description: "§7When receiving fire damage: Gain Fire Resistance II, Resistance II, and Regeneration II for §x{x} §7seconds.",
-//         cooldown: 120,
-//         scoreboard: "dragonarmor"
-//     },
-//     DRAGON_ARMOR_MYTHIC: {
-//         name: "§cDragon Armor",
-//         type: allArmor,
-//         rarity: "Mythic",
-//         min: 15,
-//         max: 22,
-//         description: "§7When receiving fire damage: Gain Fire Resistance II, Resistance II, and Regeneration II for §x{x} §7seconds.",
-//         cooldown: 90,
-//         scoreboard: "dragonarmor"
-//     }
 };
