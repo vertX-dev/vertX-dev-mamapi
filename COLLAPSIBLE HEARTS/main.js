@@ -112,7 +112,8 @@ const HPBOOST_ITEMS = [
 
 world.afterEvents.itemUse.subscibe((ev) => {
     const player = ev.source;
-    const item = ev.itemStack.typeId;
+    if (!ev.itemStack) return;
+    const item = ev.itemStack?.typeId;
     
     for (const bitem of HPBOOST_ITEMS) {
         if (bitem.id != item) continue;
