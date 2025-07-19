@@ -101,6 +101,37 @@ function initializeScoreboards() {
 }
 system.runTimeout(() => {initializeScoreboards()}, 50);
 
+const HPBOOST_ITEMS = [
+    {
+        id: "chb:heart",
+        boost: 1,
+        maxBoost: 20,
+        scoreboardTracker: "heartsTrack"
+    }
+];
+
 world.afterEvents.itemUse.subscibe((ev) => {
     const player = ev.source;
+    const item = ev.itemStack.typeId;
+    
+    for (const bitem of HPBOOST_ITEMS) {
+        if (bitem.id != item) continue;
+        
+        if (bitem.maxBoost >= getScoreboardValue(bitem.scoreboardTracker, player)) continue;
+        
+        if (!player.hasTag("rrsvertx")) {
+            world.scoreboard.getObjective("health").addScore(player, bitem.boost);
+        } else {
+            world.scoreboard.getObjective("hpforrrs").addScore(player, bitem.boost);
+        }
+        world.scoreboard.getObjective(bitem.scoreboardTracker).addScore(player, 1);
+    }
 });
+
+
+
+function getScoreboardValue(scoreboard, player) {
+    const scoreboardObj = world.scoreboard.getObjective(scoreboard);
+    const scoreboardValue = scoreboardObj.getScore(player);
+    return scoreboardValue;
+}
