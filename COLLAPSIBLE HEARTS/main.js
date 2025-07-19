@@ -61,10 +61,19 @@ world.beforeEvents.chatSend.subscibe((ev) =>{
     
     if (message.startsWith(".")) {
         if (message == ".chb") {
+            ev.cancel = true;
             system.runTimeout(() => settings(player), 60);
         }
     }
 });
+
+
+//TODO ui for settings
+function settings(player) {
+    
+}
+
+
 
 const PREDEFINED_SCOREBOARDS = [
     {
