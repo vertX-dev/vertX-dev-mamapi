@@ -1,25 +1,32 @@
-import { world, system, HudElement, HudVisibility } from "@minecraft:server";
+import { world, system, HudElement, HudVisibility } from "@minecraft/server";
 
 
 const healthBars = [
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""],
-  ["","","","","","","","","","", "","","","","","","","","",""]
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""],
+  ["","","","","","","","","","","","","","","","","","","",""]
 ];
 
-
-world.afterEvents.healthChanged.subscribe((ev) => {
-    if (ev.entity.typeId == "minecraft:player") displayHp(ev.entity);
-});
-
-world.afterEvents.playerSpawn((ev) =>{
-    displayHp(ev.player);
-});
+system.runInterval(() => {
+    const players = world.getPlayers();
+    for (const player of players) {
+        displayHp(player);
+    }
+}, 5);
 
 function displayHp(player) {
     const hpcomponent = player.getComponent("minecraft:health");
@@ -27,7 +34,7 @@ function displayHp(player) {
     const currentHp = hpcomponent.currentValue;
     
     const col = currentHp % 20;
-    const rowAbs = Math.floor(currentHp / 20);
+    const rowAbs = Math.floor((currentHp / 20) - 0.001);
     let row;
 
     if (rowAbs <= 12) {
@@ -35,7 +42,14 @@ function displayHp(player) {
     } else {
         row = ((rowAbs - 13) % 12) + 1;
     }
+
+    // Reverse the column
+    const totalCols = 20; // Assuming healthBars has 20 columns
+    let reversedCol = totalCols - 1 - col; // Reverse calculation
+    if (col == 0) reversedCol = col;
+
+    const healthBarString = `${healthBars[row][reversedCol]} x${rowAbs + 1}  ${currentHp}`;
     
-    const healthBarString = `${healthBars[row][col]} x${rowAbs.toString()}`;
-    player.onScreenDisplay.setTitle(`hpc:${healthBarString}`, {stayDuration: 1, fadeInDuration: 0, fadeOutDuration: 0});
+    player.runCommand("title @s times 0 0 0");
+    player.runCommand("title @s title hpc:" + healthBarString);
 }
