@@ -93,5 +93,5 @@ function initializeScoreboards() {
 system.runTimeout(() => {initializeScoreboards()}, 50);
 
 world.afterEvents.itemUse.subscibe((ev) => {
-    
+    const player = ev.source;
 });
