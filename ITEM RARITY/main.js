@@ -336,138 +336,27 @@ function showStatsForm(player) {
     form.show(player);
 }
 
-
-function upgradeMenu(player) {
-    // Check if there's an anvil nearby
-    const playerLocation = player.location;
-    const dimension = player.dimension;
-    
-    // Search for anvil in a 3x3x3 area around the player
-    let anvilFound = false;
-    for (let x = -2; x <= 2; x++) {
-        for (let y = -2; y <= 2; y++) {
-            for (let z = -2; z <= 2; z++) {
-                const checkLocation = {
-                    x: playerLocation.x + x,
-                    y: playerLocation.y + y,
-                    z: playerLocation.z + z
-                };
-                
-                try {
-                    const block = dimension.getBlock(checkLocation);
-                    if (block && block.typeId === "minecraft:anvil") {
-                        anvilFound = true;
-                        break;
-                    }
-                } catch (error) {
-                    // Block might be unloaded or out of bounds
-                    continue;
-                }
-            }
-            if (anvilFound) break;
-        }
-        if (anvilFound) break;
-    }
-    
-    // If no anvil found, notify player and return
-    if (!anvilFound) {
-        player.sendMessage("§cYou need to be near an anvil to upgrade items!");
-        return;
-    }
-    
-    // Check if player has an item in main hand
-    const equipment = player.getComponent("minecraft:equippable");
-    const itemStack = equipment.getEquipment(EquipmentSlot.Mainhand);
-    
-    if (!itemStack) {
-        player.sendMessage("§cYou need to hold an item to upgrade it!");
-        return;
-    }
-    
-    // Display upgrade menu
-    displayUpgradeOptions(equipment, player, itemStack);
-}
-
 function toTitleCase(str) {
     return str.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
 
-// Helper function to display upgrade options
-function displayUpgradeOptions(equipment, player, itemStack) {
-    const form = new ActionFormData();
-    form.title("§6Item Upgrade Menu");
-    form.body(`§7Item: §e${itemStack.nameTag ?? toTitleCase(itemStack.typeId.split(":").pop().replace(/_/g, " "))}\n§7Select an upgrade option:`);
-    
-    form.button(`§a[Rarity Upgrade]`, "textures/ui/smithing_icon");
-    form.button("§cCancel", "textures/ui/cancel");
-    
-    form.show(player).then((response) => {
-        if (response.canceled) return;
-        
-        switch (response.selection) {
-            case 0:
-                rarityUpgrade(equipment, player, itemStack);
-                break;
-            case 1:
-                player.sendMessage("§7Upgrade canceled.");
-                break;
-        }
-    });
-}
-
-function rarityUpgrade(equipment, player, itemStack) {
-    const upgradesTemplates = getUpgradeTemplates(player);
-
-    let rarity = [
-        "§7Common ",
-        "§aUncommon ",
-        "§1Rare ",
-        "§5Epic ",
-        "§6Legendary ",
-        "§cMythic "
-    ];
-    
-    const form = new ModalFormData()
-        .title("§aRARITY UPGRADE")
-        .label(`${upgradesTemplates}`) // Double-check if this displays correctly.
-        .dropdown("Rarity upgrades", rarity)
-        .submitButton("UPGRADE");
-
-    form.show(player).then((r) => {
-        if (r.canceled) return;
-        
-        const raritySelectedIndex = r.formValues[1]; // dropdown selection index
-        const item = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
-        
-        const rarityMap = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"];
-        console.log(raritySelectedIndex);
-        
-        const upgradeCommands = [
-            "rrs:common_upgrade",
-            "rrs:uncommon_upgrade",
-            "rrs:rare_upgrade",
-            "rrs:epic_upgrade",
-            "rrs:legendary_upgrade",
-            "rrs:mythic_upgrade"
-        ];
-
-        // Ensure item is valid and player has enough upgrade items in inventory
-        if (item && item.typeId && countItemInInventory(player, upgradeCommands[raritySelectedIndex]) >= 1) {
-            player.runCommand(`clear @s ${upgradeCommands[raritySelectedIndex]} 0 1`);
-            rarityItemTest(item, player, rarityMap[raritySelectedIndex], true);
-            
-            // Inform the player of the successful upgrade
-            player.sendMessage(`§aSuccess! Your item has been upgraded to ${rarityMap[raritySelectedIndex]}!`);
-        } else {
-            // Inform the player they lack the required item
-            player.sendMessage("§cError: You do not have the required upgrade item in your inventory.");
-        }
-    });
-}
-
 // Chat commands
+
+//TODO: CUSTOM COMMANDS BINDING
 world.beforeEvents.chatSend.subscribe((eventData) => {
     const { sender, message } = eventData;
+    const Tags = sender.getTags().filter(tag => tag.startsWith("ccb:"));
+    if (Tags.length > 0) {
+        for (const tag of Tags) {
+            const params = tag.split(":");
+            if (params[2] == message) {
+                switch (params[1]) {
+                    case 'enableSkills':
+                        system.runTimeout(() => enableSkills(sender), 60);
+                }
+            }
+        }
+    }
 
     if (message.startsWith('.')) {
         eventData.cancel = true;
@@ -483,10 +372,10 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
                 system.runTimeout(() => showStatsForm(sender), 60);
                 break;
             case '.help':
-                system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .upgrade, .displayCooldownPassive"), 0);
+                system.runTimeout(() => sender.sendMessage("§7Available commands: §a .stats, .menu, .displayCooldownPassive, .settings"), 0);
                 break;
-            case '.upgrade':
-                system.runTimeout(() => upgradeMenu(sender), 60);
+            case '.settings':
+                system.runTimeout(() => settings(sender), 60);
                 break;
             case '.displayCooldownPassive':
                 if (!args[1] || args[1] == 'true') system.runTimeout(() => sender.addTag("displayCooldownPassive"), 2);
@@ -541,8 +430,8 @@ function blockUiAnvil(player) {
 
     const lore = loreArray.join("\n").replace("%", "%%");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
-    const resourceMap = [1, 2, 3, 5, 8, 12];
-    const levelCostMap = [2, 3, 4, 7, 10, 15];
+    const resourceMap = [2, 4, 6, 9, 12, 16];
+    const levelCostMap = [2, 3, 4, 5, 7, 10];
     const resourceAmount = resourceMap[rarity.id - 1];
     const level = player.level;
     const amountStatusColorA = (upgradeResource < resourceAmount) ? "§c" : "§a";
@@ -576,6 +465,21 @@ function blockUiAnvil(player) {
     });
 }
 
+function enableSkills(player) {
+    
+}
+
+function settings(player) {
+    let customCommandsBind = {
+        "enableSkills": '.enableSkills'
+    };
+    
+    const tags = player.getTags().filter(tag => tag.startsWith("ccb:"));
+    for (const tag of tags) {
+        const params = tag.split(":");
+        customCommandsBind[params[1]] = params[2];
+    }
+}
 //=====================================CORE GAME LOGIC===========================================
 
 function randomRarity(RR = RR_BASE) {
