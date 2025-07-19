@@ -1,4 +1,4 @@
-import { world, system, HudElement, HudVisibility } from "@minecraft/server";
+import { world, system, HudElement, HudVisibility, EquipmentSlot } from "@minecraft/server";
 
 
 const healthBars = [
@@ -29,9 +29,20 @@ system.runInterval(() => {
     }
 }, 5);
 
-system.runInterval(() => {
-    
-}, 50)
+// system.runInterval(() => {
+//     const slots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.feet];
+//     const players = world.getPlayers();
+//     
+//     for (const player of players) {
+//         let armorPoints = 0;
+//         for (const slot of slots) {
+//             const item = player.getComponent("minecraft:equippable").getEquipment(slot);
+//             if (item) {
+//                 
+//             }
+//         }
+//     }
+// }, 50);
 
 function displayHp(player) {
     const hpcomponent = player.getComponent("minecraft:health");
