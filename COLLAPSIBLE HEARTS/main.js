@@ -61,7 +61,7 @@ world.beforeEvents.chatSend.subscibe((ev) =>{
     
     if (message.startsWith(".")) {
         if (message == ".chb") {
-            
+            system.runTimeout(() => settings(player), 60);
         }
     }
 });
