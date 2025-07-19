@@ -29,6 +29,10 @@ system.runInterval(() => {
     }
 }, 5);
 
+system.runInterval(() => {
+    
+}, 50)
+
 function displayHp(player) {
     const hpcomponent = player.getComponent("minecraft:health");
     const maxHp = hpcomponent.effectiveValue;
