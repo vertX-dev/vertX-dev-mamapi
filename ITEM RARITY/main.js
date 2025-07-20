@@ -441,8 +441,8 @@ function blockUiAnvil(player) {
 
     const lore = loreArray.join("\n").replace("%", "%%");
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
-    const resourceMap = [2, 4, 6, 9, 12, 16];
-    const levelCostMap = [2, 3, 4, 5, 7, 10];
+    const resourceMap = [2, 4, 6, 9, 12, 16, 1000];
+    const levelCostMap = [2, 3, 4, 5, 7, 75];
     const resourceAmount = resourceMap[rarity.id - 1];
     const level = player.level;
     const amountStatusColorA = (upgradeResource < resourceAmount) ? "§c" : "§a";
@@ -829,7 +829,12 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
                 // Upgrade to specific rarity
                 let rarity = Object.values(RARITY).find(r => r.sid === rarityUp);
                 if (!upGuarant) {
-                    const id = Math.min(6, Math.max(1, Math.floor((Math.random() * 6) + rarity.id / 3)));
+                    let id = Math.min(6, Math.max(1, Math.floor((Math.random() * 6) + rarity.id / 3)));
+                    
+                    if (id >= 6 && Math.random() < 0.1) {
+                        id = 7;
+                    }
+                    
                     rarity = Object.values(RARITY).find(r => r.id == id);
                 }
                 
@@ -1273,10 +1278,6 @@ world.afterEvents.playerBreakBlock.subscribe((ev) => {
 
 // Initialize scoreboards immediately when the script loads
 system.runTimeout(() => {initializeScoreboards()}, 50);
-
-
-//======================DIVINE RARITY=========================
-
 
 
 //=====================================SKILLS FUNCTIONALITY===========================================
