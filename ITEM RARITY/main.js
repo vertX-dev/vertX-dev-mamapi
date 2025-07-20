@@ -1275,6 +1275,10 @@ world.afterEvents.playerBreakBlock.subscribe((ev) => {
 system.runTimeout(() => {initializeScoreboards()}, 50);
 
 
+//======================DIVINE RARITY=========================
+
+
+
 //=====================================SKILLS FUNCTIONALITY===========================================
 /**
  * const ccd = testCooldown(player, skill.name);
