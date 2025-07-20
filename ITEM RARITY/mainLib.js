@@ -76,20 +76,20 @@ export const RARITY = {
             skill: 0.95,
             passive: 0.70
         }
+    },
+    DIVINE: {
+        id: 7,
+        chance: 0.1,
+        sid: "Divine",
+        dName: "§bDivine",
+        color: "§b",
+        minStats: 0,
+        maxStats: 0,
+        skillChances: {
+            skill: 0,
+            passive: 0
+        }
     }
-//     DIVINE: {
-//         id: 7,
-//         chance: 0.1,
-//         sid: "Divine",
-//         dName: "§bDivine",
-//         color: "§b",
-//         minStats: 0,
-//         maxStats: 0,
-//         skillChances: {
-//             skill: 0,
-//             passive: 0
-//         }
-//     }
 };
 
 export const blackList = [
