@@ -102,16 +102,16 @@ export const TagMapping = {
     "axe": ["axe", "battleaxe", "handaxe", "tomahawk", "hatchet", "cleaver", "francisca", "poleaxe", "labrys"],
     "shovel": ["shovel", "spade", "scoop", "trenching", "entrenching"],
     "hoe": ["hoe", "tiller", "cultivator"],
-    "mace": ["mace", "club", "warhammer", "maul", "flail", "cudgel", "bludgeon", "morningstar", "sledgehammer", "mjolnir"],
+    "mace": ["mace", "club", "warhammer", "flail", "cudgel", "bludgeon", "morningstar", "sledgehammer", "mjolnir", "hammer"],
     "helmet": ["helmet", "hat", "cap", "crown", "circlet", "headpiece", "headgear", "coif", "casque", "bascinet", "sallet", "barbute", "armet", "helm", "spangenhelm", "burgonet", "morion", "kabuto"],
-    "chestplate": ["chestplate", "armor", "tunic", "vest", "breastplate", "jerkin", "cuirass", "mail", "chainmail", "hauberk", "byrnie", "haubergeon", "lamellar", "brigandine", "gambeson", "aketon", "pourpoint", "doublet", "surcoat", "tabard"],
-    "leggings": ["leggings", "pants", "trousers", "greaves", "breeches", "chaps", "cuisses", "schynbalds", "poleyns", "chausses"],
+    "chestplate": ["chestplate", "tunic", "vest", "breastplate", "jerkin", "cuirass", "chainmail", "hauberk", "byrnie", "haubergeon", "lamellar", "brigandine", "gambeson", "aketon", "pourpoint", "surcoat", "tabard"],
+    "leggings": ["leggings", "pants", "trousers"],
     "boots": ["boots", "shoes", "sandals", "footwear", "sabatons", "slippers", "sollerets", "poulaines", "moccasins"],
-    "bow": ["bow", "longbow", "shortbow", "crossbow", "recurve", "flatbow", "ballista", "arbalest"],
-    "trident": ["trident", "fork", "spear", "lance", "javelin", "harpoon", "pitchfork", "pike", "polearm", "partisan", "ranseur", "spetum", "corsesca", "pilum", "assegai", "naginata", "yari", "qiang", "dory", "sarissa", "spontoon"],
-    "shield": ["shield", "buckler", "targe", "defender", "barrier", "scutum", "hoplon", "aspis", "pavise", "rotella", "adarga"],
-    "elytra": ["elytra", "wings", "glider", "wing", "flight"],
-    "totem": ["totem", "charm", "talisman", "amulet", "relic", "artifact", "idol", "fetish", "effigy", "ward", "phylactery"]
+    "bow": ["bow", "longbow", "shortbow", "crossbow", "recurve", "flatbow", "ballista", "arbalet"],
+    "trident": ["trident", "fork", "spear", "lance", "pitchfork", "pike", "polearm", "ranseur", "spetum", "corsesca", "pilum", "assegai", "naginata", "yari", "qiang", "dory", "sarissa", "spontoon"],
+    "shield": ["shield", "buckler", "targe", "defender", "scutum", "hoplon", "aspis", "pavise", "rotella", "adarga"],
+    "elytra": ["elytra", "wings", "glider", "wing"],
+    "totem": ["totem", "charm", "talisman", "amulet", "relic", "artifact", "idol"]
 };
 
 // Item type arrays for stats
