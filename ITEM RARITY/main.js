@@ -930,7 +930,7 @@ function setMainStats(player) {
     
     //stats from other addons
     if (player.hasTag("chbvertx")) {
-        const hpFromCHB = Math.floor(getScoreboardValue("hpForRRS")); //Compact health bar
+        const hpFromCHB = Math.floor(getScoreboardValue("hpforrrs", player)); //Compact health bar
         health = health + hpFromCHB;
     }
     

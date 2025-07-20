@@ -84,7 +84,7 @@ export const blackList = [
 ];
 
 export const TagMapping = {
-    "sword": ["sword", "katana", "claymore", "rapier", "shortsword", "longsword", "greatsword", "broadsword", "cutlass", "sabre", "scimitar", "falchion", "blade", "saber"],
+    "sword": ["sword", "katana", "claymore", "rapier", "shortsword", "longsword", "greatsword", "broadsword", "cutlass", "scimitar", "falchion", "blade", "saber"],
     "pickaxe": ["pickaxe", "pick", "mattock", "mining_pick", "digger"],
     "axe": ["axe", "battleaxe", "handaxe", "tomahawk", "great_axe", "lumber_axe", "hatchet", "cleaver"],
     "shovel": ["shovel", "spade", "digger", "scoop"],

@@ -31,9 +31,9 @@ export const skills = {
 
     // FLAME ARC - Sword
     FLAME_ARC_RARE: { name: "§9Flame Arc", type: "sword", rarity: "Rare", min: 15, max: 20, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 400, scoreboard: "flamearc" },
-    FLAME_ARC_EPIC: { name: "§5Flame Arc", type: "sword", rarity: "Epic", min: 20, max: 28, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 400, scoreboard: "flamearc" },
-    FLAME_ARC_LEGENDARY: { name: "§6Flame Arc", type: "sword", rarity: "Legendary", min: 28, max: 38, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 400, scoreboard: "flamearc" },
-    FLAME_ARC_MYTHIC: { name: "§cFlame Arc", type: "sword", rarity: "Mythic", min: 38, max: 50, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 400, scoreboard: "flamearc" },
+    FLAME_ARC_EPIC: { name: "§5Flame Arc", type: "sword", rarity: "Epic", min: 20, max: 28, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 350, scoreboard: "flamearc" },
+    FLAME_ARC_LEGENDARY: { name: "§6Flame Arc", type: "sword", rarity: "Legendary", min: 28, max: 38, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 300, scoreboard: "flamearc" },
+    FLAME_ARC_MYTHIC: { name: "§cFlame Arc", type: "sword", rarity: "Mythic", min: 38, max: 50, description: "§7Unleashes an arc of fire that \n§7ignites enemies and blocks, \n§7dealing §x{x} §7fire damage", cooldown: 250, scoreboard: "flamearc" },
 
     // SHADOW DASH - Sword
     SHADOW_DASH_RARE: { name: "§9Shadow Dash", type: "sword", rarity: "Rare", min: 3, max: 5, description: "§7Dash forward §x{x} §7blocks \n§7through enemies, reduced \n§7distance when airborne", cooldown: 50, scoreboard: "shadowdash" },
