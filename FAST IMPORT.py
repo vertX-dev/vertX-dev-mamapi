@@ -5,6 +5,7 @@ import re
 import zipfile
 import requests
 from pathlib import Path
+import argparse
 
 class MinecraftManifestUpdater:
     def __init__(self, base_directory=None, telegram_config=None, addon_name=None, version_input=None):
@@ -558,8 +559,113 @@ def create_telegram_config_template():
     print(f"Created telegram configuration template: {config_file}")
     print("Please edit the file with your actual bot token and chat ID.")
 
+def parse_cli_args():
+    parser = argparse.ArgumentParser(description='FAST IMPORT - Minecraft Addon Importer')
+    parser.add_argument('--folder', type=str, help='Addon folder path')
+    parser.add_argument('--name', type=str, help='Addon name')
+    parser.add_argument('--main-version', type=int, help='Main version number')
+    parser.add_argument('--sub-version', type=int, help='Sub version number')
+    parser.add_argument('--behavior', type=str, help='Import behavior pack (True/False)')
+    parser.add_argument('--resource', type=str, help='Import resource pack (True/False)')
+    parser.add_argument('--beta', type=str, help='Beta version (True/False)')
+    return parser.parse_args()
+
 def main():
-    """Main function to run the script"""
+    args = parse_cli_args()
+    if args.folder and args.name and args.main_version is not None and args.sub_version is not None:
+        # CLI mode
+        selected_folder = args.folder
+        addon_name = args.name
+        version_input = args.sub_version
+        main_version = args.main_version
+        sub_version = args.sub_version
+        behavior = str(args.behavior).lower() == 'true'
+        resource = str(args.resource).lower() == 'true'
+        beta = str(args.beta).lower() == 'true'
+        # Compose version string
+        version_str = f"v{main_version}.{sub_version}"
+        if beta:
+            version_str += ' Beta'
+        print(f"[CLI] Importing: {addon_name} {version_str}")
+        # Load Telegram config as before
+        telegram_config = load_telegram_config()
+        # Run the updater with selected folder and new version logic
+        updater = MinecraftManifestUpdater(
+            base_directory=selected_folder,
+            telegram_config=telegram_config,
+            addon_name=addon_name,
+            version_input=sub_version
+        )
+        # Save config for repeat import
+        config = {
+            'folder': selected_folder,
+            'name': addon_name,
+            'main_version': main_version,
+            'sub_version': sub_version,
+            'beta': beta,
+            'behavior': behavior,
+            'resource': resource
+        }
+        try:
+            with open('fast_import_config.json', 'w') as f:
+                json.dump(config, f, indent=2)
+        except Exception:
+            pass
+        # --- Manifest logic for separation and dependencies ---
+        # Find all manifest.json files and update them accordingly
+        manifest_files = updater.find_manifest_files()
+        behavior_manifest = None
+        resource_manifest = None
+        for mf in manifest_files:
+            p = str(mf).lower()
+            if 'behavior' in p or 'bp' in p:
+                behavior_manifest = mf
+            elif 'resource' in p or 'rp' in p:
+                resource_manifest = mf
+        # Generate UUIDs for dependency linking
+        behavior_uuid = str(uuid.uuid4()) if behavior else None
+        resource_uuid = str(uuid.uuid4()) if resource else None
+        # Update manifests with correct dependencies
+        for mf in manifest_files:
+            try:
+                with open(mf, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                # Set version
+                data['header']['version'] = [main_version, sub_version, 0]
+                # Set name
+                name_str = f"{addon_name} v{main_version}.{sub_version}"
+                if beta:
+                    name_str += ' Beta'
+                data['header']['name'] = name_str
+                # Set UUIDs
+                if 'behavior' in str(mf).lower() and behavior_uuid:
+                    data['header']['uuid'] = behavior_uuid
+                    for m in data.get('modules', []):
+                        m['uuid'] = behavior_uuid
+                if 'resource' in str(mf).lower() and resource_uuid:
+                    data['header']['uuid'] = resource_uuid
+                    for m in data.get('modules', []):
+                        m['uuid'] = resource_uuid
+                # Set dependencies
+                if 'behavior' in str(mf).lower() and resource_uuid:
+                    data['dependencies'] = [{
+                        'uuid': resource_uuid,
+                        'version': [main_version, sub_version, 0]
+                    }]
+                if 'resource' in str(mf).lower() and behavior_uuid:
+                    data['dependencies'] = [{
+                        'uuid': behavior_uuid,
+                        'version': [main_version, sub_version, 0]
+                    }]
+                with open(mf, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                print(f"Updated manifest: {mf}")
+            except Exception as e:
+                print(f"Error updating manifest {mf}: {e}")
+        # Continue with the rest of the process
+        updater.run()
+        return
+    # Interactive mode
     print("Minecraft Addon Updater with Telegram Integration")
     print("=" * 50)
     
