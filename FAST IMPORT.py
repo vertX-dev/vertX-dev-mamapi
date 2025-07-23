@@ -7,6 +7,8 @@ import requests
 from pathlib import Path
 import argparse
 
+CONFIG_FILE = 'fast_import_config.json'
+
 class MinecraftManifestUpdater:
     def __init__(self, base_directory=None, telegram_config=None, addon_name=None, version_input=None):
         self.base_directory = Path(base_directory) if base_directory else None
@@ -559,37 +561,185 @@ def create_telegram_config_template():
     print(f"Created telegram configuration template: {config_file}")
     print("Please edit the file with your actual bot token and chat ID.")
 
-def parse_cli_args():
-    parser = argparse.ArgumentParser(description='FAST IMPORT - Minecraft Addon Importer')
-    parser.add_argument('--folder', type=str, help='Addon folder path')
-    parser.add_argument('--name', type=str, help='Addon name')
-    parser.add_argument('--main-version', type=int, help='Main version number')
-    parser.add_argument('--sub-version', type=int, help='Sub version number')
-    parser.add_argument('--behavior', type=str, help='Import behavior pack (True/False)')
-    parser.add_argument('--resource', type=str, help='Import resource pack (True/False)')
-    parser.add_argument('--beta', type=str, help='Beta version (True/False)')
-    return parser.parse_args()
+# --- GUI Section ---
+def launch_gui():
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
 
-def main():
-    args = parse_cli_args()
-    if args.folder and args.name and args.main_version is not None and args.sub_version is not None:
-        # CLI mode
-        selected_folder = args.folder
-        addon_name = args.name
-        version_input = args.sub_version
-        main_version = args.main_version
-        sub_version = args.sub_version
-        behavior = str(args.behavior).lower() == 'true'
-        resource = str(args.resource).lower() == 'true'
-        beta = str(args.beta).lower() == 'true'
+    class FastImportGUI:
+        def __init__(self, root):
+            self.root = root
+            self.root.title('FAST IMPORT GUI')
+            self.root.geometry('500x400')
+            self.config = self.load_config()
+            self.create_widgets()
+            self.prefill_from_config()
+
+        def create_widgets(self):
+            main_frame = ttk.Frame(self.root, padding=20)
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            # Folder selection
+            folder_frame = ttk.Frame(main_frame)
+            folder_frame.pack(fill=tk.X, pady=5)
+            ttk.Label(folder_frame, text='Addon Folder:').pack(side=tk.LEFT)
+            self.folder_var = tk.StringVar()
+            folder_entry = ttk.Entry(folder_frame, textvariable=self.folder_var, width=40)
+            folder_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+            ttk.Button(folder_frame, text='Browse', command=self.browse_folder).pack(side=tk.LEFT)
+
+            # Addon name
+            name_frame = ttk.Frame(main_frame)
+            name_frame.pack(fill=tk.X, pady=5)
+            ttk.Label(name_frame, text='Addon Name:').pack(side=tk.LEFT)
+            self.name_var = tk.StringVar()
+            ttk.Entry(name_frame, textvariable=self.name_var, width=30).pack(side=tk.LEFT, padx=5)
+
+            # Version
+            version_frame = ttk.Frame(main_frame)
+            version_frame.pack(fill=tk.X, pady=5)
+            ttk.Label(version_frame, text='Version: v').pack(side=tk.LEFT)
+            self.main_version_var = tk.StringVar()
+            self.sub_version_var = tk.StringVar()
+            ttk.Entry(version_frame, textvariable=self.main_version_var, width=5).pack(side=tk.LEFT)
+            ttk.Label(version_frame, text='.').pack(side=tk.LEFT)
+            ttk.Entry(version_frame, textvariable=self.sub_version_var, width=5).pack(side=tk.LEFT)
+
+            # Beta version
+            self.beta_var = tk.BooleanVar()
+            ttk.Checkbutton(main_frame, text='Beta Version', variable=self.beta_var).pack(anchor=tk.W, pady=5)
+
+            # Pack type
+            packtype_frame = ttk.LabelFrame(main_frame, text='Pack Type', padding=10)
+            packtype_frame.pack(fill=tk.X, pady=5)
+            self.behavior_var = tk.BooleanVar()
+            self.resource_var = tk.BooleanVar()
+            ttk.Checkbutton(packtype_frame, text='Behavior Pack', variable=self.behavior_var).pack(side=tk.LEFT, padx=10)
+            ttk.Checkbutton(packtype_frame, text='Resource Pack', variable=self.resource_var).pack(side=tk.LEFT, padx=10)
+
+            # Repeat import
+            self.repeat_var = tk.BooleanVar()
+            ttk.Checkbutton(main_frame, text='Repeat Last Import (auto-increment sub-version)', variable=self.repeat_var, command=self.on_repeat_toggle).pack(anchor=tk.W, pady=5)
+
+            # Import button
+            ttk.Button(main_frame, text='Run Import', command=self.run_import).pack(pady=20)
+
+        def browse_folder(self):
+            folder = filedialog.askdirectory(title='Select Addon Folder')
+            if folder:
+                self.folder_var.set(folder)
+
+        def prefill_from_config(self):
+            if not self.config:
+                return
+            self.folder_var.set(self.config.get('folder', ''))
+            self.name_var.set(self.config.get('name', ''))
+            self.main_version_var.set(str(self.config.get('main_version', '1')))
+            self.sub_version_var.set(str(self.config.get('sub_version', '0')))
+            self.beta_var.set(self.config.get('beta', False))
+            self.behavior_var.set(self.config.get('behavior', True))
+            self.resource_var.set(self.config.get('resource', False))
+
+        def on_repeat_toggle(self):
+            if self.repeat_var.get() and self.config:
+                # Load config and increment sub-version
+                self.folder_var.set(self.config.get('folder', ''))
+                self.name_var.set(self.config.get('name', ''))
+                self.main_version_var.set(str(self.config.get('main_version', '1')))
+                sub = int(self.config.get('sub_version', 0)) + 1
+                self.sub_version_var.set(str(sub))
+                self.beta_var.set(self.config.get('beta', False))
+                self.behavior_var.set(self.config.get('behavior', True))
+                self.resource_var.set(self.config.get('resource', False))
+
+        def run_import(self):
+            folder = self.folder_var.get().strip()
+            name = self.name_var.get().strip()
+            main_version = self.main_version_var.get().strip()
+            sub_version = self.sub_version_var.get().strip()
+            beta = self.beta_var.get()
+            behavior = self.behavior_var.get()
+            resource = self.resource_var.get()
+
+            if not folder or not os.path.isdir(folder):
+                messagebox.showerror('Error', 'Please select a valid addon folder.')
+                return
+            if not name:
+                messagebox.showerror('Error', 'Please enter an addon name.')
+                return
+            if not main_version.isdigit() or not sub_version.isdigit():
+                messagebox.showerror('Error', 'Version must be numeric.')
+                return
+            if not (behavior or resource):
+                messagebox.showerror('Error', 'Select at least one pack type.')
+                return
+
+            # Save config for repeat import
+            config = {
+                'folder': folder,
+                'name': name,
+                'main_version': int(main_version),
+                'sub_version': int(sub_version),
+                'beta': beta,
+                'behavior': behavior,
+                'resource': resource
+            }
+            self.save_config(config)
+
+            # Call main() with these arguments
+            try:
+                main(
+                    folder=folder,
+                    name=name,
+                    main_version=int(main_version),
+                    sub_version=int(sub_version),
+                    behavior=behavior,
+                    resource=resource,
+                    beta=beta,
+                    gui_mode=True
+                )
+                messagebox.showinfo('Success', f'Import completed for {name} v{main_version}.{sub_version}')
+            except Exception as e:
+                messagebox.showerror('Error', f'Import failed: {e}')
+
+        def load_config(self):
+            if os.path.exists(CONFIG_FILE):
+                try:
+                    with open(CONFIG_FILE, 'r') as f:
+                        return json.load(f)
+                except Exception:
+                    return None
+            return None
+
+        def save_config(self, config):
+            try:
+                with open(CONFIG_FILE, 'w') as f:
+                    json.dump(config, f, indent=2)
+            except Exception:
+                pass
+
+    root = tk.Tk()
+    app = FastImportGUI(root)
+    root.mainloop()
+
+# --- END GUI Section ---
+
+def main(folder=None, name=None, main_version=None, sub_version=None, behavior=None, resource=None, beta=None, gui_mode=False):
+    # If called with all args, run CLI logic, else run interactive
+    if folder and name and main_version is not None and sub_version is not None:
+        selected_folder = folder
+        addon_name = name
+        version_input = sub_version
+        behavior = bool(behavior)
+        resource = bool(resource)
+        beta = bool(beta)
         # Compose version string
         version_str = f"v{main_version}.{sub_version}"
         if beta:
             version_str += ' Beta'
-        print(f"[CLI] Importing: {addon_name} {version_str}")
-        # Load Telegram config as before
+        if not gui_mode:
+            print(f"[CLI] Importing: {addon_name} {version_str}")
         telegram_config = load_telegram_config()
-        # Run the updater with selected folder and new version logic
         updater = MinecraftManifestUpdater(
             base_directory=selected_folder,
             telegram_config=telegram_config,
@@ -607,12 +757,11 @@ def main():
             'resource': resource
         }
         try:
-            with open('fast_import_config.json', 'w') as f:
+            with open(CONFIG_FILE, 'w') as f:
                 json.dump(config, f, indent=2)
         except Exception:
             pass
         # --- Manifest logic for separation and dependencies ---
-        # Find all manifest.json files and update them accordingly
         manifest_files = updater.find_manifest_files()
         behavior_manifest = None
         resource_manifest = None
@@ -622,22 +771,17 @@ def main():
                 behavior_manifest = mf
             elif 'resource' in p or 'rp' in p:
                 resource_manifest = mf
-        # Generate UUIDs for dependency linking
         behavior_uuid = str(uuid.uuid4()) if behavior else None
         resource_uuid = str(uuid.uuid4()) if resource else None
-        # Update manifests with correct dependencies
         for mf in manifest_files:
             try:
                 with open(mf, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                # Set version
                 data['header']['version'] = [main_version, sub_version, 0]
-                # Set name
                 name_str = f"{addon_name} v{main_version}.{sub_version}"
                 if beta:
                     name_str += ' Beta'
                 data['header']['name'] = name_str
-                # Set UUIDs
                 if 'behavior' in str(mf).lower() and behavior_uuid:
                     data['header']['uuid'] = behavior_uuid
                     for m in data.get('modules', []):
@@ -646,7 +790,6 @@ def main():
                     data['header']['uuid'] = resource_uuid
                     for m in data.get('modules', []):
                         m['uuid'] = resource_uuid
-                # Set dependencies
                 if 'behavior' in str(mf).lower() and resource_uuid:
                     data['dependencies'] = [{
                         'uuid': resource_uuid,
@@ -659,13 +802,14 @@ def main():
                     }]
                 with open(mf, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                print(f"Updated manifest: {mf}")
+                if not gui_mode:
+                    print(f"Updated manifest: {mf}")
             except Exception as e:
-                print(f"Error updating manifest {mf}: {e}")
-        # Continue with the rest of the process
+                if not gui_mode:
+                    print(f"Error updating manifest {mf}: {e}")
         updater.run()
         return
-    # Interactive mode
+    # Interactive mode fallback
     print("Minecraft Addon Updater with Telegram Integration")
     print("=" * 50)
     
@@ -740,4 +884,20 @@ def main():
     updater.run()
 
 if __name__ == "__main__":
-    main()
+    args = parse_cli_args()
+    if (
+        args.gui or
+        (not any([args.folder, args.name, args.main_version, args.sub_version, args.behavior, args.resource, args.beta]))
+    ):
+        launch_gui()
+    else:
+        main(
+            folder=args.folder,
+            name=args.name,
+            main_version=args.main_version,
+            sub_version=args.sub_version,
+            behavior=(str(args.behavior).lower() == 'true') if args.behavior is not None else None,
+            resource=(str(args.resource).lower() == 'true') if args.resource is not None else None,
+            beta=(str(args.beta).lower() == 'true') if args.beta is not None else None,
+            gui_mode=False
+        )
