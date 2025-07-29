@@ -1,12 +1,16 @@
-import { world, system, EquipmentSlot, EntityComponentTypes } from "@minecraft/server";
+import { world, system, EquipmentSlot, EntityComponentTypes, CommandPermissionLevel, CustomCommandStatus, CustomCommandParamType } from "@minecraft/server";
 import { ActionFormData, FormCancelationReason, uiManager } from "@minecraft/server-ui";
+
+// Constants for lore markers
+const COMMAND_MARKER = '§c§b§i§n§d§t';
+const FUNCTION_MARKER = '§a§b§i§n§d§f';
 
 export async function forceShow(player, form, timeout = Infinity) {
     const startTick = system.currentTick;
     while ((system.currentTick - startTick) < timeout) {
         const response = await form.show(player);
         if (response.cancelationReason !== FormCancelationReason.UserBusy) return response;
-    };
+    }
     throw new Error(`Timed out after ${timeout} ticks`);
 }
 
@@ -18,7 +22,7 @@ async function msifMenu(player) {
         .button('', 'textures/items/iron_chestplate')
         .button('', 'textures/items/iron_leggings')
         .button('', 'textures/items/iron_boots')
-        .button('')
+        .button('');
     const response = await forceShow(player, menu, 200);
     if (response.selection >= 0) {
         switch (response.selection) {
@@ -57,7 +61,71 @@ system.runTimeout(() => {
         uiManager.closeAllForms(player);
         msifMenu(player);
     }
-}, 20)
+}, 20);
+
+//Helper Functions for Lore
+function hideString(str, marker = COMMAND_MARKER) {
+    let encoded = '';
+    for (const char of str) {
+        encoded += `§${char}`;
+    }
+    encoded += '§r';
+    return marker + encoded;
+}
+
+function revealString(hidden, marker = COMMAND_MARKER) {
+    if (!hidden.startsWith(marker)) return null;
+    let data = hidden.slice(marker.length).replace(/§r$/, '');
+    const chars = [...data.matchAll(/§(.)/g)].map(match => match[1]);
+    return chars.join('');
+}
+
+function executeLoreCommands(player, itemStack) {
+    if (!itemStack) return false;
+    
+    const loreArray = itemStack.getLore();
+    if (!loreArray || loreArray.length === 0) return false;
+
+    let commandsExecuted = false;
+    let commands = [];
+    let functions = [];
+    
+    for (const lore of loreArray) {
+        const command = revealString(lore, COMMAND_MARKER);
+        if (command) {
+            commands.push(command);
+        }
+        
+        const functionName = revealString(lore, FUNCTION_MARKER);
+        if (functionName) {
+            functions.push(functionName);
+        }
+    }
+    
+    // Execute commands
+    for (const command of commands) {
+        try {
+            player.runCommand(command);
+            commandsExecuted = true;
+        } catch (e) {
+            console.log("command error: " + e);
+            console.log(command + " §c[FAILED]");
+        }
+    }
+    
+    // Execute functions
+    for (const functionName of functions) {
+        try {
+            player.runCommand("function " + functionName);
+            commandsExecuted = true;
+        } catch (e) {
+            console.log("function error: " + e);
+            console.log("function " + functionName + " §c[FAILED]");
+        }
+    }
+    
+    return commandsExecuted;
+}
 
 //Functions
 function parseItemIdToScoreboardObj(itemId) {
@@ -97,73 +165,142 @@ function glyphCoordToChar(data) {
 }
 
 function parseMSIFTags(tags) {
-    return tags
-        .filter(tag => tag.startsWith("MSIF:"))
-        .map(tag => {
-            const parts = tag.slice(5).split(":");
-            
-            let functionNameG = "";
-            let skillNameG = "Skill";
-            let cooldownG = 0;
-            let cooldownGroupG = "none";
-            let cooldownGroupNameG = "none";
-            let iconG = "";
-            let aSetNameG = "";
-            let aSetFunctionG = "";
-            let aSetPartsG = 4;
-            
-            const plength = parts.length;
-            let currentIndex = 0;
-            
-            while (currentIndex < plength) {
-                switch (parts[currentIndex]) {
-                    case "function":
-                        functionNameG = parts[currentIndex + 1];
-                        currentIndex = currentIndex + 2;
-                        break;
-                    case "skillName":
-                        skillNameG = parts[currentIndex + 1].replace("_p", "§").replace("_", " ");
-                        currentIndex = currentIndex + 2;
-                        break;
-                    case "icon":
-                        iconG = glyphCoordToChar(parts[currentIndex + 1]);
-                        currentIndex = currentIndex + 2;
-                        break;
-                    case "cooldown":
-                        cooldownGroupG = parts[currentIndex + 1];
-                        if (parts[currentIndex + 2] != "dName") {
-                            cooldownG = Number(parts[currentIndex + 2]);
-                            cooldownGroupNameG = cooldownGroupG;
-                            currentIndex = currentIndex + 3;
-                        } else {
-                            cooldownG = Number(parts[currentIndex + 4]);
-                            cooldownGroupNameG = parts[currentIndex + 3].replace("_p", "§").replace("_", " ");
-                            currentIndex = currentIndex + 5;
-                        }
-                        break;
-                    case "armorSet"://armorSet:<setName|string>:<functionName|string>:<parts|num>
-                        aSetNameG = parts[currentIndex + 1];
-                        aSetPartsG = parts[currentIndex + 3];
-                        aSetFunctionG = parts[currentIndex + 2];
-                        currentIndex = currentIndex + 4;
-                        break;
-                    default: 
-                        currentIndex++;
-                }
+    const msifTags = tags.filter(tag => tag.startsWith("MSIF:"));
+    const lmsifTags = tags.filter(tag => tag.startsWith("LMSIF:"));
+    
+    const results = [];
+    
+    // Parse MSIF tags (existing logic)
+    for (const tag of msifTags) {
+        const parts = tag.slice(5).split(":");
+        
+        let functionNameG = "";
+        let skillNameG = "Skill";
+        let cooldownG = 0;
+        let cooldownGroupG = "none";
+        let cooldownGroupNameG = "none";
+        let iconG = "";
+        let aSetNameG = "";
+        let aSetFunctionG = "";
+        let aSetPartsG = 4;
+        
+        const plength = parts.length;
+        let currentIndex = 0;
+        
+        while (currentIndex < plength) {
+            switch (parts[currentIndex]) {
+                case "function":
+                    functionNameG = parts[currentIndex + 1];
+                    currentIndex = currentIndex + 2;
+                    break;
+                case "skillName":
+                    skillNameG = parts[currentIndex + 1].replace("_p", "§").replace("_", " ");
+                    currentIndex = currentIndex + 2;
+                    break;
+                case "icon":
+                    iconG = glyphCoordToChar(parts[currentIndex + 1]);
+                    currentIndex = currentIndex + 2;
+                    break;
+                case "cooldown":
+                    cooldownGroupG = parts[currentIndex + 1];
+                    if (parts[currentIndex + 2] != "dName") {
+                        cooldownG = Number(parts[currentIndex + 2]);
+                        cooldownGroupNameG = cooldownGroupG;
+                        currentIndex = currentIndex + 3;
+                    } else {
+                        cooldownG = Number(parts[currentIndex + 4]);
+                        cooldownGroupNameG = parts[currentIndex + 3].replace("_p", "§").replace("_", " ");
+                        currentIndex = currentIndex + 5;
+                    }
+                    break;
+                case "armorSet":
+                    aSetNameG = parts[currentIndex + 1];
+                    aSetPartsG = Number(parts[currentIndex + 3]);
+                    aSetFunctionG = parts[currentIndex + 2];
+                    currentIndex = currentIndex + 4;
+                    break;
+                default: 
+                    currentIndex++;
             }
-            
-            return {
-                functionName: functionNameG,
-                skillName: skillNameG,
-                cooldown: cooldownG,
-                cooldownGroup: cooldownGroupG,
-                cooldownGroupName: cooldownGroupNameG,
-                icon: iconG,
-                aSetFunction: aSetFunctionG,
-                aSetName: aSetNameG,
-                aSetParts: aSetPartsG
-            };
+        }
+        
+        results.push({
+            functionName: functionNameG,
+            skillName: skillNameG,
+            cooldown: cooldownG,
+            cooldownGroup: cooldownGroupG,
+            cooldownGroupName: cooldownGroupNameG,
+            icon: iconG,
+            aSetFunction: aSetFunctionG,
+            aSetName: aSetNameG,
+            aSetParts: aSetPartsG
         });
+    }
+    
+    // Parse LMSIF tags (new logic)
+    for (const tag of lmsifTags) {
+        const parts = tag.slice(6).split(":"); // Remove "LMSIF:" prefix
+        
+        // Default values
+        let functionNameG = "";
+        let skillNameG = "Skill";
+        let cooldownG = 0;
+        let cooldownGroupG = "none";
+        let cooldownGroupNameG = "none";
+        let iconG = ""; // No icon support for LMSIF
+        let aSetNameG = "";
+        let aSetFunctionG = "";
+        let aSetPartsG = 4;
+        
+        // Parse parameters in strict order
+        if (parts.length > 0 && parts[0]) {
+            functionNameG = parts[0];
+        }
+        
+        if (parts.length > 1 && parts[1]) {
+            skillNameG = parts[1].replace(/_p/g, "§").replace(/_/g, " ");
+        }
+        
+        if (parts.length > 2 && parts[2]) {
+            cooldownGroupG = parts[2];
+        }
+        
+        if (parts.length > 3 && parts[3]) {
+            cooldownGroupNameG = parts[3].replace(/_p/g, "§").replace(/_/g, " ");
+        } else {
+            cooldownGroupNameG = cooldownGroupG;
+        }
+        
+        if (parts.length > 4 && parts[4]) {
+            cooldownG = Number(parts[4]) || 0;
+        }
+        
+        if (parts.length > 5 && parts[5]) {
+            aSetNameG = parts[5];
+        }
+        
+        if (parts.length > 6 && parts[6]) {
+            aSetFunctionG = parts[6];
+        }
+        
+        if (parts.length > 7 && parts[7]) {
+            aSetPartsG = Number(parts[7]) || 4;
+        }
+        
+        results.push({
+            functionName: functionNameG,
+            skillName: skillNameG,
+            cooldown: cooldownG,
+            cooldownGroup: cooldownGroupG,
+            cooldownGroupName: cooldownGroupNameG,
+            icon: iconG,
+            aSetFunction: aSetFunctionG,
+            aSetName: aSetNameG,
+            aSetParts: aSetPartsG
+        });
+    }
+    
+    return results;
 }
 
 function parseArmorSetsTags(player) {
@@ -276,13 +413,31 @@ function changeSkill(player) {
         itemStack = equippable?.getEquipment(EquipmentSlot.Offhand);
         itemId = itemStack?.typeId;
         
-        // If still no item or no tags, return
-        if (!itemStack || !itemId) return;
+        // If still no item or no tags, try lore backup
+        if (!itemStack || !itemId) {
+            // Try lore backup for mainhand
+            const mainhandItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+            if (mainhandItem && executeLoreCommands(player, mainhandItem)) {
+                return;
+            }
+            // Try lore backup for offhand
+            const offhandItem = equippable?.getEquipment(EquipmentSlot.Offhand);
+            if (offhandItem && executeLoreCommands(player, offhandItem)) {
+                return;
+            }
+            return;
+        }
     }
 
     const tags = itemStack.getTags();
     const skills = parseMSIFTags(tags);
-    if (skills.length === 0) return;
+    if (skills.length === 0) {
+        // Try lore backup if no MSIF tags found
+        if (executeLoreCommands(player, itemStack)) {
+            return;
+        }
+        return;
+    }
 
     const scoreboardObj = parseItemIdToScoreboardObj(itemId);
     taddsb(scoreboardObj, player);
@@ -293,6 +448,9 @@ function changeSkill(player) {
         const skill = skills[newIndex];
         const message = `§aChanged to ${skill.skillName} ${skill.icon}`;
         player.runCommand(`title @s actionbar ${message}`);
+    } else {
+        // If scoreboard failed, try lore backup
+        executeLoreCommands(player, itemStack);
     }
 }
 
@@ -303,38 +461,51 @@ function useSkillArmor(player, eSlot) {
     
     const tags = itemStack.getTags();
     const skills = parseMSIFTags(tags);
-    if (skills.length === 0) return;
+    if (skills.length === 0) {
+        // Try lore backup if no MSIF tags found
+        executeLoreCommands(player, itemStack);
+        return;
+    }
+    
     const armorData = skills[0];
     const CDTEST = taddsbc(armorData.cooldown, armorData.cooldownGroup, player, armorData.cooldownGroupName);
     if (CDTEST.state) {
+        let functionExecuted = false;
         try {
             player.runCommand(`function ${armorData.functionName}`);
+            functionExecuted = true;
         } catch (error) {
             console.warn(`Error running function ${armorData.functionName}:`, error);
-            player.runCommand("tell @s §cError: Function failed or missing.");
-        }
-        const tagsData = parseArmorSetsTags(player);
-        let lookForTag = armorData.aSetName;
-        let counter = 0;
-        if (tagsData.Head.includes(lookForTag)) counter++;
-        if (tagsData.Chest.includes(lookForTag)) counter++;
-        if (tagsData.Legs.includes(lookForTag)) counter++;
-        if (tagsData.Feet.includes(lookForTag)) counter++;
-        
-        if (counter >= armorData.aSetParts) {
-            try {
-                player.runCommand(`function ${armorData.aSetFunction}`);
-            } catch (error) {
-                console.warn(`Error running function ${armorData.aSetFunction}:`, error);
+            // Try lore backup if function failed
+            if (executeLoreCommands(player, itemStack)) {
+                functionExecuted = true;
+            } else {
                 player.runCommand("tell @s §cError: Function failed or missing.");
+            }
+        }
+        
+        if (functionExecuted) {
+            const tagsData = parseArmorSetsTags(player);
+            let lookForTag = armorData.aSetName;
+            let counter = 0;
+            if (tagsData.Head.includes(lookForTag)) counter++;
+            if (tagsData.Chest.includes(lookForTag)) counter++;
+            if (tagsData.Legs.includes(lookForTag)) counter++;
+            if (tagsData.Feet.includes(lookForTag)) counter++;
+            
+            if (counter >= armorData.aSetParts) {
+                try {
+                    player.runCommand(`function ${armorData.aSetFunction}`);
+                } catch (error) {
+                    console.warn(`Error running function ${armorData.aSetFunction}:`, error);
+                    player.runCommand("tell @s §cError: Function failed or missing.");
+                }
             }
         }
     } else {
         let timeLeft = (CDTEST.value * 0.1).toFixed(1);
         player.runCommand(`title @s actionbar §6[${armorData.cooldownGroupName}] will be ready in ${timeLeft}s`);
-    }    
-    
-    
+    }
 }
 
 function useSkill(player, eSlot) {
@@ -344,7 +515,11 @@ function useSkill(player, eSlot) {
 
     const tags = itemStack.getTags();
     const skills = parseMSIFTags(tags);
-    if (skills.length === 0) return;
+    if (skills.length === 0) {
+        // Try lore backup if no MSIF tags found
+        executeLoreCommands(player, itemStack);
+        return;
+    }
 
     const scoreboardObj = parseItemIdToScoreboardObj(itemId);
     
@@ -353,29 +528,44 @@ function useSkill(player, eSlot) {
     const currentIndex = getScoreboardValue(scoreboardObj, player);
     const skill = skills[currentIndex];
     
-    if (!skill || !skill.functionName) return;
+    if (!skill || !skill.functionName) {
+        // Try lore backup if no valid skill
+        executeLoreCommands(player, itemStack);
+        return;
+    }
+    
     const CDTEST = taddsbc(skill.cooldown, skill.cooldownGroup, player, skill.cooldownGroupName);
     if (CDTEST.state) {
+        let functionExecuted = false;
         try {
             player.runCommand(`function ${skill.functionName}`);
+            functionExecuted = true;
         } catch (error) {
             console.warn(`Error running function ${skill.functionName}:`, error);
-            player.runCommand("tell @s §cError: Function failed or missing.");
-        }
-        const tagsData = parseArmorSetsTags(player);
-        let lookForTag = skill.aSetName;
-        let counter = 0;
-        if (tagsData.Head.includes(lookForTag)) counter++;
-        if (tagsData.Chest.includes(lookForTag)) counter++;
-        if (tagsData.Legs.includes(lookForTag)) counter++;
-        if (tagsData.Feet.includes(lookForTag)) counter++;
-        
-        if (counter >= skill.aSetParts) {
-            try {
-                player.runCommand(`function ${skill.aSetFunction}`);
-            } catch (error) {
-                console.warn(`Error running function ${skill.aSetFunction}:`, error);
+            // Try lore backup if function failed
+            if (executeLoreCommands(player, itemStack)) {
+                functionExecuted = true;
+            } else {
                 player.runCommand("tell @s §cError: Function failed or missing.");
+            }
+        }
+        
+        if (functionExecuted) {
+            const tagsData = parseArmorSetsTags(player);
+            let lookForTag = skill.aSetName;
+            let counter = 0;
+            if (tagsData.Head.includes(lookForTag)) counter++;
+            if (tagsData.Chest.includes(lookForTag)) counter++;
+            if (tagsData.Legs.includes(lookForTag)) counter++;
+            if (tagsData.Feet.includes(lookForTag)) counter++;
+            
+            if (counter >= skill.aSetParts) {
+                try {
+                    player.runCommand(`function ${skill.aSetFunction}`);
+                } catch (error) {
+                    console.warn(`Error running function ${skill.aSetFunction}:`, error);
+                    player.runCommand("tell @s §cError: Function failed or missing.");
+                }
             }
         }
     } else {
@@ -384,10 +574,95 @@ function useSkill(player, eSlot) {
     }
 }
 
+// Original itemUse event listener
 world.afterEvents.itemUse.subscribe((ev) => {
     useSkill(ev.source, EquipmentSlot.Mainhand);
+});
+
+// Backup event listener for lore-based commands
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (ev.source.typeId !== "minecraft:player" || !ev.itemStack) return;
+    
+    const player = ev.source;
+    const itemStack = ev.itemStack;
+    const loreArray = itemStack.getLore();
+    
+    if (!loreArray || loreArray.length === 0) return;
+
+    // Handle commands
+    let commands = [];
+    let functions = [];
+    
+    for (const lore of loreArray) {
+        const command = revealString(lore, COMMAND_MARKER);
+        if (command) {
+            commands.push(command);
+        }
+        
+        const functionName = revealString(lore, FUNCTION_MARKER);
+        if (functionName) {
+            functions.push(functionName);
+        }
+    }
+    
+    // Execute commands
+    for (const command of commands) {
+        try {
+            player.runCommand(command);
+        } catch (e) {
+            console.log("command error: " + e);
+            console.log(command + " §c[FAILED]");
+        }
+    }
+    
+    // Execute functions
+    for (const functionName of functions) {
+        try {
+            player.runCommand("function " + functionName);
+        } catch (e) {
+            console.log("function error: " + e);
+            console.log("function " + functionName + " §c[FAILED]");
+        }
+    }
 });
 
 system.runInterval(() => {
     updateCooldown();
 }, 2); //redstone ticks
+
+system.beforeEvents.startup.subscribe((init) => {
+    const msifOpenCommand = {
+        name: "msif:msifopen",
+        description: "Open the MSIF UI",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+
+    const msifCloseCommand = {
+        name: "msif:msifclose",
+        description: "Close the MSIF UI",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    
+    init.customCommandRegistry.registerCommand(msifOpenCommand, msifOpenFunction);
+    init.customCommandRegistry.registerCommand(msifCloseCommand, msifCloseFunction);
+});
+
+function msifOpenFunction(origin) {
+    const player = origin.sourceEntity;
+    if (!player || player.typeId !== "minecraft:player") return { status: CustomCommandStatus.Fail };
+
+    system.runTimeout(() => uiManager.closeAllForms(player), 10);
+    system.runTimeout(() => msifMenu(player), 10);
+
+    return { status: CustomCommandStatus.Success };
+}
+
+function msifCloseFunction(origin) {
+    const player = origin.sourceEntity;
+    if (!player || player.typeId !== "minecraft:player") return { status: CustomCommandStatus.Fail };
+
+    system.runTimeout(() => uiManager.closeAllForms(player), 10);
+
+    return { status: CustomCommandStatus.Success };
+}
