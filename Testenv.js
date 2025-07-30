@@ -12,7 +12,7 @@ const fontCharacters = [
   '','','','','','','','',
   '','','','','','','',''
 ]; //81 real
-let ix = 80;
+let ix = 40;
 
 let result = fontCharacters[80 - ix];
 
