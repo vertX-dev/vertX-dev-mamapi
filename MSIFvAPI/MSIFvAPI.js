@@ -303,6 +303,85 @@ function parseMSIFTags(tags) {
     return results;
 }
 
+function parseUMSIFTags(tags) {
+    const umsifTags = tags.filter(tag => tag.startsWith("UMSIF:"));
+    const results = [];
+    
+    for (const tag of umsifTags) {
+        // Remove "UMSIF:" prefix and split by ":"
+        const parts = tag.slice(6).split(":");
+        
+        // Expected format: UMSIF:function:function_name:event:cooldown_group:cooldown_group_name:cooldownTime
+        if (parts.length >= 6) {
+            let functionName = "";
+            let eventType = "";
+            let cooldownGroup = "none";
+            let cooldownGroupName = "none";
+            let cooldownTime = 0;
+            
+            // Parse in order according to the specified format
+            if (parts[0] === "function" && parts[1]) {
+                functionName = parts[1];
+            }
+            
+            if (parts[2] === "event" && parts[3]) {
+                eventType = parts[3];
+            }
+            
+            if (parts[4] === "cooldown_group" && parts[5]) {
+                cooldownGroup = parts[5];
+            }
+            
+            if (parts.length > 6 && parts[6]) {
+                cooldownGroupName = parts[6].replace(/_p/g, "§").replace(/_/g, " ");
+            } else {
+                cooldownGroupName = cooldownGroup;
+            }
+            
+            if (parts.length > 7 && parts[7]) {
+                cooldownTime = Number(parts[7]) || 0;
+            }
+            
+            results.push({
+                functionName: functionName,
+                eventType: eventType,
+                cooldownGroup: cooldownGroup,
+                cooldownGroupName: cooldownGroupName,
+                cooldownTime: cooldownTime
+            });
+        }
+    }
+    
+    return results;
+}
+
+// Helper function to check if an item has UMSIF tags for a specific event
+function hasUMSIFEventTags(itemStack, eventType) {
+    if (!itemStack) return false;
+    
+    const tags = itemStack.getTags();
+    const umsifSkills = parseUMSIFTags(tags);
+    
+    return umsifSkills.some(skill => skill.eventType === eventType);
+}
+
+// Enhanced function to handle both MSIF and UMSIF tags
+function executeItemSkills(player, itemStack, eventType = null) {
+    if (!itemStack || !player) return false;
+    
+    let skillExecuted = false;
+    
+    // Try UMSIF tags if event type is specified
+    if (eventType) {
+        skillExecuted = useItemOnSpecialEvent(player, itemStack, eventType);
+    }
+    
+    // Note: UMSIF is independent - no fallback to MSIF/lore systems
+    // Each system should be handled separately by their respective event listeners
+    
+    return skillExecuted;
+}
+
 function parseArmorSetsTags(player) {
     try {
         const equippable = player.getComponent("minecraft:equippable");
@@ -574,6 +653,48 @@ function useSkill(player, eSlot) {
     }
 }
 
+function useItemOnSpecialEvent(player, itemStack, eventType) {
+    if (!itemStack || !player) return false;
+    
+    const tags = itemStack.getTags();
+    const umsifSkills = parseUMSIFTags(tags);
+    
+    // Filter skills that match the current event type
+    const matchingSkills = umsifSkills.filter(skill => skill.eventType === eventType);
+    
+    if (matchingSkills.length === 0) {
+        return false;
+    }
+    
+    let skillExecuted = false;
+    
+    for (const skill of matchingSkills) {
+        if (!skill.functionName) continue;
+        
+        // Check cooldown for this skill
+        const CDTEST = taddsbc(skill.cooldownTime, skill.cooldownGroup, player, skill.cooldownGroupName);
+        
+        if (CDTEST.state) {
+            try {
+                player.runCommand(`function ${skill.functionName}`);
+                skillExecuted = true;
+                
+                // Optional: Show skill activation message
+                player.runCommand(`title @s actionbar §a${eventType} skill activated!`);
+                
+            } catch (error) {
+                console.warn(`Error running UMSIF function ${skill.functionName}:`, error);
+                player.runCommand("tell @s §cError: UMSIF function failed or missing.");
+            }
+        } else {
+            let timeLeft = (CDTEST.value * 0.1).toFixed(1);
+            player.runCommand(`title @s actionbar §6[${skill.cooldownGroupName}] will be ready in ${timeLeft}s`);
+        }
+    }
+    
+    return skillExecuted;
+}
+
 // Original itemUse event listener
 world.afterEvents.itemUse.subscribe((ev) => {
     useSkill(ev.source, EquipmentSlot.Mainhand);
@@ -625,6 +746,153 @@ world.afterEvents.itemUse.subscribe((ev) => {
         }
     }
 });
+
+// UMSIF Event Listeners - These will automatically trigger functions based on events
+// Player damage event listener
+world.afterEvents.entityHurt.subscribe((ev) => {
+    if (ev.entity.typeId !== "minecraft:player") return;
+    
+    const player = ev.entity;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check all equipped items for UMSIF tags with "onHurt" event
+    const slots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of slots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onHurt");
+        }
+    }
+});
+
+// Player attack event listener
+world.afterEvents.entityHitEntity.subscribe((ev) => {
+    if (ev.entity.typeId !== "minecraft:player") return;
+    
+    const player = ev.entity;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check equipped weapons for UMSIF tags with "onAttack" event
+    const weaponSlots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of weaponSlots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onAttack");
+        }
+    }
+});
+
+// Entity killed event listener
+world.afterEvents.entityDie.subscribe((ev) => {
+    // Check if killed by a player
+    if (ev.damageSource.damagingEntity?.typeId !== "minecraft:player") return;
+    
+    const player = ev.damageSource.damagingEntity;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check all equipped items for UMSIF tags with "onKill" event
+    const slots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of slots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onKill");
+        }
+    }
+});
+
+// Player jump event listener
+world.afterEvents.playerJump.subscribe((ev) => {
+    const player = ev.player;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check all equipped items for UMSIF tags with "onJump" event
+    const slots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of slots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onJump");
+        }
+    }
+});
+
+// Block break event listener
+world.afterEvents.playerBreakBlock.subscribe((ev) => {
+    const player = ev.player;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check equipped tools for UMSIF tags with "onBlockBreak" event
+    const toolSlots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of toolSlots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onBlockBreak");
+        }
+    }
+});
+
+// Block place event listener
+world.afterEvents.playerPlaceBlock.subscribe((ev) => {
+    const player = ev.player;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check equipped items for UMSIF tags with "onBlockPlace" event
+    const slots = [EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of slots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onBlockPlace");
+        }
+    }
+});
+
+// Player spawn event listener for "onSpawn" events
+world.afterEvents.playerSpawn.subscribe((ev) => {
+    const player = ev.player;
+    const equippable = player.getComponent("minecraft:equippable");
+    if (!equippable) return;
+    
+    // Check all equipped items for UMSIF tags with "onSpawn" event
+    const slots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+    
+    for (const slot of slots) {
+        const itemStack = equippable.getEquipment(slot);
+        if (itemStack) {
+            executeItemSkills(player, itemStack, "onSpawn");
+        }
+    }
+});
+
+// Interval-based event listener for "onTick" events (runs every second)
+system.runInterval(() => {
+    const players = world.getPlayers();
+    
+    for (const player of players) {
+        const equippable = player.getComponent("minecraft:equippable");
+        if (!equippable) continue;
+        
+        // Check all equipped items for UMSIF tags with "onTick" event
+        const slots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Mainhand, EquipmentSlot.Offhand];
+        
+        for (const slot of slots) {
+            const itemStack = equippable.getEquipment(slot);
+            if (itemStack) {
+                executeItemSkills(player, itemStack, "onTick");
+            }
+        }
+    }
+}, 20); // Run every 20 ticks (1 second)
 
 system.runInterval(() => {
     updateCooldown();
