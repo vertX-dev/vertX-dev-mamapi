@@ -5,7 +5,10 @@ import {
     GameMode,
     ItemStack,
     MoonPhase,
-    EntityDamageCause
+    EntityDamageCause,
+    CustomCommandStatus,
+    CommandPermissionLevel,
+    CustomCommandParamType
 } from "@minecraft/server";
 import {
     ActionFormData,
@@ -40,7 +43,6 @@ let BOOST_COEF = 10;
 let RR_BASE = RARITY.COMMON; // default common
 
 const HEALTH_BAR_FONT = "";//32 values
-const RARITY_UPGRADES_GLYPS = "";//6 values
 
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
@@ -163,15 +165,6 @@ function getScoreboardValue(scoreboard, player) {
     const scoreboardObj = world.scoreboard.getObjective(scoreboard);
     const scoreboardValue = scoreboardObj.getScore(player);
     return scoreboardValue;
-}
-
-function getUpgradeRarityIcon(rarity) {
-    const raritya = Object.values(RARITY).find(r => r.sid === rarity).id;
-    return RARITY_UPGRADES_GLYPS.charAt(raritya - 1);
-}
-
-function getUpgradeTemplates(player) {
-    return `${countItemInInventory(player, "rrs:common_upgrade")}   ${countItemInInventory(player, "rrs:uncommon_upgrade")}   ${countItemInInventory(player, "rrs:rare_upgrade")}   ${countItemInInventory(player, "rrs:epic_upgrade")}   ${countItemInInventory(player, "rrs:legendary_upgrade")}   ${countItemInInventory(player, "rrs:mythic_upgrade")}`;
 }
 
 function countItemInInventory(player, itemId) {
@@ -342,141 +335,211 @@ function toTitleCase(str) {
 }
 
 // Chat commands
-world.beforeEvents.chatSend.subscribe((eventData) => {
-    const { sender, message } = eventData;
-
-    // Cancel default chat event for recognized commands
-    if (message.startsWith('.')) {
-        eventData.cancel = true; // Cancel the default chat event
-
-        const args = message.split(' ');
-        const command = args[0].toLowerCase();
-
-        switch (command) {
-            // Built-in commands
-            case '.enableSkills':
-                system.runTimeout(() => enableSkills(sender), 1);
-                break;
-            case '.disableSkills':
-                system.runTimeout(() => disableSkills(sender), 1);
-                break;
-            case '.enableDisplayCooldownSkills':
-                system.runTimeout(() => enableDisplayCooldownSkills(sender), 1);
-                break;
-            case '.disableDisplayCooldownSkills':
-                system.runTimeout(() => disableDisplayCooldownSkills(sender), 1);
-                break;
-            case '.enablePassives':
-                system.runTimeout(() => enablePassives(sender), 1);
-                break;
-            case '.disablePassives':
-                system.runTimeout(() => disablePassives(sender), 1);
-                break;
-            case '.enableDisplayCooldownPassives':
-                system.runTimeout(() => enableDisplayCooldownPassives(sender), 1);
-                break;
-            case '.disableDisplayCooldownPassives':
-                system.runTimeout(() => disableDisplayCooldownPassives(sender), 1);
-                break;
-            case '.menu':
-                system.runTimeout(() => statsMainMenu(sender), 60);
-                break;
-            case '.stats':
-                system.runTimeout(() => showStatsForm(sender), 60);
-                break;
-            case '.settings':
-                system.runTimeout(() => settings(sender), 60);
-                break;
-            case '.help':
-                system.runTimeout(() => sender.sendMessage("§7Available commands: §a.enableSkills, .disableSkills, .enableDisplayCooldownSkills, .disableDisplayCooldownSkills, .enablePassives, .disablePassives, .enableDisplayCooldownPassives, .disableDisplayCooldownPassives, .menu, .stats, .settings"), 1);
-                break;
-            default:
-                // Unknown command message
-                system.runTimeout(() => sender.sendMessage('§cUnknown command. Use .help for available commands.'), 1);
-                break;
-        }
-    }
-});
-
-world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
-    const block = ev.block;
-    const player = ev.player;
-    const itemStack = ev.itemStack;
-    if (!itemStack || !block || !player || block.typeId != "rrs:heavy_anvil") return;
+system.beforeEvents.startup.subscribe((init) => {
+    // RRS Commands
+    const enableSkillsCommand = {
+        name: "rrs:enableskills",
+        description: "Enable skills system",
+        permissionLevel: CommandPermissionLevel.Any
+    };
     
-    // Use system.runTimeout to add tag
-    system.runTimeout(() => {
-        player.addTag("reforge_ui");
-    }, 1);
+    const disableSkillsCommand = {
+        name: "rrs:disableskills",
+        description: "Disable skills system",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const enableDisplayCooldownSkillsCommand = {
+        name: "rrs:enabledisplaycooldownskills",
+        description: "Enable display cooldown for skills",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const disableDisplayCooldownSkillsCommand = {
+        name: "rrs:disabledisplaycooldownskills",
+        description: "Disable display cooldown for skills",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const enablePassivesCommand = {
+        name: "rrs:enablepassives",
+        description: "Enable passives system",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const disablePassivesCommand = {
+        name: "rrs:disablepassives",
+        description: "Disable passives system",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const enableDisplayCooldownPassivesCommand = {
+        name: "rrs:enabledisplaycooldownpassives",
+        description: "Enable display cooldown for passives",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const disableDisplayCooldownPassivesCommand = {
+        name: "rrs:disabledisplaycooldownpassives",
+        description: "Disable display cooldown for passives",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const menuCommand = {
+        name: "rrs:menu",
+        description: "Open main stats menu",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const statsCommand = {
+        name: "rrs:stats",
+        description: "Show stats form",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const settingsCommand = {
+        name: "rrs:settings",
+        description: "Open settings menu",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    // Register all commands
+    init.customCommandRegistry.registerCommand(enableSkillsCommand, enableSkillsFunction);
+    init.customCommandRegistry.registerCommand(disableSkillsCommand, disableSkillsFunction);
+    init.customCommandRegistry.registerCommand(enableDisplayCooldownSkillsCommand, enableDisplayCooldownSkillsFunction);
+    init.customCommandRegistry.registerCommand(disableDisplayCooldownSkillsCommand, disableDisplayCooldownSkillsFunction);
+    init.customCommandRegistry.registerCommand(enablePassivesCommand, enablePassivesFunction);
+    init.customCommandRegistry.registerCommand(disablePassivesCommand, disablePassivesFunction);
+    init.customCommandRegistry.registerCommand(enableDisplayCooldownPassivesCommand, enableDisplayCooldownPassivesFunction);
+    init.customCommandRegistry.registerCommand(disableDisplayCooldownPassivesCommand, disableDisplayCooldownPassivesFunction);
+    init.customCommandRegistry.registerCommand(menuCommand, menuFunction);
+    init.customCommandRegistry.registerCommand(statsCommand, statsFunction);
+    init.customCommandRegistry.registerCommand(settingsCommand, settingsFunction);
 });
 
-// System interval to handle UI for tagged players
-system.runInterval(() => {
-    for (const player of world.getAllPlayers()) {
-        if (player.hasTag("reforge_ui")) {
-            player.removeTag("reforge_ui");
-            blockUiAnvil(player);
-        }
-    }
-}, 10);
-
-function blockUiAnvil(player) {
-    const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
-    if (!itemStack) {
-        player.sendMessage("§cYou must hold an item to reforge.");
-        return;
-    }
-
-    const loreArray = itemStack.getLore();
-    if (!loreArray || loreArray.length === 0) {
-        player.sendMessage("§cThis item cannot be reforged.");
-        return;
-    }
-
-    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[0]);
-    if (!rarity) {
-        player.sendMessage("§cUnknown rarity. Cannot reforge this item.");
-        return;
-    }
-
-    const lore = loreArray.join("\n").replace("%", "%%");
-    const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
-    const resourceMap = [2, 4, 6, 9, 12, 16, 1000];
-    const levelCostMap = [2, 3, 4, 5, 7, 75];
-    const resourceAmount = resourceMap[rarity.id - 1];
-    const level = player.level;
-    const amountStatusColorA = (upgradeResource < resourceAmount) ? "§c" : "§a";
-    const amountStatusColorL = (level < levelCostMap[rarity.id - 1]) ? "§c" : "§a";
-
-    const reforgeMenu = new ActionFormData()
-        .title("§c§b§t§6§lREFORGE MENU")
-        .body(`You have: ${upgradeResource} and ${level}\n\n§f${lore}`)
-        .button(`§a§lREFORGE§r ${amountStatusColorA}${resourceAmount}  ${amountStatusColorL}${levelCostMap[rarity.id - 1]}`, 'textures/ui/smithing_icon')
-        .button("§c§lCLOSE", "textures/ui/cancel");
-
-    reforgeMenu.show(player).then((r) => {
-        if (r.canceled) return;
-
-        switch (r.selection) {
-            case 0:
-                if (upgradeResource >= resourceAmount && level >= levelCostMap[rarity.id - 1]) {
-                    player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
-                    player.addLevels((-1) * levelCostMap[rarity.id - 1]);
-                    rarityItemTest(itemStack, player, rarity.sid, false);
-                    player.runCommand("playsound random.anvil_use @s")
-                    blockUiAnvil(player); // refresh the UI
-                } else {
-                    player.sendMessage("§cNot enough amethyst shards or XP to reforge.");
-                }
-                break;
-            case 1:
-                uiManager.closeAllForms(player);
-                break;
+// Command functions
+function enableSkillsFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            enableSkills(player);
         }
     });
+    
+    return { status: CustomCommandStatus.Success };
 }
 
-//CUSTOM COMMANDS BINDING
+function disableSkillsFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            disableSkills(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function enableDisplayCooldownSkillsFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            enableDisplayCooldownSkills(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function disableDisplayCooldownSkillsFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            disableDisplayCooldownSkills(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function enablePassivesFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            enablePassives(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function disablePassivesFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            disablePassives(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function enableDisplayCooldownPassivesFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            enableDisplayCooldownPassives(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function disableDisplayCooldownPassivesFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            disableDisplayCooldownPassives(player);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function menuFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            system.runTimeout(() => statsMainMenu(player), 10);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function statsFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            system.runTimeout(() => showStatsForm(player), 10);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function settingsFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            system.runTimeout(() => settings(player), 10);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Core functions
 function settings(player) {
     let settingsConfig = {
         "skills": {
@@ -551,37 +614,122 @@ function settings(player) {
 
 function enableSkills(player) {
     player.removeTag("disabledSkills");
+    player.sendMessage("§aSkills enabled!");
 }
 
 function disableSkills(player) {
     player.addTag("disabledSkills");
+    player.sendMessage("§cSkills disabled!");
 }
 
 function enableDisplayCooldownSkills(player) {
     player.removeTag("disabledCooldownSkills");
+    player.sendMessage("§aSkill cooldown display enabled!");
 }
 
 function disableDisplayCooldownSkills(player) {
     player.addTag("disabledCooldownSkills");
+    player.sendMessage("§cSkill cooldown display disabled!");
 }
 
 function enablePassives(player) {
     player.removeTag("disabledPassives");
+    player.sendMessage("§aPassives enabled!");
 }
 
 function disablePassives(player) {
     player.addTag("disabledPassives");
+    player.sendMessage("§cPassives disabled!");
 }
 
 function enableDisplayCooldownPassives(player) {
     player.addTag("showCooldownPassives");
+    player.sendMessage("§aPassive cooldown display enabled!");
 }
 
 function disableDisplayCooldownPassives(player) {
     player.removeTag("showCooldownPassives");
+    player.sendMessage("§cPassive cooldown display disabled!");
 }
 
 
+world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
+    const block = ev.block;
+    const player = ev.player;
+    const itemStack = ev.itemStack;
+    if (!itemStack || !block || !player || block.typeId != "rrs:heavy_anvil") return;
+    
+    // Use system.runTimeout to add tag
+    system.runTimeout(() => {
+        player.addTag("reforge_ui");
+    }, 1);
+});
+
+// System interval to handle UI for tagged players
+system.runInterval(() => {
+    for (const player of world.getAllPlayers()) {
+        if (player.hasTag("reforge_ui")) {
+            player.removeTag("reforge_ui");
+            blockUiAnvil(player);
+        }
+    }
+}, 10);
+
+function blockUiAnvil(player) {
+    const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+    if (!itemStack) {
+        player.sendMessage("§cYou must hold an item to reforge.");
+        return;
+    }
+
+    const loreArray = itemStack.getLore();
+    if (!loreArray || loreArray.length === 0) {
+        player.sendMessage("§cThis item cannot be reforged.");
+        return;
+    }
+
+    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[0]);
+    if (!rarity) {
+        player.sendMessage("§cUnknown rarity. Cannot reforge this item.");
+        return;
+    }
+
+    const lore = loreArray.join("\n").replace("%", "%%");
+    const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
+    const resourceMap = [2, 4, 6, 9, 12, 16, 1000];
+    const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+    const resourceAmount = resourceMap[rarity.id - 1];
+    const level = player.level;
+    const amountStatusColorA = (upgradeResource < resourceAmount) ? "§c" : "§a";
+    const amountStatusColorL = (level < levelCostMap[rarity.id - 1]) ? "§c" : "§a";
+
+    const reforgeMenu = new ActionFormData()
+        .title("§c§b§t§6§lREFORGE MENU")
+        .body(`You have: ${upgradeResource} and ${level}\n\n§f${lore}`)
+        .button(`§a§lREFORGE§r ${amountStatusColorA}${resourceAmount}  ${amountStatusColorL}${levelCostMap[rarity.id - 1]}`, 'textures/ui/smithing_icon')
+        .button("§c§lCLOSE", "textures/ui/cancel");
+
+    reforgeMenu.show(player).then((r) => {
+        if (r.canceled) return;
+
+        switch (r.selection) {
+            case 0:
+                if (upgradeResource >= resourceAmount && level >= levelCostMap[rarity.id - 1]) {
+                    player.runCommand(`clear @s minecraft:amethyst_shard 0 ${resourceAmount}`);
+                    player.addLevels((-1) * levelCostMap[rarity.id - 1]);
+                    rarityItemTest(itemStack, player, rarity.sid, false);
+                    player.runCommand("playsound random.anvil_use @s")
+                    blockUiAnvil(player); // refresh the UI
+                } else {
+                    player.sendMessage("§cNot enough amethyst shards or XP to reforge.");
+                }
+                break;
+            case 1:
+                uiManager.closeAllForms(player);
+                break;
+        }
+    });
+}
 
 //=====================================CORE GAME LOGIC===========================================
 
@@ -930,18 +1078,6 @@ function setMainStats(player) {
     let defense = Math.floor(Math.min(getScoreboardValue("defense", player), 80) / 20) - 1;
     let speed = Math.floor(Math.min(getScoreboardValue("speed", player), 200) / 20) - 1;
     let healthBoost = (getScoreboardValue("healthpercent", player) / 100) + 1;
-    
-    
-    
-    //stats from other addons
-    if (player.hasTag("chbvertx")) {
-        const hpFromCHB = Math.floor(getScoreboardValue("hpforrrs", player)); //Compact health bar
-        health = health + hpFromCHB;
-    }
-    
-    
-    
-    
 
     health = Math.floor(((health + 5) * healthBoost) - 6);
 
@@ -1084,9 +1220,11 @@ system.runInterval(() => {
     const players = world.getPlayers();
     for (const player of players) {
         try {
-            healEntity(player);
+            if (!player.hasTag("CYoneStatsVertX")) {//CY - COMPATIBILITY
+                healEntity(player);
+            }
             //DO NOT DELETE LINE BELLOW, IT NEEDED FOR COMPATIBILITY WITH OTHER ADDONS
-            if (!player.hasTag("rrsvertX")) player.addTag("rrsvertx")
+            if (!player.hasTag("CYrrsvertX")) player.addTag("CYrrsvertx");
         } catch (error) {
             // Handle the error, e.g., log it to the console
             console.error(`Failed to heal player ${player.name}: ${error.message}`);
@@ -1161,8 +1299,7 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
     let damage = calculateDamage(player, 6);
     if (mob.typeId !== "minecraft:enderman") {
         mob.applyDamage(damage);
-
-        healEntity(player, ((getScoreboardValue("lifesteal", player) / 100) * damage) / 2);
+        healEntity(player, (getScoreboardValue("lifesteal", player) * damage) / 200);
     }
     
     const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
@@ -1323,11 +1460,11 @@ function skillSpinStrike(player, skill) {
 
     // Spin attack particles and sound
     player.runCommand(`particle minecraft:critical_hit_emitter ~ ~1 ~`);
-    player.runCommand(`playsound entity.player.attack.sweep @s`);
-    player.runCommand(`playsound entity.player.attack.strong @s`);
 
     // Hit and damage enemies
-    player.runCommand(`damage @e[r=3,rm=1,type=!player] ${damage}`);
+    player.addTag("spinStrikeProtection");
+    player.runCommand(`damage @e[r=3,tag=!spinStrikeProtection] ${damage}`);
+    player.removeTag("spinStrikeProtection");
 
     // 360 spin visuals
     for (let i = 0; i < 8; i++) {
@@ -1454,13 +1591,15 @@ function skillFlameArc(player, skill) {
         "^1^^2", "^1^^3", "^1^^4",
         "^-1^^2", "^-1^^3", "^-1^^4"
     ];
-
+    
+    player.addTag("flameArcProtection");
     for (const pos of arcPositions) {
         player.runCommand(`execute at @s positioned${pos} run fill ~ ~ ~ ~ ~ ~ fire replace air`);
         player.runCommand(`execute at @s positioned${pos} run particle minecraft:mobflame_single ~ ~ ~`);
-        player.runCommand(`execute at @s positioned${pos} run damage @e[r=1,type=!player] ${damage} fire`);
-        player.runCommand(`execute at @s positioned${pos} run effect @e[r=1,type=!player] slowness 2 2 true`);
+        player.runCommand(`execute at @s positioned${pos} run damage @e[r=1,tag=!flameArcProtection] ${damage} fire`);
+        player.runCommand(`execute at @s positioned${pos} run effect @e[r=1,tag=!flameArcProtection] slowness 2 2 true`);
     }
+    player.removeTag("flameArcProtection")
 }
 
 function skillShadowDash(player, skill) {
@@ -1496,12 +1635,14 @@ function skillVoidPierce(player, skill) {
     const damage = calculateDamage(player, skill.value);
     player.runCommand(`particle minecraft:reverse_portal ~ ~1.5 ~`);
     player.runCommand(`playsound entity.wither.shoot @s`);
-
+    
+    player.addTag("voidPierceProtection");
     for (let i = 1; i <= 9; i++) {
         player.runCommand(`execute at @s positioned^^1^${i} run particle minecraft:endrod ~ ~ ~`);
-        player.runCommand(`execute at @s positioned^^1^${i} run damage @e[r=1,type=!player] ${damage} magic`);
-        player.runCommand(`execute at @s positioned^^1^${i} if entity @e[r=1,type=!player] run playsound entity.arrow.hit @s`);
+        player.runCommand(`execute at @s positioned^^1^${i} run damage @e[r=1,tag=!voidPierceProtection] ${damage} magic`);
+        player.runCommand(`execute at @s positioned^^1^${i} if entity @e[r=1,tag=!voidPierceProtection] run playsound entity.arrow.hit @s`);
     }
+    player.removeTag("voidPierceProtection");
 
     player.runCommand(`execute at @s positioned^^1^9 run particle minecraft:dragon_breath_fire ~ ~ ~`);
 }
@@ -1553,9 +1694,9 @@ function passiveFrostTouch(player, passive, entity) {
     
     entity.addEffect("slowness", passive.value * 20, {amplifier: 2})
     if (Math.random() > 0.95) {
-        const posX = entity.position.x;
-        const posY = entity.position.y;
-        const posZ = entity.position.z;
+        const posX = entity.location.x;
+        const posY = entity.location.y;
+        const posZ = entity.location.z;
         entity.runCommand(`setblock ${posX} ${posY - 1} ${posZ} powder_snow`);
     }
 }
