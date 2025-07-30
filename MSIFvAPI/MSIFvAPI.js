@@ -371,24 +371,13 @@ function executeItemSkills(player, itemStack, eventType = null) {
     
     let skillExecuted = false;
     
-    // First try UMSIF tags if event type is specified
+    // Try UMSIF tags if event type is specified
     if (eventType) {
         skillExecuted = useItemOnSpecialEvent(player, itemStack, eventType);
     }
     
-    // If no UMSIF skills were executed, try regular MSIF tags
-    if (!skillExecuted) {
-        const tags = itemStack.getTags();
-        const msifSkills = parseMSIFTags(tags);
-        
-        if (msifSkills.length > 0) {
-            // Handle regular MSIF skill activation logic here if needed
-            skillExecuted = true;
-        } else {
-            // Fallback to lore commands
-            skillExecuted = executeLoreCommands(player, itemStack);
-        }
-    }
+    // Note: UMSIF is independent - no fallback to MSIF/lore systems
+    // Each system should be handled separately by their respective event listeners
     
     return skillExecuted;
 }
@@ -674,8 +663,7 @@ function useItemOnSpecialEvent(player, itemStack, eventType) {
     const matchingSkills = umsifSkills.filter(skill => skill.eventType === eventType);
     
     if (matchingSkills.length === 0) {
-        // Try lore backup if no UMSIF tags found for this event
-        return executeLoreCommands(player, itemStack);
+        return false;
     }
     
     let skillExecuted = false;
@@ -696,12 +684,7 @@ function useItemOnSpecialEvent(player, itemStack, eventType) {
                 
             } catch (error) {
                 console.warn(`Error running UMSIF function ${skill.functionName}:`, error);
-                // Try lore backup if function failed
-                if (executeLoreCommands(player, itemStack)) {
-                    skillExecuted = true;
-                } else {
-                    player.runCommand("tell @s §cError: UMSIF function failed or missing.");
-                }
+                player.runCommand("tell @s §cError: UMSIF function failed or missing.");
             }
         } else {
             let timeLeft = (CDTEST.value * 0.1).toFixed(1);
