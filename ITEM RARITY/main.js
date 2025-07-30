@@ -428,6 +428,199 @@ function accessItemReforge(player) {
     blockUiAnvil(player);
 }
 
+function divineMenu(player) {
+    const menu = new ActionFormData()
+        .title('§5§l⚡ DIVINE MENU ⚡')
+        .body('§7Access divine powers and celestial abilities:')
+        .button('§d§lDIVINE UPGRADES', 'textures/ui/enchanting_table_icon')
+        .button('§b§lCELESTIAL FORGE', 'textures/ui/beacon_icon')
+        .button('§6§lDIVINE BLESSINGS', 'textures/ui/golden_apple')
+        .button('§e§lDIVINE ARTIFACTS', 'textures/ui/totem_icon')
+        .button('§c§lCLOSE', 'textures/ui/cancel');
+
+    menu.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    openDivineUpgrades(player);
+                    break;
+                case 1:
+                    openCelestialForge(player);
+                    break;
+                case 2:
+                    openDivineBlessings(player);
+                    break;
+                case 3:
+                    openDivineArtifacts(player);
+                    break;
+                case 4:
+                    // Close menu
+                    break;
+            }
+        }
+    });
+}
+
+function openDivineUpgrades(player) {
+    const upgradeForm = new ActionFormData()
+        .title('§d§l⚡ DIVINE UPGRADES ⚡')
+        .body(
+            '§7Divine upgrades transcend mortal limitations.\n\n' +
+            '§5Current Divine Level: §f0 §7(Placeholder)\n' +
+            '§5Divine Power: §f0 §7(Placeholder)\n' +
+            '§5Celestial Energy: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for divine upgrade functionality.\n' +
+            '§eImplement divine stat enhancement system here.'
+        )
+        .button('§d§lASCEND DAMAGE', 'textures/ui/sword_diamond')
+        .button('§d§lASCEND DEFENSE', 'textures/ui/armor_diamond')
+        .button('§d§lASCEND VITALITY', 'textures/ui/heart_icon')
+        .button('§d§lASCEND AGILITY', 'textures/ui/speed_effect_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    upgradeForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§d⚡ Divine damage ascension - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§d⚡ Divine defense ascension - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§d⚡ Divine vitality ascension - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§d⚡ Divine agility ascension - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function openCelestialForge(player) {
+    const forgeForm = new ActionFormData()
+        .title('§b§l⭐ CELESTIAL FORGE ⭐')
+        .body(
+            '§7Forge items with celestial power beyond mortal comprehension.\n\n' +
+            '§bStardust: §f0 §7(Placeholder)\n' +
+            '§bCelestial Essence: §f0 §7(Placeholder)\n' +
+            '§bDivine Crystals: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for celestial forging functionality.\n' +
+            '§eImplement divine item creation and enhancement system here.'
+        )
+        .button('§b§lFORGE DIVINE WEAPON', 'textures/ui/sword_netherite')
+        .button('§b§lFORGE DIVINE ARMOR', 'textures/ui/armor_netherite')
+        .button('§b§lFORGE DIVINE TOOL', 'textures/ui/pickaxe_netherite')
+        .button('§b§lENHANCE ITEM', 'textures/ui/anvil_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    forgeForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§b⭐ Divine weapon forging - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§b⭐ Divine armor forging - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§b⭐ Divine tool forging - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§b⭐ Divine item enhancement - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function openDivineBlessings(player) {
+    const blessingsForm = new ActionFormData()
+        .title('§6§l🔥 DIVINE BLESSINGS 🔥')
+        .body(
+            '§7Receive blessings from divine entities.\n\n' +
+            '§6Active Blessings: §f0 §7(Placeholder)\n' +
+            '§6Blessing Power: §f0 §7(Placeholder)\n' +
+            '§6Divine Favor: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for divine blessings functionality.\n' +
+            '§eImplement temporary/permanent divine buff system here.'
+        )
+        .button('§6§lBLESSING OF POWER', 'textures/ui/strength_effect_icon')
+        .button('§6§lBLESSING OF PROTECTION', 'textures/ui/resistance_effect_icon')
+        .button('§6§lBLESSING OF REGENERATION', 'textures/ui/regeneration_effect_icon')
+        .button('§6§lBLESSING OF SWIFTNESS', 'textures/ui/speed_effect_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    blessingsForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§6🔥 Blessing of Power - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§6🔥 Blessing of Protection - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§6🔥 Blessing of Regeneration - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§6🔥 Blessing of Swiftness - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function openDivineArtifacts(player) {
+    const artifactsForm = new ActionFormData()
+        .title('§e§l💎 DIVINE ARTIFACTS 💎')
+        .body(
+            '§7Collect and manage legendary divine artifacts.\n\n' +
+            '§eArtifacts Owned: §f0 §7(Placeholder)\n' +
+            '§eArtifact Power: §f0 §7(Placeholder)\n' +
+            '§eRelic Energy: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for divine artifacts functionality.\n' +
+            '§eImplement artifact collection and management system here.'
+        )
+        .button('§e§lVIEW ARTIFACTS', 'textures/ui/book_icon')
+        .button('§e§lCRAFT ARTIFACT', 'textures/ui/crafting_table')
+        .button('§e§lUPGRADE ARTIFACT', 'textures/ui/experience_orb')
+        .button('§e§lATTUNE ARTIFACT', 'textures/ui/beacon_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    artifactsForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§e💎 View artifacts - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§e💎 Craft artifact - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§e💎 Upgrade artifact - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§e💎 Attune artifact - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
 function toTitleCase(str) {
     return str.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
@@ -501,6 +694,12 @@ system.beforeEvents.startup.subscribe((init) => {
         permissionLevel: CommandPermissionLevel.Any
     };
     
+    const divineMenuCommand = {
+        name: "rrs:divinemenu",
+        description: "Open divine menu",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
     // Register all commands
     init.customCommandRegistry.registerCommand(enableSkillsCommand, enableSkillsFunction);
     init.customCommandRegistry.registerCommand(disableSkillsCommand, disableSkillsFunction);
@@ -513,6 +712,7 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(menuCommand, menuFunction);
     init.customCommandRegistry.registerCommand(statsCommand, statsFunction);
     init.customCommandRegistry.registerCommand(settingsCommand, settingsFunction);
+    init.customCommandRegistry.registerCommand(divineMenuCommand, divineMenuFunction);
 });
 
 // Command functions
@@ -631,6 +831,17 @@ function settingsFunction(origin) {
         const player = origin.sourceEntity;
         if (player) {
             system.runTimeout(() => settings(player), 10);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function divineMenuFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            system.runTimeout(() => divineMenu(player), 10);
         }
     });
     
