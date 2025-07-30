@@ -280,7 +280,7 @@ function initializeScoreboards() {
 function statsMainMenu(player) {
     const menu = new ActionFormData()
         .title('SELECT OPTION')
-        .button('STATS', 'textures/ui/gamerpic')
+        .button('STATS', 'textures/ui/gamerpic');
 
     menu.show(player).then((r) => {
         if (!r.canceled) {
