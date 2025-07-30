@@ -281,16 +281,12 @@ function statsMainMenu(player) {
     const menu = new ActionFormData()
         .title('SELECT OPTION')
         .button('STATS', 'textures/ui/gamerpic')
-        .button('FORGE', 'textures/ui/smithing_icon');
 
     menu.show(player).then((r) => {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
                     showStatsForm(player, true);
-                    break;
-                case 1:
-                    upgradeMenu(player);
                     break;
             }
         }
