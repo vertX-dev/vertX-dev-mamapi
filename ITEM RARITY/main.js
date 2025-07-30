@@ -46,47 +46,47 @@ const HEALTH_BAR_FONT = "�
 
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
-        name: "damage",
+        name: "rrsdamage",
         displayName: "Damage"
     },
     {
-        name: "damagepercent",
+        name: "rrsdamagepercent",
         displayName: "Damage percent bonus"
     },
     {
-        name: "defense",
+        name: "rrsdefense",
         displayName: "Defense"
     },
     {
-        name: "health",
+        name: "rrshealth",
         displayName: "Health"
     },
     {
-        name: "speed",
+        name: "rrsspeed",
         displayName: "Speed"
     },
     {
-        name: "regeneration",
+        name: "rrsregeneration",
         displayName: "Regeneration"
     },
     {
-        name: "critchance",
+        name: "rrscritchance",
         displayName: "Crit Chance"
     },
     {
-        name: "critdamage",
+        name: "rrscritdamage",
         displayName: "Crit Damage"
     },
     {
-        name: "lifesteal",
+        name: "rrslifesteal",
         displayName: "Life steal"
     },
     {
-        name: "healthpercent",
+        name: "rrshealthpercent",
         displayName: "Health percent bonus"
     },
     {
-        name: "hawkeyerange",
+        name: "rrshawkeyerange",
         displayName: "Hawk eye range"
     }
 ];
@@ -299,16 +299,16 @@ function statsMainMenu(player) {
 
 function showStatsForm(player) {
     const stats = {
-        damage: getScoreboardValue("damage", player),
-        damagepercent: getScoreboardValue("damagepercent", player),
-        defense: getScoreboardValue("defense", player),
-        health: getScoreboardValue("health", player) + 20,
-        speed: getScoreboardValue("speed", player),
-        regeneration: getScoreboardValue("regeneration", player),
-        critchance: getScoreboardValue("critchance", player) + 5,
-        critdamage: getScoreboardValue("critdamage", player) + 50,
-        lifesteal: getScoreboardValue("lifesteal", player),
-        healthpercent: getScoreboardValue("healthpercent", player)
+        damage: getScoreboardValue("rrsdamage", player),
+        damagepercent: getScoreboardValue("rrsdamagepercent", player),
+        defense: getScoreboardValue("rrsdefense", player),
+        health: getScoreboardValue("rrshealth", player) + 20,
+        speed: getScoreboardValue("rrsspeed", player),
+        regeneration: getScoreboardValue("rrsregeneration", player),
+        critchance: getScoreboardValue("rrscritchance", player) + 5,
+        critdamage: getScoreboardValue("rrscritdamage", player) + 50,
+        lifesteal: getScoreboardValue("rrslifesteal", player),
+        healthpercent: getScoreboardValue("rrshealthpercent", player)
     };
 
     const form = new ActionFormData()
@@ -328,6 +328,297 @@ function showStatsForm(player) {
         .button("§aOK");
 
     form.show(player);
+}
+
+function upgradeMenu(player) {
+    const menu = new ActionFormData()
+        .title('§6§lSTATS UPGRADE MENU')
+        .body('§7Choose an upgrade option:')
+        .button('§a§lUPGRADE STATS', 'textures/ui/experiencebarempty')
+        .button('§b§lITEM REFORGE', 'textures/ui/smithing_icon')
+        .button('§c§lCLOSE', 'textures/ui/cancel');
+
+    menu.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    openStatsUpgradeForm(player);
+                    break;
+                case 1:
+                    // Access the blocking function (item reforge)
+                    accessItemReforge(player);
+                    break;
+                case 2:
+                    // Close menu
+                    break;
+            }
+        }
+    });
+}
+
+function openStatsUpgradeForm(player) {
+    // Placeholder function for stats upgrading
+    const upgradeForm = new ActionFormData()
+        .title('§a§lSTATS UPGRADE')
+        .body(
+            '§7Current Stats:\n' +
+            `§7Damage: §f${getScoreboardValue("rrsdamage", player)}\n` +
+            `§7Defense: §f${getScoreboardValue("rrsdefense", player)}\n` +
+            `§7Health: §f${getScoreboardValue("rrshealth", player) + 20}\n` +
+            `§7Speed: §f${getScoreboardValue("rrsspeed", player)}\n` +
+            `§7Regeneration: §f${getScoreboardValue("rrsregeneration", player)}\n` +
+            `§7Crit Chance: §f${getScoreboardValue("rrscritchance", player) + 5}%\n` +
+            `§7Crit Damage: §f${getScoreboardValue("rrscritdamage", player) + 50}%\n` +
+            `§7Life Steal: §f${getScoreboardValue("rrslifesteal", player)}%\n\n` +
+            '§eThis is a placeholder for stats upgrading functionality.\n' +
+            '§eUpgrade system will be implemented here.'
+        )
+        .button('§a§lUPGRADE DAMAGE', 'textures/ui/sword_icon')
+        .button('§a§lUPGRADE DEFENSE', 'textures/ui/armor_icon')
+        .button('§a§lUPGRADE HEALTH', 'textures/ui/heart_icon')
+        .button('§a§lUPGRADE SPEED', 'textures/ui/speed_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    upgradeForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    // Placeholder: Upgrade damage
+                    player.sendMessage("§eUpgrade damage functionality - to be implemented");
+                    break;
+                case 1:
+                    // Placeholder: Upgrade defense
+                    player.sendMessage("§eUpgrade defense functionality - to be implemented");
+                    break;
+                case 2:
+                    // Placeholder: Upgrade health
+                    player.sendMessage("§eUpgrade health functionality - to be implemented");
+                    break;
+                case 3:
+                    // Placeholder: Upgrade speed
+                    player.sendMessage("§eUpgrade speed functionality - to be implemented");
+                    break;
+                case 4:
+                    // Go back to upgrade menu
+                    upgradeMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function accessItemReforge(player) {
+    // This function provides access to the blocking function (item reforge)
+    // Check if player has an item to reforge
+    const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
+    if (!itemStack) {
+        player.sendMessage("§cYou must hold an item to reforge.");
+        upgradeMenu(player); // Return to upgrade menu
+        return;
+    }
+
+    const loreArray = itemStack.getLore();
+    if (!loreArray || loreArray.length === 0) {
+        player.sendMessage("§cThis item cannot be reforged.");
+        upgradeMenu(player); // Return to upgrade menu
+        return;
+    }
+
+    // Call the blocking function (item reforge UI)
+    blockUiAnvil(player);
+}
+
+function divineMenu(player) {
+    const menu = new ActionFormData()
+        .title('§5§l⚡ DIVINE MENU ⚡')
+        .body('§7Access divine powers and celestial abilities:')
+        .button('§d§lDIVINE UPGRADES', 'textures/ui/enchanting_table_icon')
+        .button('§b§lCELESTIAL FORGE', 'textures/ui/beacon_icon')
+        .button('§6§lDIVINE BLESSINGS', 'textures/ui/golden_apple')
+        .button('§e§lDIVINE ARTIFACTS', 'textures/ui/totem_icon')
+        .button('§c§lCLOSE', 'textures/ui/cancel');
+
+    menu.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    openDivineUpgrades(player);
+                    break;
+                case 1:
+                    openCelestialForge(player);
+                    break;
+                case 2:
+                    openDivineBlessings(player);
+                    break;
+                case 3:
+                    openDivineArtifacts(player);
+                    break;
+                case 4:
+                    // Close menu
+                    break;
+            }
+        }
+    });
+}
+
+function openDivineUpgrades(player) {
+    const upgradeForm = new ActionFormData()
+        .title('§d§l⚡ DIVINE UPGRADES ⚡')
+        .body(
+            '§7Divine upgrades transcend mortal limitations.\n\n' +
+            '§5Current Divine Level: §f0 §7(Placeholder)\n' +
+            '§5Divine Power: §f0 §7(Placeholder)\n' +
+            '§5Celestial Energy: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for divine upgrade functionality.\n' +
+            '§eImplement divine stat enhancement system here.'
+        )
+        .button('§d§lASCEND DAMAGE', 'textures/ui/sword_diamond')
+        .button('§d§lASCEND DEFENSE', 'textures/ui/armor_diamond')
+        .button('§d§lASCEND VITALITY', 'textures/ui/heart_icon')
+        .button('§d§lASCEND AGILITY', 'textures/ui/speed_effect_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    upgradeForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§d⚡ Divine damage ascension - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§d⚡ Divine defense ascension - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§d⚡ Divine vitality ascension - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§d⚡ Divine agility ascension - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function openCelestialForge(player) {
+    const forgeForm = new ActionFormData()
+        .title('§b§l⭐ CELESTIAL FORGE ⭐')
+        .body(
+            '§7Forge items with celestial power beyond mortal comprehension.\n\n' +
+            '§bStardust: §f0 §7(Placeholder)\n' +
+            '§bCelestial Essence: §f0 §7(Placeholder)\n' +
+            '§bDivine Crystals: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for celestial forging functionality.\n' +
+            '§eImplement divine item creation and enhancement system here.'
+        )
+        .button('§b§lFORGE DIVINE WEAPON', 'textures/ui/sword_netherite')
+        .button('§b§lFORGE DIVINE ARMOR', 'textures/ui/armor_netherite')
+        .button('§b§lFORGE DIVINE TOOL', 'textures/ui/pickaxe_netherite')
+        .button('§b§lENHANCE ITEM', 'textures/ui/anvil_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    forgeForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§b⭐ Divine weapon forging - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§b⭐ Divine armor forging - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§b⭐ Divine tool forging - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§b⭐ Divine item enhancement - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function openDivineBlessings(player) {
+    const blessingsForm = new ActionFormData()
+        .title('§6§l🔥 DIVINE BLESSINGS 🔥')
+        .body(
+            '§7Receive blessings from divine entities.\n\n' +
+            '§6Active Blessings: §f0 §7(Placeholder)\n' +
+            '§6Blessing Power: §f0 §7(Placeholder)\n' +
+            '§6Divine Favor: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for divine blessings functionality.\n' +
+            '§eImplement temporary/permanent divine buff system here.'
+        )
+        .button('§6§lBLESSING OF POWER', 'textures/ui/strength_effect_icon')
+        .button('§6§lBLESSING OF PROTECTION', 'textures/ui/resistance_effect_icon')
+        .button('§6§lBLESSING OF REGENERATION', 'textures/ui/regeneration_effect_icon')
+        .button('§6§lBLESSING OF SWIFTNESS', 'textures/ui/speed_effect_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    blessingsForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§6🔥 Blessing of Power - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§6🔥 Blessing of Protection - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§6🔥 Blessing of Regeneration - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§6🔥 Blessing of Swiftness - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
+}
+
+function openDivineArtifacts(player) {
+    const artifactsForm = new ActionFormData()
+        .title('§e§l💎 DIVINE ARTIFACTS 💎')
+        .body(
+            '§7Collect and manage legendary divine artifacts.\n\n' +
+            '§eArtifacts Owned: §f0 §7(Placeholder)\n' +
+            '§eArtifact Power: §f0 §7(Placeholder)\n' +
+            '§eRelic Energy: §f0 §7(Placeholder)\n\n' +
+            '§eThis is a placeholder for divine artifacts functionality.\n' +
+            '§eImplement artifact collection and management system here.'
+        )
+        .button('§e§lVIEW ARTIFACTS', 'textures/ui/book_icon')
+        .button('§e§lCRAFT ARTIFACT', 'textures/ui/crafting_table')
+        .button('§e§lUPGRADE ARTIFACT', 'textures/ui/experience_orb')
+        .button('§e§lATTUNE ARTIFACT', 'textures/ui/beacon_icon')
+        .button('§c§lBACK', 'textures/ui/cancel');
+
+    artifactsForm.show(player).then((r) => {
+        if (!r.canceled) {
+            switch (r.selection) {
+                case 0:
+                    player.sendMessage("§e💎 View artifacts - to be implemented");
+                    break;
+                case 1:
+                    player.sendMessage("§e💎 Craft artifact - to be implemented");
+                    break;
+                case 2:
+                    player.sendMessage("§e💎 Upgrade artifact - to be implemented");
+                    break;
+                case 3:
+                    player.sendMessage("§e💎 Attune artifact - to be implemented");
+                    break;
+                case 4:
+                    divineMenu(player);
+                    break;
+            }
+        }
+    });
 }
 
 function toTitleCase(str) {
@@ -403,6 +694,12 @@ system.beforeEvents.startup.subscribe((init) => {
         permissionLevel: CommandPermissionLevel.Any
     };
     
+    const divineMenuCommand = {
+        name: "rrs:divinemenu",
+        description: "Open divine menu",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
     // Register all commands
     init.customCommandRegistry.registerCommand(enableSkillsCommand, enableSkillsFunction);
     init.customCommandRegistry.registerCommand(disableSkillsCommand, disableSkillsFunction);
@@ -415,6 +712,7 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(menuCommand, menuFunction);
     init.customCommandRegistry.registerCommand(statsCommand, statsFunction);
     init.customCommandRegistry.registerCommand(settingsCommand, settingsFunction);
+    init.customCommandRegistry.registerCommand(divineMenuCommand, divineMenuFunction);
 });
 
 // Command functions
@@ -533,6 +831,17 @@ function settingsFunction(origin) {
         const player = origin.sourceEntity;
         if (player) {
             system.runTimeout(() => settings(player), 10);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function divineMenuFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        if (player) {
+            system.runTimeout(() => divineMenu(player), 10);
         }
     });
     
@@ -1010,11 +1319,11 @@ function rarityItemTest(itemStack, player, rarityUp = "None", upGuarant = false)
 }
 
 function calculateDamage(player, damage = 0) {
-    damage = (damage + getScoreboardValue("damage", player)) * (1 + (getScoreboardValue("damagepercent", player) / 100));
+    damage = (damage + getScoreboardValue("rrsdamage", player)) * (1 + (getScoreboardValue("rrsdamagepercent", player) / 100));
 
-    const critChance = getScoreboardValue("critchance", player);
+    const critChance = getScoreboardValue("rrscritchance", player);
     if ((Math.random() * 100) <= critChance + 5) {
-        damage = damage * (1 + (getScoreboardValue("critdamage", player) / 100));
+        damage = damage * (1 + (getScoreboardValue("rrscritdamage", player) / 100));
         player.runCommand("title @s actionbar §cCRIT " + damage.toFixed(1));
     }
 
@@ -1067,17 +1376,17 @@ function compileBuffs(player) {
     }
 }
 
-function healEntity(entity, value = getScoreboardValue("regeneration", entity)) {
+function healEntity(entity, value = getScoreboardValue("rrsregeneration", entity)) {
     let cHealth = entity.getComponent("minecraft:health");
     cHealth.setCurrentValue(Math.min((cHealth.currentValue + Math.floor(value)), cHealth.effectiveMax));
 }
 
 function setMainStats(player) {
     //get all stats
-    let health = Math.floor(getScoreboardValue("health", player) / 4);
-    let defense = Math.floor(Math.min(getScoreboardValue("defense", player), 80) / 20) - 1;
-    let speed = Math.floor(Math.min(getScoreboardValue("speed", player), 200) / 20) - 1;
-    let healthBoost = (getScoreboardValue("healthpercent", player) / 100) + 1;
+    let health = Math.floor(getScoreboardValue("rrshealth", player) / 4);
+    let defense = Math.floor(Math.min(getScoreboardValue("rrsdefense", player), 80) / 20) - 1;
+    let speed = Math.floor(Math.min(getScoreboardValue("rrsspeed", player), 200) / 20) - 1;
+    let healthBoost = (getScoreboardValue("rrshealthpercent", player) / 100) + 1;
 
     health = Math.floor(((health + 5) * healthBoost) - 6);
 
@@ -1264,7 +1573,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
 
         mob.applyDamage(damage);
 
-        healEntity(player, (getScoreboardValue("lifesteal", player) / 100) * damage);
+        healEntity(player, (getScoreboardValue("rrslifesteal", player) / 100) * damage);
 
         const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
         if (passive && passive.name) {
@@ -1299,7 +1608,7 @@ world.afterEvents.projectileHitEntity.subscribe((ev) => {
     let damage = calculateDamage(player, 6);
     if (mob.typeId !== "minecraft:enderman") {
         mob.applyDamage(damage);
-        healEntity(player, (getScoreboardValue("lifesteal", player) * damage) / 200);
+        healEntity(player, (getScoreboardValue("rrslifesteal", player) * damage) / 200);
     }
     
     const passive = parseLoreToPassive(player.getComponent("minecraft:equippable"), EquipmentSlot.Mainhand);
@@ -1651,7 +1960,7 @@ function skillVoidPierce(player, skill) {
 //=====================================PASSIVES FUNCTIONALITY===========================================
 
 /*function hawkEye(player) {
-    const range = 6 + (getScoreboardValue("hawkeyerange", player) ?? 0);
+    const range = 6 + (getScoreboardValue("rrshawkeyerange", player) ?? 0);
     const hitData = getEntitiesFromViewDirection();
     const entity = hitData[0].entity;
     const distance = hitData[0].distance;
