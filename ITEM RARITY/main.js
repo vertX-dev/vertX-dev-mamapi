@@ -424,6 +424,7 @@ function accessItemReforge(player) {
     blockUiAnvil(player);
 }
 
+//======================DIVINE LOGIC========
 function divineMenu(player) {
     const menu = new ActionFormData()
         .title('§5§l⚡ DIVINE MENU ⚡')
@@ -616,6 +617,8 @@ function openDivineArtifacts(player) {
         }
     });
 }
+
+//==========================================================
 
 function toTitleCase(str) {
     return str.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
