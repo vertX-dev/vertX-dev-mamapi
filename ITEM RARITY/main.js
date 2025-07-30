@@ -425,9 +425,10 @@ function accessItemReforge(player) {
 }
 
 //======================DIVINE LOGIC========
+
 function divineMenu(player) {
     const menu = new ActionFormData()
-        .title('§5§l⚡ DIVINE MENU ⚡')
+        .title('§5§lDIVINE MENU ⚡')
         .body('§7Access divine powers and celestial abilities:')
         .button('§d§lDIVINE UPGRADES', 'textures/ui/enchanting_table_icon')
         .button('§b§lCELESTIAL FORGE', 'textures/ui/beacon_icon')
@@ -460,7 +461,7 @@ function divineMenu(player) {
 
 function openDivineUpgrades(player) {
     const upgradeForm = new ActionFormData()
-        .title('§d§l⚡ DIVINE UPGRADES ⚡')
+        .title('§d§lDIVINE UPGRADES')
         .body(
             '§7Divine upgrades transcend mortal limitations.\n\n' +
             '§5Current Divine Level: §f0 §7(Placeholder)\n' +
@@ -479,16 +480,16 @@ function openDivineUpgrades(player) {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
-                    player.sendMessage("§d⚡ Divine damage ascension - to be implemented");
+                    player.sendMessage("§dDivine damage ascension - to be implemented");
                     break;
                 case 1:
-                    player.sendMessage("§d⚡ Divine defense ascension - to be implemented");
+                    player.sendMessage("§dDivine defense ascension - to be implemented");
                     break;
                 case 2:
-                    player.sendMessage("§d⚡ Divine vitality ascension - to be implemented");
+                    player.sendMessage("§dDivine vitality ascension - to be implemented");
                     break;
                 case 3:
-                    player.sendMessage("§d⚡ Divine agility ascension - to be implemented");
+                    player.sendMessage("§dDivine agility ascension - to be implemented");
                     break;
                 case 4:
                     divineMenu(player);
@@ -500,7 +501,7 @@ function openDivineUpgrades(player) {
 
 function openCelestialForge(player) {
     const forgeForm = new ActionFormData()
-        .title('§b§l⭐ CELESTIAL FORGE ⭐')
+        .title('§b§lCELESTIAL FORGE')
         .body(
             '§7Forge items with celestial power beyond mortal comprehension.\n\n' +
             '§bStardust: §f0 §7(Placeholder)\n' +
@@ -519,16 +520,16 @@ function openCelestialForge(player) {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
-                    player.sendMessage("§b⭐ Divine weapon forging - to be implemented");
+                    player.sendMessage("§bDivine weapon forging - to be implemented");
                     break;
                 case 1:
-                    player.sendMessage("§b⭐ Divine armor forging - to be implemented");
+                    player.sendMessage("§bDivine armor forging - to be implemented");
                     break;
                 case 2:
-                    player.sendMessage("§b⭐ Divine tool forging - to be implemented");
+                    player.sendMessage("§bDivine tool forging - to be implemented");
                     break;
                 case 3:
-                    player.sendMessage("§b⭐ Divine item enhancement - to be implemented");
+                    player.sendMessage("§bDivine item enhancement - to be implemented");
                     break;
                 case 4:
                     divineMenu(player);
@@ -540,7 +541,7 @@ function openCelestialForge(player) {
 
 function openDivineBlessings(player) {
     const blessingsForm = new ActionFormData()
-        .title('§6§l🔥 DIVINE BLESSINGS 🔥')
+        .title('§6§lDIVINE BLESSINGS')
         .body(
             '§7Receive blessings from divine entities.\n\n' +
             '§6Active Blessings: §f0 §7(Placeholder)\n' +
@@ -559,16 +560,16 @@ function openDivineBlessings(player) {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
-                    player.sendMessage("§6🔥 Blessing of Power - to be implemented");
+                    player.sendMessage("§6Blessing of Power - to be implemented");
                     break;
                 case 1:
-                    player.sendMessage("§6🔥 Blessing of Protection - to be implemented");
+                    player.sendMessage("§6Blessing of Protection - to be implemented");
                     break;
                 case 2:
-                    player.sendMessage("§6🔥 Blessing of Regeneration - to be implemented");
+                    player.sendMessage("§6Blessing of Regeneration - to be implemented");
                     break;
                 case 3:
-                    player.sendMessage("§6🔥 Blessing of Swiftness - to be implemented");
+                    player.sendMessage("§6Blessing of Swiftness - to be implemented");
                     break;
                 case 4:
                     divineMenu(player);
@@ -580,7 +581,7 @@ function openDivineBlessings(player) {
 
 function openDivineArtifacts(player) {
     const artifactsForm = new ActionFormData()
-        .title('§e§l💎 DIVINE ARTIFACTS 💎')
+        .title('§e§lDIVINE ARTIFACTS')
         .body(
             '§7Collect and manage legendary divine artifacts.\n\n' +
             '§eArtifacts Owned: §f0 §7(Placeholder)\n' +
@@ -599,16 +600,16 @@ function openDivineArtifacts(player) {
         if (!r.canceled) {
             switch (r.selection) {
                 case 0:
-                    player.sendMessage("§e💎 View artifacts - to be implemented");
+                    player.sendMessage("§eView artifacts - to be implemented");
                     break;
                 case 1:
-                    player.sendMessage("§e💎 Craft artifact - to be implemented");
+                    player.sendMessage("§eCraft artifact - to be implemented");
                     break;
                 case 2:
-                    player.sendMessage("§e💎 Upgrade artifact - to be implemented");
+                    player.sendMessage("§eUpgrade artifact - to be implemented");
                     break;
                 case 3:
-                    player.sendMessage("§e💎 Attune artifact - to be implemented");
+                    player.sendMessage("§eAttune artifact - to be implemented");
                     break;
                 case 4:
                     divineMenu(player);
