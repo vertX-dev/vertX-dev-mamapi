@@ -358,12 +358,90 @@ function applySign(signStr, value) {
 }
 
 function openStatsUpgradeForm(player) {
+    //general first checks
     const equippable = player.getComponent("minecraft:equippable");
     const itemStack = equippable.getEquipment(EquipmentSlot.Mainhand);
 
     const loreArray = itemStack.getLore();
+    if (!itemStack || loreArray.length == 0 || loreArray.includes("§bDivine")) {
+        system.runTimeout(() => {
+            player.sendMessage("You can't change stats of this item");
+        }, 5);
+        return;
+    }
+    //initialization of important variables
+    const upgradeBar = [
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', ''
+    ];
+    
+    const upgradeMaterials = [
+        {
+            id: "rrs:tier1_upgrade",
+            name: "Tier 1 upgrade",
+            icon: '',
+            amount: 1,
+            tag: "8",
+            ix: 0
+        },
+        {
+            id: "rrs:tier1_upgrade",
+            name: "Tier 1 upgrade",
+            icon: '',
+            amount: 2,
+            tag: "a",
+            ix: 0
+        },
+        {
+            id: "rrs:tier2_upgrade",
+            name: "Tier 2 upgrade",
+            icon: '',
+            amount: 1,
+            tag: "1",
+            ix: 1
+        },
+        {
+            id: "rrs:tier2_upgrade",
+            name: "Tier 2 upgrade",
+            icon: '',
+            amount: 2,
+            tag: "5",
+            ix: 1
+        },
+        {
+            id: "rrs:tier3_upgrade",
+            name: "Tier 3 upgrade",
+            icon: '',
+            amount: 1,
+            tag: "6",
+            ix: 2
+        },
+        {
+            id: "rrs:tier3_upgrade",
+            name: "Tier 3 upgrade",
+            icon: '',
+            amount: 2,
+            tag: "c",
+            ix: 2
+        },
+    ];    
+    //secondary test
     const attributes = parseLoreToStats(loreArray);
-
+    if (attributes.length == 0) {
+        system.runTimeout(() => {
+            player.sendMessage("There is no stats on item");
+        }, 5);
+        return;
+    }
+    
+    //retrive all stats data
     let stats = [];
     //result.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${measure}`);
     for (const attribute of attributes) {
@@ -379,8 +457,13 @@ function openStatsUpgradeForm(player) {
             fString: attribute
         });
     }
-
-    let materialsString = "";
+    
+    //Check for upgrade materials
+    const resources = [
+        countItemInInventory(player, upgradeMaterials[0].id),
+        countItemInInventory(player, upgradeMaterials[2].id),
+        countItemInInventory(player, upgradeMaterials[4].id)
+    ];
 
     // 
     // 
@@ -388,70 +471,66 @@ function openStatsUpgradeForm(player) {
     // 
     // 
     // 
-
-
-    const upgradeBar = [
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', '', '', '', '', '', '', '', '', '',
-        '', ''
-    ];
-    const upgradeMaterials = [{
-        id: "rrs:tier1_upgrade",
-        name: "Tier 1 upgrade",
-        icon: ''
-    }, {
-        id: "rrs:tier2_upgrade",
-        name: "Tier 2 upgrade",
-        icon: ''
-    }, {
-        id: "rrs:tier3_upgrade",
-        name: "Tier 3 upgrade",
-        icon: ''
-    }];
-
-    let statsCurString = "Upgrade materials: " + materialsString + "\n";
+    
+    //create base of ui menu
+    let statsCurString = `Upgrade materials: ${upgradeMaterials[0].icon}${resources[0]}  ${upgradeMaterials[2].icon}${resources[1]}  ${upgradeMaterials[4].icon}${resources[2]}\n`;
     for (const stat of stats) {
         const range = stat.maxValue - stat.minValue;
         const absValue = stat.value % stats.minValue;
-        const percent = Math.max(0, Math.min(81, Math.ceil((stat.value / stat.maxValue) * 81)));
-
-        statsCurString = `${statsCurString}\n${fString} ${upgradeBar[81 - percent]}`;
+        const percent = Math.max(0, Math.min(81, Math.floor((stat.value / stat.maxValue) * 81)));
+        
+        //create max value of stat progress bar
+        statsCurString = `${statsCurString}\n${stats.fString} ${upgradeBar[81 - percent]}`;
     }
-
-    let evolve = 0;
 
     const upgradeForm = new ActionFormData()
         .title('§a§lSTATS UPGRADE')
         .body(statsCurString);
 
-
+    //cteate upgrade button for each stat, also count max stats
+    let evolve = 0;
+    let statsUpgradeStatus = [];
     for (const stat of stats) {
         const range = stat.maxValue - stat.minValue;
         const absValue = stat.value % stats.minValue;
-        const percent = Math.max(0, Math.min(2, Math.ceil((stat.value / stat.maxValue) * 3)));
         
-         const price = Math.max(0, Math.min(9, Math.ceil((stat.value / stat.maxValue) * 9))) % 3;
+        const tag = stat.name.charAt(1);
+        const materialData = upgradeMaterials.find(item => item.tag === tag);
         
-
-        form.button(`§l§${status}[UPGRADE] §r${stat.name} $(${price}${upgradeMaterials[percent].icon})`, 'textures/ui/smithing_icon');
+        const result = (materialData.amount <= resources[materialData.ix])? { color: "§a", status: true } : { color: "§c", status: false };
+        statsUpgradeStatus.push(result.status);
+        
+        form.button(`§l§${result.color}[UPGRADE] §r${stat.name} $(${materialData.amount}${materialData.icon})`, 'textures/ui/smithing_icon');
         if (stat.value * 0.85 >= stat.maxValue) {
             evolve++;
         }
     }
+    let buttonIx = stats.length;
+    //create evolve button
     if (evolve == stats.length) {
         form.button("§b§l[EVOLVE]", 'textures/blocks/enchanting_table_top')
+        buttonIx++;
     }
     form.button("§l[BACK]", 'textures/ui/arrow_left');
-
+    
+    //main upgrade logic
     upgradeForm.show(player).then((r) => {
         if (!r.canceled) {
-
+            //is upgrade
+            if (r.selection < buttonIx) {
+                //upgrade
+                
+            } else if (r.selection == buttonIx) {
+                if (evolve == stats.length) {
+                    //evolution button was pressed
+                    
+                } else {
+                    //back to main menu
+                    upgradeMenu(player);
+                    return;
+                }
+            }
+            openStatsUpgradeForm(player);
         }
     });
 }
