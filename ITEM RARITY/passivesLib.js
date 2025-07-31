@@ -10,7 +10,7 @@ import {
 export const passives = {
     // Existing Frost Touch passives
     FROST_TOUCH_RARE: {
-        name: "§1Frost Touch",
+        name: "§9Frost Touch",
         type: meleeWeapons,
         rarity: "Rare",
         min: 1,
@@ -52,7 +52,7 @@ export const passives = {
 
     // Lightning Strike passives
     LIGHTNING_STRIKE_RARE: {
-        name: "§1Lightning Strike",
+        name: "§9Lightning Strike",
         type: allWeapons,
         rarity: "Rare",
         min: 5,
@@ -126,7 +126,7 @@ export const passives = {
 
 //     // Berserker passives
 //     BERSERKER_RARE: {
-//         name: "§1Berserker",
+//         name: "§9Berserker",
 //         type: meleeWeapons,
 //         rarity: "Rare",
 //         min: 8,
@@ -168,7 +168,7 @@ export const passives = {
 
     // Poison Blade passives
     POISON_BLADE_RARE: {
-        name: "§1Poison Blade",
+        name: "§9Poison Blade",
         type: meleeWeapons,
         rarity: "Rare",
         min: 3,
@@ -201,7 +201,7 @@ export const passives = {
 
     // Explosive Arrows passives
     EXPLOSIVE_ARROWS_RARE: {
-        name: "§1Explosive Arrows",
+        name: "§9Explosive Arrows",
         type: rangedWeapons,
         rarity: "Rare",
         min: 2,
@@ -243,7 +243,7 @@ export const passives = {
 
     // Ender Arrow passives
     ENDER_ARROW_RARE: {
-        name: "§1Ender Arrow",
+        name: "§9Ender Arrow",
         type: rangedWeapons,
         rarity: "Rare",
         min: 25,
@@ -285,7 +285,7 @@ export const passives = {
     
     // Dragon Armor passives
     DRAGON_ARMOR_RARE: {
-        name: "§1Dragon Armor",
+        name: "§9Dragon Armor",
         type: "chestplate",
         rarity: "Rare",
         min: 5,

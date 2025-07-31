@@ -98,11 +98,11 @@ export const blackList = [
 
 export const TagMapping = {
     "sword": ["sword", "katana", "claymore", "rapier", "shortsword", "longsword", "greatsword", "broadsword", "cutlass", "scimitar", "falchion", "blade", "saber", "estoc", "gladius", "bastard", "flamberge", "zweihander", "wakizashi", "tanto", "ninjato", "dao", "jian", "shamshir", "tulwar", "khopesh", "xiphos", "kopis", "epee", "foil", "dagger", "dirk", "stiletto", "poniard", "misericorde", "rondel", "bodkin", "kris", "athame", "sgian", "kukri", "bowie", "seax"],
-    "pickaxe": ["pickaxe", "pick", "mattock", "digger", "icepick", "warpick"],
-    "axe": ["axe", "battleaxe", "handaxe", "tomahawk", "hatchet", "cleaver", "francisca", "poleaxe", "labrys"],
+    "pickaxe": ["pickaxe", "pick", "mattock", "digger", "icepick", "warpick", "paxel"],
+    "axe": ["axe", "battleaxe", "handaxe", "tomahawk", "hatchet", "cleaver", "francisca", "poleaxe", "labrys", "daneaxe"],
     "shovel": ["shovel", "spade", "scoop", "trenching", "entrenching"],
     "hoe": ["hoe", "tiller", "cultivator"],
-    "mace": ["mace", "club", "warhammer", "flail", "cudgel", "bludgeon", "morningstar", "sledgehammer", "mjolnir", "hammer"],
+    "mace": ["mace", "club", "warhammer", "flail", "cudgel", "bludgeon", "morningstar", "sledgehammer", "mjolnir", "hammer", "halberd"],
     "helmet": ["helmet", "hat", "cap", "crown", "circlet", "headpiece", "headgear", "coif", "casque", "bascinet", "sallet", "barbute", "armet", "helm", "spangenhelm", "burgonet", "morion", "kabuto"],
     "chestplate": ["chestplate", "tunic", "vest", "breastplate", "jerkin", "cuirass", "chainmail", "hauberk", "byrnie", "haubergeon", "lamellar", "brigandine", "gambeson", "aketon", "pourpoint", "surcoat", "tabard"],
     "leggings": ["leggings", "pants", "trousers"],

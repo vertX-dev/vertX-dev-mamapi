@@ -513,9 +513,11 @@ function openStatsUpgradeForm(player) {
         }
     }
     let buttonIx = statsL.length;
+    let buttonIxB = 0;
     //create evolve button
     if (evolve == statsL.length) {
         upgradeForm.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top')
+        buttonIxB++;
         buttonIx++;
     }
     upgradeForm.button("§l[BACK]", 'textures/ui/arrow_left');
@@ -527,7 +529,7 @@ function openStatsUpgradeForm(player) {
             if (r.selection < buttonIx) {
                 //upgrade
                 const upgradedStatIx = r.selection;
-                const stat = statsUpgradeStatus[upgradedStatIx];
+                const stat = statsUpgradeStatus[upgradedStatIx - buttonIxB];
                 if (stat.status) {
                     //get new random value
                     const newStatValue = rnb(statsL[upgradedStatIx].minValue, statsL[upgradedStatIx].maxValue);
