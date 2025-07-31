@@ -388,7 +388,7 @@ function openStatsUpgradeForm(player) {
             name: "Tier 1 upgrade",
             icon: '',
             amount: 1,
-            tag: "8",
+            tag: "7",
             ix: 0
         },
         {
@@ -404,7 +404,7 @@ function openStatsUpgradeForm(player) {
             name: "Tier 2 upgrade",
             icon: '',
             amount: 1,
-            tag: "1",
+            tag: "9",
             ix: 1
         },
         {
@@ -498,7 +498,11 @@ function openStatsUpgradeForm(player) {
         const materialData = upgradeMaterials.find(item => item.tag === tag);
         
         const result = (materialData.amount <= resources[materialData.ix])? { color: "§a", status: true } : { color: "§c", status: false };
-        statsUpgradeStatus.push(result.status);
+        statsUpgradeStatus.push({
+            status: result.status,
+            amount: materialData.amount,
+            id: materialData.id
+        });
         
         form.button(`§l§${result.color}[UPGRADE] §r${stat.name} $(${materialData.amount}${materialData.icon})`, 'textures/ui/smithing_icon');
         if (stat.value * 0.85 >= stat.maxValue) {
@@ -508,7 +512,7 @@ function openStatsUpgradeForm(player) {
     let buttonIx = stats.length;
     //create evolve button
     if (evolve == stats.length) {
-        form.button("§b§l[EVOLVE]", 'textures/blocks/enchanting_table_top')
+        form.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top')
         buttonIx++;
     }
     form.button("§l[BACK]", 'textures/ui/arrow_left');
@@ -519,21 +523,74 @@ function openStatsUpgradeForm(player) {
             //is upgrade
             if (r.selection < buttonIx) {
                 //upgrade
-                
+                const upgradedStatIx = r.selection;
+                const stat = statsUpgradeStatus[upgradedStatIx];
+                if (stat.status) {
+                    //get new random value
+                    const newStatValue = rnb(stats[upgradedStatIx].minValue, stats[upgradedStatIx].maxValue);
+                    
+                    const startIndex = loreArray.indexOf("§8Attributes") + 1;
+                    const endIndex = loreArray.indexOf("§a§t§b§e§n§d§r");
+                    
+                    // Replace the content in between
+                    const updated = [
+                      ...loreArray.slice(0, startIndex),
+                      ...insertContent,
+                      ...loreArray.slice(endIndex)
+                    ];
+                    
+                    const newItem = itemStack.clone();
+                    newItem.setLore(updated);
+                    
+                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                    //upgrade effects
+                    player.runCommand("playsound random.anvil_use @s");
+                    player.runCommand(`clear @s ${stat.id} 0 ${stat.amount}`);
+                } else {
+                    system.runTimeout(() => player.sendMessage("§cNot enough resources for upgrade"), 5);
+                    return;
+                }
             } else if (r.selection == buttonIx) {
                 if (evolve == stats.length) {
                     //evolution button was pressed
+                    const dNamePosition = loreArray.indexOf("§8Attributes") - 1;
+                    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
+                    //create new upgraded lore
+                    const Tags = parseTags(itemStack.typeId);
+                    const clearedLore = clearLore(loreArray);
                     
+                    const skill = randomSkill(rarity.sid, Tags.data);
+                    const passive = randomPassiveAbility(rarity.sid, Tags.data);
+                    
+                    let statsEvo = [];
+                    
+                    for (const stat of stats) {
+                        statsEvo.push(rarity.color + stat.fString.slice(2));
+                    }
+                    
+                    const newLore = [...clearedLore, rarity.dName, ...statsEvo, ...skill, ...passive, "§r§r§s§v§e§r§t"];
+                    
+                    const newItem = itemStack.clone();
+                    newItem.setLore(newLore);
+                    
+                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
                 } else {
                     //back to main menu
                     upgradeMenu(player);
                     return;
                 }
+            } else {
+                //back to main menu
+                upgradeMenu(player);
+                return;
             }
+            //reopen menu
             openStatsUpgradeForm(player);
         }
     });
 }
+
+
 
 function accessItemReforge(player) {
     // This function provides access to the block function (item reforge)
@@ -773,6 +830,10 @@ function openDivineArtifacts(player) {
 }
 
 //==========================================================
+
+function rnb(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 function toTitleCase(str) {
     return str.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
@@ -1149,8 +1210,10 @@ function blockUiAnvil(player) {
         player.sendMessage("§cThis item cannot be reforged.");
         return;
     }
-
-    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[0]);
+    
+    const dNamePosition = loreArray.indexOf(§8Attributes) - 1;
+    
+    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
     if (!rarity) {
         player.sendMessage("§cUnknown rarity. Cannot reforge this item.");
         return;
