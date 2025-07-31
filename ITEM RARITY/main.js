@@ -450,6 +450,13 @@ function openStatsUpgradeForm(player) {
         const normalize = str => str.trim().replace(/§./g, ""); // remove §x codes and trim
         const STAT = Object.values(stats).find(r => normalize(r.name) === normalize(params[0]));
         
+        if (!STAT) {
+            system.runTimeout(() => {
+                player.sendMessage(`§cUnknown stat type: ${params[0]}`);
+            }, 5);
+            continue;
+        }
+        
         statsL.push({
             name: params[0],
             sign: params[1],
@@ -479,11 +486,12 @@ function openStatsUpgradeForm(player) {
     let statsCurString = `Upgrade materials: ${upgradeMaterials[0].icon}${resources[0]}  ${upgradeMaterials[2].icon}${resources[1]}  ${upgradeMaterials[4].icon}${resources[2]}\n`;
     for (const stat of statsL) {
         const range = stat.maxValue - stat.minValue;
-        const absValue = stat.value % stat.minValue;
-        const percent = Math.max(0, Math.min(81, Math.floor((stat.value / stat.maxValue) * 81)));
+        const relativeValue = stat.value - stat.minValue;
+        const percent = Math.max(0, Math.min(81, Math.floor((relativeValue / range) * 81)));
         
-        //create max value of stat progress bar
-        statsCurString = `${statsCurString}\n${stat.fString} ${upgradeBar[81 - percent]}`;
+        //create max value of stat progress bar with proper % display
+        const displayString = stat.fString.replace(/§w %§w/g, '§w %%§w');
+        statsCurString = `${statsCurString}\n${displayString} ${upgradeBar[81 - percent]}`;
     }
 
     const upgradeForm = new ActionFormData()
@@ -495,10 +503,21 @@ function openStatsUpgradeForm(player) {
     let statsUpgradeStatus = [];
     for (const stat of statsL) {
         const range = stat.maxValue - stat.minValue;
-        const absValue = stat.value % stat.minValue;
+        const relativeValue = stat.value - stat.minValue;
         
         const tag = stat.name.charAt(1);
         const materialData = upgradeMaterials.find(item => item.tag == tag);
+        
+        if (!materialData) {
+            // Handle case where material data is not found
+            statsUpgradeStatus.push({
+                status: false,
+                amount: 0,
+                id: "unknown"
+            });
+            upgradeForm.button(`§l§c[UPGRADE] §r${stat.name} §8No material`, 'textures/ui/smithing_icon');
+            continue;
+        }
         
         const result = (materialData.amount <= resources[materialData.ix])? { color: "§a", status: true } : { color: "§c", status: false };
         statsUpgradeStatus.push({
@@ -508,17 +527,14 @@ function openStatsUpgradeForm(player) {
         });
         
         upgradeForm.button(`§l${result.color}[UPGRADE] §r${stat.name} §8${materialData.amount}${materialData.icon}`, 'textures/ui/smithing_icon');
-        if (stat.value * 0.9 >= stat.maxValue) {
+        if (stat.value >= stat.maxValue * 0.9) {
             evolve++;
         }
     }
-    let buttonIx = statsL.length;
-    let buttonIxB = 0;
+    
     //create evolve button
     if (evolve == statsL.length) {
-        upgradeForm.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top')
-        buttonIxB++;
-        buttonIx++;
+        upgradeForm.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top');
     }
     upgradeForm.button("§l[BACK]", 'textures/ui/arrow_left');
     
@@ -526,11 +542,11 @@ function openStatsUpgradeForm(player) {
     upgradeForm.show(player).then((r) => {
         if (!r.canceled) {
             //is upgrade
-            if (r.selection < buttonIx) {
+            if (r.selection < statsL.length) {
                 //upgrade
                 const upgradedStatIx = r.selection;
-                const stat = statsUpgradeStatus[upgradedStatIx - buttonIxB];
-                if (stat.status) {
+                const stat = statsUpgradeStatus[upgradedStatIx];
+                if (stat && stat.status) {
                     //get new random value
                     const newStatValue = rnb(statsL[upgradedStatIx].minValue, statsL[upgradedStatIx].maxValue);
                     
@@ -547,15 +563,29 @@ function openStatsUpgradeForm(player) {
                         index++;
                     }
                     
-                    const startIndex = loreArray.indexOf("§8Attributes") + 1;
+                    const startIndex = loreArray.indexOf("§8Attributes");
                     const endIndex = loreArray.indexOf("§a§t§b§e§n§d§r");
                     
-                    // Replace the content in between
-                    const updated = [
-                      ...loreArray.slice(0, startIndex),
-                      ...newStats,
-                      ...loreArray.slice(endIndex)
-                    ];
+                    // Replace the content in between, ensuring markers are present
+                    let updated;
+                    if (startIndex !== -1 && endIndex !== -1) {
+                        // Both markers exist, replace content between them
+                        updated = [
+                            ...loreArray.slice(0, startIndex + 1),
+                            ...newStats,
+                            ...loreArray.slice(endIndex)
+                        ];
+                    } else {
+                        // Missing markers, add them
+                        const insertIndex = loreArray.findIndex(line => line.includes("§8") || line.includes("§a") || line.includes("§9") || line.includes("§5") || line.includes("§6") || line.includes("§c")) + 1;
+                        updated = [
+                            ...loreArray.slice(0, insertIndex),
+                            "§8Attributes",
+                            ...newStats,
+                            "§a§t§b§e§n§d§r",
+                            ...loreArray.slice(insertIndex)
+                        ];
+                    }
                     
                     const newItem = itemStack.clone();
                     newItem.setLore(updated);
@@ -568,9 +598,8 @@ function openStatsUpgradeForm(player) {
                     system.runTimeout(() => player.sendMessage("§cNot enough resources for upgrade"), 5);
                     return;
                 }
-            } else if (r.selection == buttonIx) {
-                if (evolve == statsL.length) {
-                    //evolution button was pressed
+            } else if (r.selection == statsL.length && evolve == statsL.length) {
+                //evolution button was pressed
                     const dNamePosition = findInsertIndex(loreArray);
                     const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
                     //create new upgraded lore
@@ -586,17 +615,12 @@ function openStatsUpgradeForm(player) {
                         statsEvo.push(rarity.color + stat.fString.slice(2));
                     }
                     
-                    const newLore = [...clearedLore, rarity.dName, ...statsEvo, ...skill, ...passive, "§r§r§s§v§e§r§t"];
+                    const newLore = [...clearedLore, rarity.dName, "§8Attributes", ...statsEvo, "§a§t§b§e§n§d§r", ...skill, ...passive, "§r§r§s§v§e§r§t"];
                     
                     const newItem = itemStack.clone();
                     newItem.setLore(newLore);
                     
                     equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
-                } else {
-                    //back to main menu
-                    upgradeMenu(player);
-                    return;
-                }
             } else {
                 //back to main menu
                 upgradeMenu(player);
