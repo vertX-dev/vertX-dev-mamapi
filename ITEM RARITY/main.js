@@ -489,8 +489,9 @@ function openStatsUpgradeForm(player) {
         const relativeValue = stat.value - stat.minValue;
         const percent = Math.max(0, Math.min(81, Math.floor((relativeValue / range) * 81)));
         
-        //create max value of stat progress bar
-        statsCurString = `${statsCurString}\n${stat.fString} ${upgradeBar[81 - percent]}`;
+        //create max value of stat progress bar with proper % display
+        const displayString = stat.fString.replace(/§w %§w/g, '§w %%§w');
+        statsCurString = `${statsCurString}\n${displayString} ${upgradeBar[81 - percent]}`;
     }
 
     const upgradeForm = new ActionFormData()
@@ -562,15 +563,29 @@ function openStatsUpgradeForm(player) {
                         index++;
                     }
                     
-                    const startIndex = loreArray.indexOf("§8Attributes") + 1;
+                    const startIndex = loreArray.indexOf("§8Attributes");
                     const endIndex = loreArray.indexOf("§a§t§b§e§n§d§r");
                     
-                    // Replace the content in between
-                    const updated = [
-                      ...loreArray.slice(0, startIndex),
-                      ...newStats,
-                      ...loreArray.slice(endIndex)
-                    ];
+                    // Replace the content in between, ensuring markers are present
+                    let updated;
+                    if (startIndex !== -1 && endIndex !== -1) {
+                        // Both markers exist, replace content between them
+                        updated = [
+                            ...loreArray.slice(0, startIndex + 1),
+                            ...newStats,
+                            ...loreArray.slice(endIndex)
+                        ];
+                    } else {
+                        // Missing markers, add them
+                        const insertIndex = loreArray.findIndex(line => line.includes("§8") || line.includes("§a") || line.includes("§9") || line.includes("§5") || line.includes("§6") || line.includes("§c")) + 1;
+                        updated = [
+                            ...loreArray.slice(0, insertIndex),
+                            "§8Attributes",
+                            ...newStats,
+                            "§a§t§b§e§n§d§r",
+                            ...loreArray.slice(insertIndex)
+                        ];
+                    }
                     
                     const newItem = itemStack.clone();
                     newItem.setLore(updated);
@@ -600,7 +615,7 @@ function openStatsUpgradeForm(player) {
                         statsEvo.push(rarity.color + stat.fString.slice(2));
                     }
                     
-                    const newLore = [...clearedLore, rarity.dName, ...statsEvo, ...skill, ...passive, "§r§r§s§v§e§r§t"];
+                    const newLore = [...clearedLore, rarity.dName, "§8Attributes", ...statsEvo, "§a§t§b§e§n§d§r", ...skill, ...passive, "§r§r§s§v§e§r§t"];
                     
                     const newItem = itemStack.clone();
                     newItem.setLore(newLore);
