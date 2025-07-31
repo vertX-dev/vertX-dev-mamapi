@@ -360,10 +360,10 @@ function applySign(signStr, value) {
 function openStatsUpgradeForm(player) {
     const equippable = player.getComponent("minecraft:equippable");
     const itemStack = equippable.getEquipment(EquipmentSlot.Mainhand);
-    
+
     const loreArray = itemStack.getLore();
     const attributes = parseLoreToStats(loreArray);
-    
+
     let stats = [];
     //result.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${measure}`);
     for (const attribute of attributes) {
@@ -379,64 +379,79 @@ function openStatsUpgradeForm(player) {
             fString: attribute
         });
     }
-    
-    const materialsString = "";
-    
-// 
-// 
-// 
-// 
-// 
-// 
 
-    
+    let materialsString = "";
+
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+
+
     const upgradeBar = [
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '',''
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', ''
     ];
-    const upgradeMaterials = [
-        
-    ];
-    
+    const upgradeMaterials = [{
+        id: "rrs:tier1_upgrade",
+        name: "Tier 1 upgrade",
+        icon: ''
+    }, {
+        id: "rrs:tier2_upgrade",
+        name: "Tier 2 upgrade",
+        icon: ''
+    }, {
+        id: "rrs:tier3_upgrade",
+        name: "Tier 3 upgrade",
+        icon: ''
+    }];
+
     let statsCurString = "Upgrade materials: " + materialsString + "\n";
     for (const stat of stats) {
         const range = stat.maxValue - stat.minValue;
         const absValue = stat.value % stats.minValue;
-        const percent = Math.max(0, Math.min(80, Math.ceil((stat.value / stat.maxValue) * 81)));
-        
-        statsCurString = `${statsCurString}\n${fString} ${upgradeBar[80 - percent]}`;
+        const percent = Math.max(0, Math.min(81, Math.ceil((stat.value / stat.maxValue) * 81)));
+
+        statsCurString = `${statsCurString}\n${fString} ${upgradeBar[81 - percent]}`;
     }
 
     let evolve = 0;
-    
+
     const upgradeForm = new ActionFormData()
         .title('§a§lSTATS UPGRADE')
         .body(statsCurString);
-        
-        
+
+
     for (const stat of stats) {
         const range = stat.maxValue - stat.minValue;
         const absValue = stat.value % stats.minValue;
-        const percent = Math.max(0, Math.min(80, Math.ceil((stat.value / stat.maxValue) * 81)));
+        const percent = Math.max(0, Math.min(2, Math.ceil((stat.value / stat.maxValue) * 3)));
         
-        form.button(`[UPGRADE] ${stat.name} $(${})`, 'textures/ui/smithing_icon');
-        if (stat.value * 0.85 >= stat.maxValue);
+         const price = Math.max(0, Math.min(9, Math.ceil((stat.value / stat.maxValue) * 9))) % 3;
+        
+
+        form.button(`§l§${status}[UPGRADE] §r${stat.name} $(${price}${upgradeMaterials[percent].icon})`, 'textures/ui/smithing_icon');
+        if (stat.value * 0.85 >= stat.maxValue) {
+            evolve++;
+        }
     }
     if (evolve == stats.length) {
-        form.button("§b[EVOLVE]", 'textures/blocks/enchanting_table_top')
+        form.button("§b§l[EVOLVE]", 'textures/blocks/enchanting_table_top')
     }
-    form.button("[BACK]", 'textures/ui/arrow_left');
+    form.button("§l[BACK]", 'textures/ui/arrow_left');
 
     upgradeForm.show(player).then((r) => {
         if (!r.canceled) {
-            
+
         }
     });
 }
@@ -465,27 +480,27 @@ function accessItemReforge(player) {
 //======================DIVINE LOGIC========
 
 function divineMenu(player) {
-    
+
     const taskBar = [
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '',''
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', ''
     ];
-    
+
     const divineBar = [
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','','','',
-      '','','','','','','','',''
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '', ''
     ];
-    
+
     const menu = new ActionFormData()
         .title('§5§lDIVINE MENU ⚡')
         .body('§7Access divine powers and celestial abilities:')
