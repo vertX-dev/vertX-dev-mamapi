@@ -328,7 +328,7 @@ function upgradeMenu(player) {
     const menu = new ActionFormData()
         .title('§6§lSTATS UPGRADE MENU')
         .body('§7Choose an upgrade option:')
-        .button('§a§lUPGRADE STATS', 'textures/ui/experiencebarempty')
+        .button('§a§lUPGRADE STATS', 'textures/ui/up_arrow')
         .button('§b§lITEM REFORGE', 'textures/ui/smithing_icon')
         .button('§c§lCLOSE', 'textures/ui/cancel');
 
@@ -353,7 +353,7 @@ function upgradeMenu(player) {
 function applySign(signStr, value) {
     signStr = signStr.trim(); // Remove spaces
 
-    if (signStr === "-") return -Math.abs(value);
+    if (signStr === "" || signStr === "-") return -Math.abs(value);
     return Math.abs(value); // For "+" or anything else, treat as positive
 }
 
@@ -433,7 +433,7 @@ function openStatsUpgradeForm(player) {
         },
     ];    
     //secondary test
-    const attributes = parseLoreToStats(loreArray);
+    const attributes = parseLoreToStats(equippable, EquipmentSlot.Mainhand);
     if (attributes.length == 0) {
         system.runTimeout(() => {
             player.sendMessage("There is no stats on item");
@@ -442,16 +442,19 @@ function openStatsUpgradeForm(player) {
     }
     
     //retrive all stats data
-    let stats = [];
+    let statsL = [];
     //result.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${measure}`);
     for (const attribute of attributes) {
         const params = attribute.split("§w");
-        const STAT = Object.values(stats).find(r => r.name === params[0]);
-        stats.push({
+        
+        const normalize = str => str.trim().replace(/§./g, ""); // remove §x codes and trim
+        const STAT = Object.values(stats).find(r => normalize(r.name) === normalize(params[0]));
+        
+        statsL.push({
             name: params[0],
             sign: params[1],
             value: applySign(params[1], Number(params[2].trim())),
-            measure: params[4],
+            measure: params[3],
             maxValue: Math.round(STAT.max * 1.25),
             minValue: STAT.min,
             fString: attribute
@@ -474,13 +477,13 @@ function openStatsUpgradeForm(player) {
     
     //create base of ui menu
     let statsCurString = `Upgrade materials: ${upgradeMaterials[0].icon}${resources[0]}  ${upgradeMaterials[2].icon}${resources[1]}  ${upgradeMaterials[4].icon}${resources[2]}\n`;
-    for (const stat of stats) {
+    for (const stat of statsL) {
         const range = stat.maxValue - stat.minValue;
-        const absValue = stat.value % stats.minValue;
+        const absValue = stat.value % stat.minValue;
         const percent = Math.max(0, Math.min(81, Math.floor((stat.value / stat.maxValue) * 81)));
         
         //create max value of stat progress bar
-        statsCurString = `${statsCurString}\n${stats.fString} ${upgradeBar[81 - percent]}`;
+        statsCurString = `${statsCurString}\n${stat.fString} ${upgradeBar[81 - percent]}`;
     }
 
     const upgradeForm = new ActionFormData()
@@ -490,12 +493,12 @@ function openStatsUpgradeForm(player) {
     //cteate upgrade button for each stat, also count max stats
     let evolve = 0;
     let statsUpgradeStatus = [];
-    for (const stat of stats) {
+    for (const stat of statsL) {
         const range = stat.maxValue - stat.minValue;
-        const absValue = stat.value % stats.minValue;
+        const absValue = stat.value % stat.minValue;
         
         const tag = stat.name.charAt(1);
-        const materialData = upgradeMaterials.find(item => item.tag === tag);
+        const materialData = upgradeMaterials.find(item => item.tag == tag);
         
         const result = (materialData.amount <= resources[materialData.ix])? { color: "§a", status: true } : { color: "§c", status: false };
         statsUpgradeStatus.push({
@@ -504,18 +507,18 @@ function openStatsUpgradeForm(player) {
             id: materialData.id
         });
         
-        form.button(`§l§${result.color}[UPGRADE] §r${stat.name} $(${materialData.amount}${materialData.icon})`, 'textures/ui/smithing_icon');
-        if (stat.value * 0.85 >= stat.maxValue) {
+        upgradeForm.button(`§l${result.color}[UPGRADE] §r${stat.name} §8${materialData.amount}${materialData.icon}`, 'textures/ui/smithing_icon');
+        if (stat.value * 0.9 >= stat.maxValue) {
             evolve++;
         }
     }
-    let buttonIx = stats.length;
+    let buttonIx = statsL.length;
     //create evolve button
-    if (evolve == stats.length) {
-        form.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top')
+    if (evolve == statsL.length) {
+        upgradeForm.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top')
         buttonIx++;
     }
-    form.button("§l[BACK]", 'textures/ui/arrow_left');
+    upgradeForm.button("§l[BACK]", 'textures/ui/arrow_left');
     
     //main upgrade logic
     upgradeForm.show(player).then((r) => {
@@ -527,7 +530,20 @@ function openStatsUpgradeForm(player) {
                 const stat = statsUpgradeStatus[upgradedStatIx];
                 if (stat.status) {
                     //get new random value
-                    const newStatValue = rnb(stats[upgradedStatIx].minValue, stats[upgradedStatIx].maxValue);
+                    const newStatValue = rnb(statsL[upgradedStatIx].minValue, statsL[upgradedStatIx].maxValue);
+                    
+                    let newStats = [];
+                    let index = 0;
+                    while (statsL.length > index) {
+                        if (index != upgradedStatIx) {
+                            newStats.push(statsL[index].fString);
+                        } else {
+                            const newStat = statsL[index];
+                            const sign = newStatValue >= 0 ? "+" : "";
+                            newStats.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${newStat.measure}`);
+                        }
+                        index++;
+                    }
                     
                     const startIndex = loreArray.indexOf("§8Attributes") + 1;
                     const endIndex = loreArray.indexOf("§a§t§b§e§n§d§r");
@@ -535,7 +551,7 @@ function openStatsUpgradeForm(player) {
                     // Replace the content in between
                     const updated = [
                       ...loreArray.slice(0, startIndex),
-                      ...insertContent,
+                      ...newStats,
                       ...loreArray.slice(endIndex)
                     ];
                     
@@ -551,9 +567,9 @@ function openStatsUpgradeForm(player) {
                     return;
                 }
             } else if (r.selection == buttonIx) {
-                if (evolve == stats.length) {
+                if (evolve == statsL.length) {
                     //evolution button was pressed
-                    const dNamePosition = loreArray.indexOf("§8Attributes") - 1;
+                    const dNamePosition = findInsertIndex(loreArray);
                     const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
                     //create new upgraded lore
                     const Tags = parseTags(itemStack.typeId);
@@ -564,7 +580,7 @@ function openStatsUpgradeForm(player) {
                     
                     let statsEvo = [];
                     
-                    for (const stat of stats) {
+                    for (const stat of statsL) {
                         statsEvo.push(rarity.color + stat.fString.slice(2));
                     }
                     
@@ -609,7 +625,7 @@ function accessItemReforge(player) {
         return;
     }
 
-    // Call the blocking function (item reforge UI)
+    // Call the block function (item reforge UI)
     blockUiAnvil(player);
 }
 
@@ -1193,10 +1209,24 @@ system.runInterval(() => {
     for (const player of world.getAllPlayers()) {
         if (player.hasTag("reforge_ui")) {
             player.removeTag("reforge_ui");
-            blockUiAnvil(player);
+            upgradeMenu(player);
         }
     }
 }, 10);
+
+function findInsertIndex(loreArray) {
+    const fallbackTags = ["§8Attributes", "§8Skill", "§8Passive", "§r§r§s§v§e§r§t"];
+
+    for (const tag of fallbackTags) {
+        const index = loreArray.indexOf(tag);
+        if (index !== -1) {
+            return index - 1;
+        }
+    }
+
+    // If none of the tags are found, return a default like end of array or -1
+    return loreArray.length - 1; // or return -1 if you prefer that
+}
 
 function blockUiAnvil(player) {
     const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
@@ -1211,7 +1241,7 @@ function blockUiAnvil(player) {
         return;
     }
     
-    const dNamePosition = loreArray.indexOf(§8Attributes) - 1;
+    const dNamePosition = findInsertIndex(loreArray);
     
     const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
     if (!rarity) {
@@ -1350,7 +1380,7 @@ function randomSkill(rarity, type) {
 
             const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
             const newSkillValueST = ("§w" + newSkillValue + "§w");
-            const description = newSkill.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newPassiveValueST : RR.color);
+            const description = newSkill.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newSkillValueST : RR.color);
 
             skillData = {
                 name: newSkill.name,
