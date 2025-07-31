@@ -42,8 +42,6 @@ import {
 let BOOST_COEF = 10;
 let RR_BASE = RARITY.COMMON; // default common
 
-const HEALTH_BAR_FONT = "";//32 values
-
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
         name: "rrsdamage",
@@ -352,59 +350,99 @@ function upgradeMenu(player) {
     });
 }
 
+function applySign(signStr, value) {
+    signStr = signStr.trim(); // Remove spaces
+
+    if (signStr === "-") return -Math.abs(value);
+    return Math.abs(value); // For "+" or anything else, treat as positive
+}
+
 function openStatsUpgradeForm(player) {
-    // Placeholder function for stats upgrading
+    const equippable = player.getComponent("minecraft:equippable");
+    const itemStack = equippable.getEquipment(EquipmentSlot.Mainhand);
+    
+    const loreArray = itemStack.getLore();
+    const attributes = parseLoreToStats(loreArray);
+    
+    let stats = [];
+    //result.push(`${newStat.name}§w ${sign}§w${newStatValue}§w${measure}`);
+    for (const attribute of attributes) {
+        const params = attribute.split("§w");
+        const STAT = Object.values(stats).find(r => r.name === params[0]);
+        stats.push({
+            name: params[0],
+            sign: params[1],
+            value: applySign(params[1], Number(params[2].trim())),
+            measure: params[4],
+            maxValue: Math.round(STAT.max * 1.25),
+            minValue: STAT.min,
+            fString: attribute
+        });
+    }
+    
+    const materialsString = "";
+    
+// 
+// 
+// 
+// 
+// 
+// 
+
+    
+    const upgradeBar = [
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '',''
+    ];
+    const upgradeMaterials = [
+        
+    ];
+    
+    let statsCurString = "Upgrade materials: " + materialsString + "\n";
+    for (const stat of stats) {
+        const range = stat.maxValue - stat.minValue;
+        const absValue = stat.value % stats.minValue;
+        const percent = Math.max(0, Math.min(80, Math.ceil((stat.value / stat.maxValue) * 81)));
+        
+        statsCurString = `${statsCurString}\n${fString} ${upgradeBar[80 - percent]}`;
+    }
+
+    let evolve = 0;
+    
     const upgradeForm = new ActionFormData()
         .title('§a§lSTATS UPGRADE')
-        .body(
-            '§7Current Stats:\n' +
-            `§7Damage: §f${getScoreboardValue("rrsdamage", player)}\n` +
-            `§7Defense: §f${getScoreboardValue("rrsdefense", player)}\n` +
-            `§7Health: §f${getScoreboardValue("rrshealth", player) + 20}\n` +
-            `§7Speed: §f${getScoreboardValue("rrsspeed", player)}\n` +
-            `§7Regeneration: §f${getScoreboardValue("rrsregeneration", player)}\n` +
-            `§7Crit Chance: §f${getScoreboardValue("rrscritchance", player) + 5}%\n` +
-            `§7Crit Damage: §f${getScoreboardValue("rrscritdamage", player) + 50}%\n` +
-            `§7Life Steal: §f${getScoreboardValue("rrslifesteal", player)}%\n\n` +
-            '§eThis is a placeholder for stats upgrading functionality.\n' +
-            '§eUpgrade system will be implemented here.'
-        )
-        .button('§a§lUPGRADE DAMAGE', 'textures/ui/sword_icon')
-        .button('§a§lUPGRADE DEFENSE', 'textures/ui/armor_icon')
-        .button('§a§lUPGRADE HEALTH', 'textures/ui/heart_icon')
-        .button('§a§lUPGRADE SPEED', 'textures/ui/speed_icon')
-        .button('§c§lBACK', 'textures/ui/cancel');
+        .body(statsCurString);
+        
+        
+    for (const stat of stats) {
+        const range = stat.maxValue - stat.minValue;
+        const absValue = stat.value % stats.minValue;
+        const percent = Math.max(0, Math.min(80, Math.ceil((stat.value / stat.maxValue) * 81)));
+        
+        form.button(`[UPGRADE] ${stat.name} $(${})`, 'textures/ui/smithing_icon');
+        if (stat.value * 0.85 >= stat.maxValue);
+    }
+    if (evolve == stats.length) {
+        form.button("§b[EVOLVE]", 'textures/blocks/enchanting_table_top')
+    }
+    form.button("[BACK]", 'textures/ui/arrow_left');
 
     upgradeForm.show(player).then((r) => {
         if (!r.canceled) {
-            switch (r.selection) {
-                case 0:
-                    // Placeholder: Upgrade damage
-                    player.sendMessage("§eUpgrade damage functionality - to be implemented");
-                    break;
-                case 1:
-                    // Placeholder: Upgrade defense
-                    player.sendMessage("§eUpgrade defense functionality - to be implemented");
-                    break;
-                case 2:
-                    // Placeholder: Upgrade health
-                    player.sendMessage("§eUpgrade health functionality - to be implemented");
-                    break;
-                case 3:
-                    // Placeholder: Upgrade speed
-                    player.sendMessage("§eUpgrade speed functionality - to be implemented");
-                    break;
-                case 4:
-                    // Go back to upgrade menu
-                    upgradeMenu(player);
-                    break;
-            }
+            
         }
     });
 }
 
 function accessItemReforge(player) {
-    // This function provides access to the blocking function (item reforge)
+    // This function provides access to the block function (item reforge)
     // Check if player has an item to reforge
     const itemStack = player.getComponent("minecraft:equippable")?.getEquipment(EquipmentSlot.Mainhand);
     if (!itemStack) {
@@ -427,6 +465,27 @@ function accessItemReforge(player) {
 //======================DIVINE LOGIC========
 
 function divineMenu(player) {
+    
+    const taskBar = [
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '',''
+    ];
+    
+    const divineBar = [
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','','','',
+      '','','','','','','','',''
+    ];
+    
     const menu = new ActionFormData()
         .title('§5§lDIVINE MENU ⚡')
         .body('§7Access divine powers and celestial abilities:')
@@ -1003,10 +1062,12 @@ function blockUiAnvil(player) {
         return;
     }
 
-    const lore = loreArray.join("\n").replace("%", "%%");
-    const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
-    const resourceMap = [2, 4, 6, 9, 12, 16, 1000];
+    const lore = loreArray.join("\n").replace(/%/g, "%%");
+    const resourceMap = [2, 4, 8, 13, 20, 32, 1000];
     const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+    
+    const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
+    
     const resourceAmount = resourceMap[rarity.id - 1];
     const level = player.level;
     const amountStatusColorA = (upgradeResource < resourceAmount) ? "§c" : "§a";
@@ -1014,8 +1075,8 @@ function blockUiAnvil(player) {
 
     const reforgeMenu = new ActionFormData()
         .title("§c§b§t§6§lREFORGE MENU")
-        .body(`You have: ${upgradeResource} and ${level}\n\n§f${lore}`)
-        .button(`§a§lREFORGE§r ${amountStatusColorA}${resourceAmount}  ${amountStatusColorL}${levelCostMap[rarity.id - 1]}`, 'textures/ui/smithing_icon')
+        .body(`You have: ${upgradeResource} and ${level}\n\n§f${lore}`)
+        .button(`§a§lREFORGE§r ${amountStatusColorA}${resourceAmount}  ${amountStatusColorL}${levelCostMap[rarity.id - 1]}`, 'textures/ui/smithing_icon')
         .button("§c§lCLOSE", "textures/ui/cancel");
 
     reforgeMenu.show(player).then((r) => {
@@ -1132,7 +1193,7 @@ function randomSkill(rarity, type) {
 
             const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
             const newSkillValueST = ("§w" + newSkillValue + "§w");
-            const description = newSkill.description.replace("{x}", newSkillValueST).replace("§x", RR.color);
+            const description = newSkill.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newPassiveValueST : RR.color);
 
             skillData = {
                 name: newSkill.name,
@@ -1178,7 +1239,7 @@ function randomPassiveAbility(rarity, type) {
 
             const newPassiveValue = Math.floor((Math.random() * (newPassive.max - newPassive.min + 1) + newPassive.min) * BOOST_COEF / 10);
             const newPassiveValueST = ("§w" + newPassiveValue + "§w");
-            const description = newPassive.description.replace("{x}", newPassiveValueST).replace("§x", RR.color);
+            const description = newPassive.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newPassiveValueST : RR.color);
 
             passiveData = {
                 name: newPassive.name,
@@ -1596,7 +1657,7 @@ world.afterEvents.entityHurt.subscribe((ev) => {
 });
 
 world.afterEvents.projectileHitEntity.subscribe((ev) => {
-    if (!ev.source || ev.source.typeId !== "minecraft:player") return;
+    if (!ev.source || ev.source.typeId !== "minecraft:player" || (!ev.projectile.typeId.includes("arrow") && !ev.projectile.typeId.includes("trident") && !ev.source.hasTag("opFun"))) return;
 
     const player = ev.source;
     const entityHit = ev.getEntityHit();
