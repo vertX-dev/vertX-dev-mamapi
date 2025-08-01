@@ -42,6 +42,75 @@ import {
 let BOOST_COEF = 10;
 let RR_BASE = RARITY.COMMON; // default common
 
+// XP Level costs for reforge and evolution (indexed by current rarity id - 1)
+const LEVEL_COST_MAP = [2, 3, 4, 5, 7, 10, 75];
+
+// Resource costs for reforge (indexed by current rarity id - 1)  
+const RESOURCE_MAP = [2, 4, 8, 13, 20, 32, 1000];
+
+// Evolution success chances (indexed by current rarity id - 1)
+const EVOLUTION_CHANCES = [
+    1.0,   // Common → Uncommon (100%)
+    1.0,   // Uncommon → Rare (100%)
+    1.0,   // Rare → Epic (100%)
+    1.0,   // Epic → Legendary (100%)
+    1.0,   // Legendary → Mythic (100%)
+    0.07,  // Mythic → Divine (7%)
+    0.0    // Divine → ??? (impossible)
+];
+
+// Upgrade materials configuration
+const UPGRADE_MATERIALS = [
+    {
+        id: "rrs:tier1_upgrade",
+        name: "Tier 1 upgrade",
+        icon: '🔸',
+        amount: 1,
+        tag: "7",
+        ix: 0
+    },
+    {
+        id: "rrs:tier1_upgrade", 
+        name: "Tier 1 upgrade",
+        icon: '🔸',
+        amount: 2,
+        tag: "a",
+        ix: 0
+    },
+    {
+        id: "rrs:tier2_upgrade",
+        name: "Tier 2 upgrade", 
+        icon: '🔹',
+        amount: 1,
+        tag: "9",
+        ix: 1
+    },
+    {
+        id: "rrs:tier2_upgrade",
+        name: "Tier 2 upgrade",
+        icon: '🔹', 
+        amount: 2,
+        tag: "5",
+        ix: 1
+    },
+    {
+        id: "rrs:tier3_upgrade",
+        name: "Tier 3 upgrade",
+        icon: '💎',
+        amount: 1,
+        tag: "6", 
+        ix: 2
+    },
+    {
+        id: "rrs:tier3_upgrade",
+        name: "Tier 3 upgrade",
+        icon: '💎',
+        amount: 2,
+        tag: "c",
+        ix: 2
+    }
+];
+
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
         name: "rrsdamage",
@@ -405,7 +474,8 @@ function openStatsUpgradeForm(player) {
         '', ''
     ];
     
-    const upgradeMaterials = [
+    // Use global upgrade materials config
+    const upgradeMaterials = UPGRADE_MATERIALS;
         {
             id: "rrs:tier1_upgrade",
             name: "Tier 1 upgrade",
@@ -556,8 +626,8 @@ function openStatsUpgradeForm(player) {
     
     //create evolve button
     if (evolve == statsL.length) {
-        // Add XP requirements for evolution (same as reforge system)
-        const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+        // Add XP requirements for evolution (use global config)
+        const levelCostMap = LEVEL_COST_MAP;
         const dNamePosition = findInsertIndex(loreArray);
         const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
         const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
@@ -566,7 +636,14 @@ function openStatsUpgradeForm(player) {
             const xpCost = levelCostMap[currentRarity.id - 1] || 10;
             const playerLevel = player.level;
             const xpStatusColor = (playerLevel >= xpCost) ? "§a" : "§c";
-            upgradeForm.button(`§b§l[EVOLVE] - increase rarity ${xpStatusColor}${xpCost}`, 'textures/blocks/enchanting_table_top');
+            const evolutionChance = EVOLUTION_CHANCES[currentRarity.id - 1] || 0;
+            
+            let buttonText = `§b§l[EVOLVE] - increase rarity ${xpStatusColor}${xpCost}`;
+            if (evolutionChance < 1.0) {
+                buttonText += ` §e(${(evolutionChance * 100).toFixed(1)}% chance)`;
+            }
+            
+            upgradeForm.button(buttonText, 'textures/blocks/enchanting_table_top');
         } else {
             upgradeForm.button("§b§l[EVOLVE] - increase rarity §8Max rarity", 'textures/blocks/enchanting_table_top');
         }
@@ -635,7 +712,7 @@ function openStatsUpgradeForm(player) {
                 }
             } else if (r.selection == statsL.length && evolve == statsL.length) {
                 //evolution button was pressed
-                const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+                const levelCostMap = LEVEL_COST_MAP;
                 const dNamePosition = findInsertIndex(loreArray);
                 const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
                 const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
@@ -653,8 +730,18 @@ function openStatsUpgradeForm(player) {
                     return;
                 }
                 
-                // Consume XP levels
+                // Check evolution success chance
+                const evolutionChance = EVOLUTION_CHANCES[currentRarity.id - 1] || 0;
+                const success = Math.random() <= evolutionChance;
+                
+                // Always consume XP levels (whether success or failure)
                 player.addLevels(-xpCost);
+                
+                if (!success) {
+                    system.runTimeout(() => player.sendMessage(`§cEvolution failed! ${(evolutionChance * 100).toFixed(1)}% chance. Lost ${xpCost} XP levels.`), 5);
+                    player.runCommand("playsound block.anvil.land @s");
+                    return;
+                }
                 
                 //create new upgraded lore
                 const Tags = parseTags(itemStack.typeId);
@@ -1333,8 +1420,8 @@ function blockUiAnvil(player) {
     }
 
     const lore = loreArray.join("\n").replace(/%/g, "%%");
-    const resourceMap = [2, 4, 8, 13, 20, 32, 1000];
-    const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+    const resourceMap = RESOURCE_MAP;
+    const levelCostMap = LEVEL_COST_MAP;
     
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     
