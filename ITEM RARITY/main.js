@@ -470,8 +470,7 @@ function openStatsUpgradeForm(player) {
     for (const attribute of attributes) {
         const params = attribute.split("§w");
         
-        const normalize = str => str.trim().replace(/§./g, ""); // remove §x codes and trim
-        const STAT = Object.values(stats).find(r => normalize(r.name) === normalize(params[0]));
+        const STAT = Object.values(stats).find(r => r.name === params[0]);
         
         if (!STAT) {
             system.runTimeout(() => {
@@ -570,13 +569,8 @@ function openStatsUpgradeForm(player) {
                 const upgradedStatIx = r.selection;
                 const stat = statsUpgradeStatus[upgradedStatIx];
                 if (stat && stat.status) {
-                    //get new random value - ensure it's better than current value
-                    const currentValue = statsL[upgradedStatIx].value;
-                    const minValue = Math.max(statsL[upgradedStatIx].minValue, currentValue + 1);
-                    const maxValue = statsL[upgradedStatIx].maxValue;
-                    
-                    // If current value is already at max, just set to max
-                    const newStatValue = minValue > maxValue ? maxValue : rnb(minValue, maxValue);
+                    //get new random value
+                    const newStatValue = rnb(statsL[upgradedStatIx].minValue, statsL[upgradedStatIx].maxValue);
                     
                     let newStats = [];
                     let index = 0;
