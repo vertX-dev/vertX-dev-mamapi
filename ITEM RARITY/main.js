@@ -45,70 +45,20 @@ let RR_BASE = RARITY.COMMON; // default common
 // XP Level costs for reforge and evolution (indexed by current rarity id - 1)
 const LEVEL_COST_MAP = [2, 3, 4, 5, 7, 10, 75];
 
+const LEVEL_COST_MAP_EVO = [5, 10, 14, 17, 22, 25, 75];
+
 // Resource costs for reforge (indexed by current rarity id - 1)  
 const RESOURCE_MAP = [2, 4, 8, 13, 20, 32, 1000];
 
 // Evolution success chances (indexed by current rarity id - 1)
 const EVOLUTION_CHANCES = [
-    1.0,   // Common → Uncommon (100%)
-    1.0,   // Uncommon → Rare (100%)
-    1.0,   // Rare → Epic (100%)
-    1.0,   // Epic → Legendary (100%)
-    1.0,   // Legendary → Mythic (100%)
+    0.9,   // Common → Uncommon (100%)
+    0.8,   // Uncommon → Rare (100%)
+    0.7,   // Rare → Epic (100%)
+    0.6,   // Epic → Legendary (100%)
+    0.5,   // Legendary → Mythic (100%)
     0.07,  // Mythic → Divine (7%)
     0.0    // Divine → ??? (impossible)
-];
-
-// Upgrade materials configuration
-const UPGRADE_MATERIALS = [
-    {
-        id: "rrs:tier1_upgrade",
-        name: "Tier 1 upgrade",
-        icon: '🔸',
-        amount: 1,
-        tag: "7",
-        ix: 0
-    },
-    {
-        id: "rrs:tier1_upgrade", 
-        name: "Tier 1 upgrade",
-        icon: '🔸',
-        amount: 2,
-        tag: "a",
-        ix: 0
-    },
-    {
-        id: "rrs:tier2_upgrade",
-        name: "Tier 2 upgrade", 
-        icon: '🔹',
-        amount: 1,
-        tag: "9",
-        ix: 1
-    },
-    {
-        id: "rrs:tier2_upgrade",
-        name: "Tier 2 upgrade",
-        icon: '🔹', 
-        amount: 2,
-        tag: "5",
-        ix: 1
-    },
-    {
-        id: "rrs:tier3_upgrade",
-        name: "Tier 3 upgrade",
-        icon: '💎',
-        amount: 1,
-        tag: "6", 
-        ix: 2
-    },
-    {
-        id: "rrs:tier3_upgrade",
-        name: "Tier 3 upgrade",
-        icon: '💎',
-        amount: 2,
-        tag: "c",
-        ix: 2
-    }
 ];
 
 // Static predefined scoreboards - load early to prevent timing issues
@@ -475,7 +425,7 @@ function openStatsUpgradeForm(player) {
     ];
     
     // Use global upgrade materials config
-    const upgradeMaterials = UPGRADE_MATERIALS;
+    const upgradeMaterials = [
         {
             id: "rrs:tier1_upgrade",
             name: "Tier 1 upgrade",
@@ -519,7 +469,7 @@ function openStatsUpgradeForm(player) {
         {
             id: "rrs:tier3_upgrade",
             name: "Tier 3 upgrade",
-            icon: '',
+            icon: '',
             amount: 2,
             tag: "c",
             ix: 2
@@ -582,13 +532,13 @@ function openStatsUpgradeForm(player) {
         const percent = Math.max(0, Math.min(81, Math.floor((relativeValue / range) * 81)));
         
         //create max value of stat progress bar with proper % display
-        const displayString = stat.fString.replace(/§w %§w/g, '§w %%§w');
+        const displayString = stat.fString;
         statsCurString = `${statsCurString}\n${displayString} ${upgradeBar[81 - percent]}`;
     }
 
     const upgradeForm = new ActionFormData()
         .title('§a§lSTATS UPGRADE')
-        .body(statsCurString);
+        .body(statsCurString.replace(/%/g, "%%"));
 
     //cteate upgrade button for each stat, also count max stats
     let evolve = 0;
@@ -627,7 +577,7 @@ function openStatsUpgradeForm(player) {
     //create evolve button
     if (evolve == statsL.length) {
         // Add XP requirements for evolution (use global config)
-        const levelCostMap = LEVEL_COST_MAP;
+        const levelCostMap = LEVEL_COST_MAP_EVO;
         const dNamePosition = findInsertIndex(loreArray);
         const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
         const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
@@ -712,7 +662,7 @@ function openStatsUpgradeForm(player) {
                 }
             } else if (r.selection == statsL.length && evolve == statsL.length) {
                 //evolution button was pressed
-                const levelCostMap = LEVEL_COST_MAP;
+                const levelCostMap = LEVEL_COST_MAP_EVO;
                 const dNamePosition = findInsertIndex(loreArray);
                 const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
                 const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
