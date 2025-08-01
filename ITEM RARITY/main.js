@@ -161,8 +161,17 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
 
 function getScoreboardValue(scoreboard, player) {
     const scoreboardObj = world.scoreboard.getObjective(scoreboard);
-    const scoreboardValue = scoreboardObj.getScore(player);
-    return scoreboardValue;
+    if (!scoreboardObj) {
+        console.warn(`Scoreboard '${scoreboard}' not found`);
+        return 0;
+    }
+    try {
+        const scoreboardValue = scoreboardObj.getScore(player);
+        return scoreboardValue;
+    } catch (error) {
+        console.warn(`Error getting score for ${player.name} from scoreboard '${scoreboard}':`, error);
+        return 0;
+    }
 }
 
 function countItemInInventory(player, itemId) {
@@ -215,14 +224,28 @@ function parseTags(itemId = "minecraft:apple") {
 
 function testCooldown(player, name, object = skills) {
     const Obj = Object.values(object).find(s => s.name == name);
+    
+    if (!Obj) {
+        console.warn(`Skill/Passive '${name}' not found`);
+        return { obj: null, time: 0 };
+    }
 
     const scoreboardObj = world.scoreboard.getObjective(Obj.scoreboard);
-    const scoreboardValue = scoreboardObj.getScore(player);
-
-    return {
-        obj: scoreboardObj,
-        time: scoreboardValue
-    };
+    if (!scoreboardObj) {
+        console.warn(`Scoreboard '${Obj.scoreboard}' not found for ${name}`);
+        return { obj: null, time: 0 };
+    }
+    
+    try {
+        const scoreboardValue = scoreboardObj.getScore(player);
+        return {
+            obj: scoreboardObj,
+            time: scoreboardValue
+        };
+    } catch (error) {
+        console.warn(`Error getting cooldown for ${name}:`, error);
+        return { obj: scoreboardObj, time: 0 };
+    }
 }
 
 function updateCooldown() {
@@ -547,8 +570,13 @@ function openStatsUpgradeForm(player) {
                 const upgradedStatIx = r.selection;
                 const stat = statsUpgradeStatus[upgradedStatIx];
                 if (stat && stat.status) {
-                    //get new random value
-                    const newStatValue = rnb(statsL[upgradedStatIx].minValue, statsL[upgradedStatIx].maxValue);
+                    //get new random value - ensure it's better than current value
+                    const currentValue = statsL[upgradedStatIx].value;
+                    const minValue = Math.max(statsL[upgradedStatIx].minValue, currentValue + 1);
+                    const maxValue = statsL[upgradedStatIx].maxValue;
+                    
+                    // If current value is already at max, just set to max
+                    const newStatValue = minValue > maxValue ? maxValue : rnb(minValue, maxValue);
                     
                     let newStats = [];
                     let index = 0;
@@ -1367,7 +1395,7 @@ function randomStats(rarity, type) {
             if (validStats.length > 0) {
                 const newStat = validStats[Math.floor(Math.random() * validStats.length)];
 
-                const newStatValue = Math.floor((Math.random() * (newStat.max - newStat.min + 1) + newStat.min) * BOOST_COEF / 10);
+                const newStatValue = Math.floor(rnb(newStat.min, newStat.max) * BOOST_COEF / 10);
                 const measure = newStat.measure ?? "";
                 const sign = newStatValue >= 0 ? "+" : "";
 
@@ -1404,7 +1432,7 @@ function randomSkill(rarity, type) {
         if (validSkills.length > 0) {
             const newSkill = validSkills[Math.floor(Math.random() * validSkills.length)];
 
-            const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
+            const newSkillValue = Math.floor(rnb(newSkill.min, newSkill.max) * BOOST_COEF / 10);
             const newSkillValueST = ("§w" + newSkillValue + "§w");
             const description = newSkill.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newSkillValueST : RR.color);
 
@@ -1450,7 +1478,7 @@ function randomPassiveAbility(rarity, type) {
         if (validPassives.length > 0) {
             const newPassive = validPassives[Math.floor(Math.random() * validPassives.length)];
 
-            const newPassiveValue = Math.floor((Math.random() * (newPassive.max - newPassive.min + 1) + newPassive.min) * BOOST_COEF / 10);
+            const newPassiveValue = Math.floor(rnb(newPassive.min, newPassive.max) * BOOST_COEF / 10);
             const newPassiveValueST = ("§w" + newPassiveValue + "§w");
             const description = newPassive.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newPassiveValueST : RR.color);
 
@@ -2001,21 +2029,32 @@ system.runTimeout(() => {initializeScoreboards()}, 50);
 
 
 //=====================================SKILLS FUNCTIONALITY===========================================
-/**
- * const ccd = testCooldown(player, skill.name);
-    if (!ccd || ccd.time > 0) return;
-    ccd.obj.setScore(player, skill.cooldown);
- */
+
+function checkAndSetCooldown(player, skillName, cooldownValue, object = skills) {
+    const ccd = testCooldown(player, skillName, object);
+    if (ccd.time > 0) {
+        if (!player.hasTag("disabledCooldownSkills") && object === skills) {
+            player.runCommand(`title @s actionbar ${skillName} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        }
+        if (player.hasTag("showCooldownPassives") && object === passives) {
+            player.runCommand(`title @s actionbar ${skillName} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        }
+        return false;
+    }
+    if (!ccd.obj) {
+        console.warn(`Cannot set cooldown for ${skillName} - scoreboard not found`);
+        return false;
+    }
+    ccd.obj.setScore(player, cooldownValue);
+    return true;
+}
 
 
 
 function skillSmashLeap(player, skill) {
-    const ccd = testCooldown(player, skill.name);
-    if (ccd.time > 0) {
-        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+    if (!checkAndSetCooldown(player, skill.name, skill.cooldown * 10)) {
         return;
     }
-    ccd.obj.setScore(player, skill.cooldown * 10);
 
     // Stun enemies
     player.runCommand(`effect @e[r=${skill.value}] slowness 2 4 true`);
