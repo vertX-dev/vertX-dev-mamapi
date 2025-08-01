@@ -556,7 +556,20 @@ function openStatsUpgradeForm(player) {
     
     //create evolve button
     if (evolve == statsL.length) {
-        upgradeForm.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top');
+        // Add XP requirements for evolution (same as reforge system)
+        const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+        const dNamePosition = findInsertIndex(loreArray);
+        const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
+        const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
+        
+        if (nextRarity) {
+            const xpCost = levelCostMap[currentRarity.id - 1] || 10;
+            const playerLevel = player.level;
+            const xpStatusColor = (playerLevel >= xpCost) ? "§a" : "§c";
+            upgradeForm.button(`§b§l[EVOLVE] - increase rarity ${xpStatusColor}${xpCost}`, 'textures/blocks/enchanting_table_top');
+        } else {
+            upgradeForm.button("§b§l[EVOLVE] - increase rarity §8Max rarity", 'textures/blocks/enchanting_table_top');
+        }
     }
     upgradeForm.button("§l[BACK]", 'textures/ui/arrow_left');
     
@@ -622,27 +635,49 @@ function openStatsUpgradeForm(player) {
                 }
             } else if (r.selection == statsL.length && evolve == statsL.length) {
                 //evolution button was pressed
-                    const dNamePosition = findInsertIndex(loreArray);
-                    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
-                    //create new upgraded lore
-                    const Tags = parseTags(itemStack.typeId);
-                    const clearedLore = clearLore(loreArray);
-                    
-                    const skill = randomSkill(rarity.sid, Tags.data);
-                    const passive = randomPassiveAbility(rarity.sid, Tags.data);
-                    
-                    let statsEvo = [];
-                    
-                    for (const stat of statsL) {
-                        statsEvo.push(rarity.color + stat.fString.slice(2));
-                    }
-                    
-                    const newLore = [...clearedLore, rarity.dName, "§8Attributes", ...statsEvo, "§a§t§b§e§n§d§r", ...skill, ...passive, "§r§r§s§v§e§r§t"];
-                    
-                    const newItem = itemStack.clone();
-                    newItem.setLore(newLore);
-                    
-                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+                const dNamePosition = findInsertIndex(loreArray);
+                const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
+                const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
+                
+                if (!nextRarity) {
+                    system.runTimeout(() => player.sendMessage("§cItem is already at maximum rarity"), 5);
+                    return;
+                }
+                
+                const xpCost = levelCostMap[currentRarity.id - 1] || 10;
+                const playerLevel = player.level;
+                
+                if (playerLevel < xpCost) {
+                    system.runTimeout(() => player.sendMessage(`§cNot enough XP levels for evolution. Need ${xpCost} levels.`), 5);
+                    return;
+                }
+                
+                // Consume XP levels
+                player.addLevels(-xpCost);
+                
+                //create new upgraded lore
+                const Tags = parseTags(itemStack.typeId);
+                const clearedLore = clearLore(loreArray);
+                
+                const skill = randomSkill(nextRarity.sid, Tags.data);
+                const passive = randomPassiveAbility(nextRarity.sid, Tags.data);
+                
+                let statsEvo = [];
+                
+                for (const stat of statsL) {
+                    statsEvo.push(nextRarity.color + stat.fString.slice(2));
+                }
+                
+                const newLore = [...clearedLore, nextRarity.dName, "§8Attributes", ...statsEvo, "§a§t§b§e§n§d§r", ...skill, ...passive, "§r§r§s§v§e§r§t"];
+                
+                const newItem = itemStack.clone();
+                newItem.setLore(newLore);
+                
+                equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                
+                // Play evolution sound effect
+                player.runCommand("playsound block.enchantment_table.use @s");
             } else {
                 //back to main menu
                 upgradeMenu(player);
