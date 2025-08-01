@@ -42,6 +42,75 @@ import {
 let BOOST_COEF = 10;
 let RR_BASE = RARITY.COMMON; // default common
 
+// XP Level costs for reforge and evolution (indexed by current rarity id - 1)
+const LEVEL_COST_MAP = [2, 3, 4, 5, 7, 10, 75];
+
+// Resource costs for reforge (indexed by current rarity id - 1)  
+const RESOURCE_MAP = [2, 4, 8, 13, 20, 32, 1000];
+
+// Evolution success chances (indexed by current rarity id - 1)
+const EVOLUTION_CHANCES = [
+    1.0,   // Common → Uncommon (100%)
+    1.0,   // Uncommon → Rare (100%)
+    1.0,   // Rare → Epic (100%)
+    1.0,   // Epic → Legendary (100%)
+    1.0,   // Legendary → Mythic (100%)
+    0.07,  // Mythic → Divine (7%)
+    0.0    // Divine → ??? (impossible)
+];
+
+// Upgrade materials configuration
+const UPGRADE_MATERIALS = [
+    {
+        id: "rrs:tier1_upgrade",
+        name: "Tier 1 upgrade",
+        icon: '🔸',
+        amount: 1,
+        tag: "7",
+        ix: 0
+    },
+    {
+        id: "rrs:tier1_upgrade", 
+        name: "Tier 1 upgrade",
+        icon: '🔸',
+        amount: 2,
+        tag: "a",
+        ix: 0
+    },
+    {
+        id: "rrs:tier2_upgrade",
+        name: "Tier 2 upgrade", 
+        icon: '🔹',
+        amount: 1,
+        tag: "9",
+        ix: 1
+    },
+    {
+        id: "rrs:tier2_upgrade",
+        name: "Tier 2 upgrade",
+        icon: '🔹', 
+        amount: 2,
+        tag: "5",
+        ix: 1
+    },
+    {
+        id: "rrs:tier3_upgrade",
+        name: "Tier 3 upgrade",
+        icon: '💎',
+        amount: 1,
+        tag: "6", 
+        ix: 2
+    },
+    {
+        id: "rrs:tier3_upgrade",
+        name: "Tier 3 upgrade",
+        icon: '💎',
+        amount: 2,
+        tag: "c",
+        ix: 2
+    }
+];
+
 // Static predefined scoreboards - load early to prevent timing issues
 const PREDEFINED_SCOREBOARDS = [{
         name: "rrsdamage",
@@ -161,8 +230,17 @@ const COOLDOWN_PREDEFINED_SCOREBOARDS = [{
 
 function getScoreboardValue(scoreboard, player) {
     const scoreboardObj = world.scoreboard.getObjective(scoreboard);
-    const scoreboardValue = scoreboardObj.getScore(player);
-    return scoreboardValue;
+    if (!scoreboardObj) {
+        console.warn(`Scoreboard '${scoreboard}' not found`);
+        return 0;
+    }
+    try {
+        const scoreboardValue = scoreboardObj.getScore(player);
+        return scoreboardValue;
+    } catch (error) {
+        console.warn(`Error getting score for ${player.name} from scoreboard '${scoreboard}':`, error);
+        return 0;
+    }
 }
 
 function countItemInInventory(player, itemId) {
@@ -215,14 +293,28 @@ function parseTags(itemId = "minecraft:apple") {
 
 function testCooldown(player, name, object = skills) {
     const Obj = Object.values(object).find(s => s.name == name);
+    
+    if (!Obj) {
+        console.warn(`Skill/Passive '${name}' not found`);
+        return { obj: null, time: 0 };
+    }
 
     const scoreboardObj = world.scoreboard.getObjective(Obj.scoreboard);
-    const scoreboardValue = scoreboardObj.getScore(player);
-
-    return {
-        obj: scoreboardObj,
-        time: scoreboardValue
-    };
+    if (!scoreboardObj) {
+        console.warn(`Scoreboard '${Obj.scoreboard}' not found for ${name}`);
+        return { obj: null, time: 0 };
+    }
+    
+    try {
+        const scoreboardValue = scoreboardObj.getScore(player);
+        return {
+            obj: scoreboardObj,
+            time: scoreboardValue
+        };
+    } catch (error) {
+        console.warn(`Error getting cooldown for ${name}:`, error);
+        return { obj: scoreboardObj, time: 0 };
+    }
 }
 
 function updateCooldown() {
@@ -382,7 +474,8 @@ function openStatsUpgradeForm(player) {
         '', ''
     ];
     
-    const upgradeMaterials = [
+    // Use global upgrade materials config
+    const upgradeMaterials = UPGRADE_MATERIALS;
         {
             id: "rrs:tier1_upgrade",
             name: "Tier 1 upgrade",
@@ -447,8 +540,7 @@ function openStatsUpgradeForm(player) {
     for (const attribute of attributes) {
         const params = attribute.split("§w");
         
-        const normalize = str => str.trim().replace(/§./g, ""); // remove §x codes and trim
-        const STAT = Object.values(stats).find(r => normalize(r.name) === normalize(params[0]));
+        const STAT = Object.values(stats).find(r => r.name === params[0]);
         
         if (!STAT) {
             system.runTimeout(() => {
@@ -534,7 +626,27 @@ function openStatsUpgradeForm(player) {
     
     //create evolve button
     if (evolve == statsL.length) {
-        upgradeForm.button("§b§l[EVOLVE] - increase rarity", 'textures/blocks/enchanting_table_top');
+        // Add XP requirements for evolution (use global config)
+        const levelCostMap = LEVEL_COST_MAP;
+        const dNamePosition = findInsertIndex(loreArray);
+        const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
+        const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
+        
+        if (nextRarity) {
+            const xpCost = levelCostMap[currentRarity.id - 1] || 10;
+            const playerLevel = player.level;
+            const xpStatusColor = (playerLevel >= xpCost) ? "§a" : "§c";
+            const evolutionChance = EVOLUTION_CHANCES[currentRarity.id - 1] || 0;
+            
+            let buttonText = `§b§l[EVOLVE] - increase rarity ${xpStatusColor}${xpCost}`;
+            if (evolutionChance < 1.0) {
+                buttonText += ` §e(${(evolutionChance * 100).toFixed(1)}% chance)`;
+            }
+            
+            upgradeForm.button(buttonText, 'textures/blocks/enchanting_table_top');
+        } else {
+            upgradeForm.button("§b§l[EVOLVE] - increase rarity §8Max rarity", 'textures/blocks/enchanting_table_top');
+        }
     }
     upgradeForm.button("§l[BACK]", 'textures/ui/arrow_left');
     
@@ -600,27 +712,59 @@ function openStatsUpgradeForm(player) {
                 }
             } else if (r.selection == statsL.length && evolve == statsL.length) {
                 //evolution button was pressed
-                    const dNamePosition = findInsertIndex(loreArray);
-                    const rarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
-                    //create new upgraded lore
-                    const Tags = parseTags(itemStack.typeId);
-                    const clearedLore = clearLore(loreArray);
-                    
-                    const skill = randomSkill(rarity.sid, Tags.data);
-                    const passive = randomPassiveAbility(rarity.sid, Tags.data);
-                    
-                    let statsEvo = [];
-                    
-                    for (const stat of statsL) {
-                        statsEvo.push(rarity.color + stat.fString.slice(2));
-                    }
-                    
-                    const newLore = [...clearedLore, rarity.dName, "§8Attributes", ...statsEvo, "§a§t§b§e§n§d§r", ...skill, ...passive, "§r§r§s§v§e§r§t"];
-                    
-                    const newItem = itemStack.clone();
-                    newItem.setLore(newLore);
-                    
-                    equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                const levelCostMap = LEVEL_COST_MAP;
+                const dNamePosition = findInsertIndex(loreArray);
+                const currentRarity = Object.values(RARITY).find(r => r.dName === loreArray[dNamePosition]);
+                const nextRarity = Object.values(RARITY).find(r => r.id === currentRarity.id + 1);
+                
+                if (!nextRarity) {
+                    system.runTimeout(() => player.sendMessage("§cItem is already at maximum rarity"), 5);
+                    return;
+                }
+                
+                const xpCost = levelCostMap[currentRarity.id - 1] || 10;
+                const playerLevel = player.level;
+                
+                if (playerLevel < xpCost) {
+                    system.runTimeout(() => player.sendMessage(`§cNot enough XP levels for evolution. Need ${xpCost} levels.`), 5);
+                    return;
+                }
+                
+                // Check evolution success chance
+                const evolutionChance = EVOLUTION_CHANCES[currentRarity.id - 1] || 0;
+                const success = Math.random() <= evolutionChance;
+                
+                // Always consume XP levels (whether success or failure)
+                player.addLevels(-xpCost);
+                
+                if (!success) {
+                    system.runTimeout(() => player.sendMessage(`§cEvolution failed! ${(evolutionChance * 100).toFixed(1)}% chance. Lost ${xpCost} XP levels.`), 5);
+                    player.runCommand("playsound block.anvil.land @s");
+                    return;
+                }
+                
+                //create new upgraded lore
+                const Tags = parseTags(itemStack.typeId);
+                const clearedLore = clearLore(loreArray);
+                
+                const skill = randomSkill(nextRarity.sid, Tags.data);
+                const passive = randomPassiveAbility(nextRarity.sid, Tags.data);
+                
+                let statsEvo = [];
+                
+                for (const stat of statsL) {
+                    statsEvo.push(nextRarity.color + stat.fString.slice(2));
+                }
+                
+                const newLore = [...clearedLore, nextRarity.dName, "§8Attributes", ...statsEvo, "§a§t§b§e§n§d§r", ...skill, ...passive, "§r§r§s§v§e§r§t"];
+                
+                const newItem = itemStack.clone();
+                newItem.setLore(newLore);
+                
+                equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
+                
+                // Play evolution sound effect
+                player.runCommand("playsound block.enchantment_table.use @s");
             } else {
                 //back to main menu
                 upgradeMenu(player);
@@ -1276,8 +1420,8 @@ function blockUiAnvil(player) {
     }
 
     const lore = loreArray.join("\n").replace(/%/g, "%%");
-    const resourceMap = [2, 4, 8, 13, 20, 32, 1000];
-    const levelCostMap = [2, 3, 4, 5, 7, 10, 75];
+    const resourceMap = RESOURCE_MAP;
+    const levelCostMap = LEVEL_COST_MAP;
     
     const upgradeResource = countItemInInventory(player, "minecraft:amethyst_shard");
     
@@ -1367,7 +1511,7 @@ function randomStats(rarity, type) {
             if (validStats.length > 0) {
                 const newStat = validStats[Math.floor(Math.random() * validStats.length)];
 
-                const newStatValue = Math.floor((Math.random() * (newStat.max - newStat.min + 1) + newStat.min) * BOOST_COEF / 10);
+                const newStatValue = Math.floor(rnb(newStat.min, newStat.max) * BOOST_COEF / 10);
                 const measure = newStat.measure ?? "";
                 const sign = newStatValue >= 0 ? "+" : "";
 
@@ -1404,7 +1548,7 @@ function randomSkill(rarity, type) {
         if (validSkills.length > 0) {
             const newSkill = validSkills[Math.floor(Math.random() * validSkills.length)];
 
-            const newSkillValue = Math.floor((Math.random() * (newSkill.max - newSkill.min + 1) + newSkill.min) * BOOST_COEF / 10);
+            const newSkillValue = Math.floor(rnb(newSkill.min, newSkill.max) * BOOST_COEF / 10);
             const newSkillValueST = ("§w" + newSkillValue + "§w");
             const description = newSkill.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newSkillValueST : RR.color);
 
@@ -1450,7 +1594,7 @@ function randomPassiveAbility(rarity, type) {
         if (validPassives.length > 0) {
             const newPassive = validPassives[Math.floor(Math.random() * validPassives.length)];
 
-            const newPassiveValue = Math.floor((Math.random() * (newPassive.max - newPassive.min + 1) + newPassive.min) * BOOST_COEF / 10);
+            const newPassiveValue = Math.floor(rnb(newPassive.min, newPassive.max) * BOOST_COEF / 10);
             const newPassiveValueST = ("§w" + newPassiveValue + "§w");
             const description = newPassive.description.replace(/\{x\}|§x/g, match => match === "{x}" ? newPassiveValueST : RR.color);
 
@@ -2001,21 +2145,32 @@ system.runTimeout(() => {initializeScoreboards()}, 50);
 
 
 //=====================================SKILLS FUNCTIONALITY===========================================
-/**
- * const ccd = testCooldown(player, skill.name);
-    if (!ccd || ccd.time > 0) return;
-    ccd.obj.setScore(player, skill.cooldown);
- */
+
+function checkAndSetCooldown(player, skillName, cooldownValue, object = skills) {
+    const ccd = testCooldown(player, skillName, object);
+    if (ccd.time > 0) {
+        if (!player.hasTag("disabledCooldownSkills") && object === skills) {
+            player.runCommand(`title @s actionbar ${skillName} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        }
+        if (player.hasTag("showCooldownPassives") && object === passives) {
+            player.runCommand(`title @s actionbar ${skillName} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+        }
+        return false;
+    }
+    if (!ccd.obj) {
+        console.warn(`Cannot set cooldown for ${skillName} - scoreboard not found`);
+        return false;
+    }
+    ccd.obj.setScore(player, cooldownValue);
+    return true;
+}
 
 
 
 function skillSmashLeap(player, skill) {
-    const ccd = testCooldown(player, skill.name);
-    if (ccd.time > 0) {
-        if (!player.hasTag("disabledCooldownSkills")) player.runCommand(`title @s actionbar ${skill.name} on cooldown: §e${(ccd.time / 10).toFixed(1)}s`);
+    if (!checkAndSetCooldown(player, skill.name, skill.cooldown * 10)) {
         return;
     }
-    ccd.obj.setScore(player, skill.cooldown * 10);
 
     // Stun enemies
     player.runCommand(`effect @e[r=${skill.value}] slowness 2 4 true`);
