@@ -2037,7 +2037,7 @@ function createPath(player, waypoints, radius, mode, replaceBlocks, blockSource,
         }
         
         // Check if path is too large
-        if (allPositions.length > 50000) {
+        if (allPositions.length > 200) {
             player.sendMessage(`§cPath too large! ${allPositions.length} blocks would be placed. Maximum is 50,000.`);
             player.sendMessage("§7Consider using smaller radius or fewer waypoints.");
             return;
