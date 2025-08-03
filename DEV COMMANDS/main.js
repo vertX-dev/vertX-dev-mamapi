@@ -2223,8 +2223,8 @@ function processPathBatch(pathState) {
         pathState.currentIndex++;
     }
     
-    // Show progress updates every 500 blocks
-    if (pathState.placedBlocks % 500 === 0 || pathState.currentIndex >= pathState.positions.length) {
+    // Show progress updates every 1000 blocks
+    if (pathState.placedBlocks % 1000 === 0 || pathState.currentIndex >= pathState.positions.length) {
         const progress = Math.round((pathState.currentIndex / pathState.totalBlocks) * 100);
         const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
         
