@@ -13,7 +13,7 @@ function giveItem(player, item, container = player.getComponent("minecraft:inven
         container.addItem(item);
     } else {
         player.runCommand("tell @s clear inventory to get " + item.nameTag);
-        system.runTimeout(() => giveItem(player, item, container), 160);
+        system.runTimeout(() => giveItem(player, item, container), 200);
     }
 }
 
