@@ -18,5 +18,7 @@ function giveItem(player, item, container = player.getComponent("minecraft:inven
 }
 
 world.afterEvents.playerSpawn.subscribe((ev) => {
-    
+    if (ev.initialSpawn) {
+        giveItem(ev.player, createItem(getRandomItem()));
+    }
 });
