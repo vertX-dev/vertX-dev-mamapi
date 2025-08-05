@@ -12,7 +12,8 @@ function giveItem(player, item, container = player.getComponent("minecraft:inven
     if (container.emptySlotsCount > 0) {
         container.addItem(item);
     } else {
-        system.runTimeout(() => giveItem(player, item, container), 100);
+        player.runCommand("tell @s clear inventory to get " + item.nameTag);
+        system.runTimeout(() => giveItem(player, item, container), 160);
     }
 }
 
