@@ -33,7 +33,7 @@ function giveItems(player, items, container = player.getComponent("minecraft:inv
             fullItems.push(item);
         }
     }
-    if (fullItems.length > 0) system.runTimeout(() => giveItem(player, fullItems, container), 200);
+    if (fullItems.length > 0) system.runTimeout(() => giveItems(player, fullItems, container), 200);
 }
 
 function createItems(itemIds) {
