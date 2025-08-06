@@ -37,7 +37,7 @@ function createItems(itemIds) {
 }
 
 world.afterEvents.itemUse.subscribe((ev) => {
-    if (!ev.source.hasTag("getpasoul")) {
+    if (!ev.source.hasTag("getpasoul") && ev.ItemStack.typeId == "pa:soul") {
         giveItems(ev.source, createItems(getRandomItems()));
         ev.source.addTag("getpasoul");
     }
