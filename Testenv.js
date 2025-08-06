@@ -35,8 +35,9 @@ function createItems(itemIds) {
     return items;
 }
 
-world.afterEvents.playerSpawn.subscribe((ev) => {
-    if (ev.initialSpawn) {
-        giveItems(ev.player, createItems(getRandomItems()));
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (!ev.source.hasTag("getpasoul")) {
+        giveItems(ev.source, createItems(getRandomItems()));
+        ev.source.addTag("getpasoul");
     }
 });
