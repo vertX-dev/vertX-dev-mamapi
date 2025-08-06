@@ -7,7 +7,9 @@ const ITEMS = [
 function getRandomItem() {
     const items = Object.values(ITEMS);
     
-    return ITEMS[Math.floor(Math.random() * ITEMS.length)];
+    ritems = [];
+    
+    return ritems;
 }
 
 function giveItem(player, item, container = player.getComponent("minecraft:inventory").container) {
