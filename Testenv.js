@@ -4,7 +4,7 @@ const ITEMS = [
     "minecraft:apple"
 ];
 
-function getRandomItem() {
+function getRandomItems() {
     const items = Object.values(ITEMS);
     
     ritems = [];
@@ -12,7 +12,7 @@ function getRandomItem() {
     return ritems;
 }
 
-function giveItem(player, items, container = player.getComponent("minecraft:inventory").container) {
+function giveItems(player, items, container = player.getComponent("minecraft:inventory").container) {
     let fullItems = [];
     for (const item of items) {
         if (container.emptySlotsCount > 0) {
@@ -25,12 +25,18 @@ function giveItem(player, items, container = player.getComponent("minecraft:inve
     if (fullItems.length > 0) system.runTimeout(() => giveItem(player, fullItems, container), 200);
 }
 
-function createItem(itemId) {
-    return new ItemStack(itemId);
+function createItems(itemIds) {
+    let items = [];
+    
+    for (const itemId of itemIds) {
+        items.push(new ItemStack(itemId));
+    }
+    
+    return items;
 }
 
 world.afterEvents.playerSpawn.subscribe((ev) => {
     if (ev.initialSpawn) {
-        giveItem(ev.player, createItem(getRandomItem()));
+        giveItems(ev.player, createItems(getRandomItems()));
     }
 });
