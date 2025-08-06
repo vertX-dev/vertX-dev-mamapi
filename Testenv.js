@@ -12,12 +12,14 @@ function getRandomItem() {
     return ritems;
 }
 
-function giveItem(player, item, container = player.getComponent("minecraft:inventory").container) {
-    if (container.emptySlotsCount > 0) {
-        container.addItem(item);
-    } else {
-        player.runCommand("tell @s clear inventory to get " + item.nameTag);
-        system.runTimeout(() => giveItem(player, item, container), 200);
+function giveItem(player, items, container = player.getComponent("minecraft:inventory").container) {
+    for (const item of items) {
+        if (container.emptySlotsCount > 0) {
+            container.addItem(item);
+        } else {
+            player.runCommand("tell @s clear inventory to get " + item.nameTag);
+            system.runTimeout(() => giveItem(player, item, container), 200);
+        }
     }
 }
 
