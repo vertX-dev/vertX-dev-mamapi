@@ -5,6 +5,8 @@ const ITEMS = [
 ];
 
 function getRandomItem() {
+    const items = Object.values(ITEMS);
+    
     return ITEMS[Math.floor(Math.random() * ITEMS.length)];
 }
 
