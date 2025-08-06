@@ -1,11 +1,11 @@
 import { world, EquipmentSlot, system, ItemStack } from "@minecraft/setver";
 
 const ITEMS = [
-    "minecraft:apple"
+    {id: "pa:justice", chance: 0.55}
 ];
 
 function getRandomItems() {
-    const items = Object.values(ITEMS);
+    
     
     ritems = [];
     
