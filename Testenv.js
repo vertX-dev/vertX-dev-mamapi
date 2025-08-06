@@ -5,9 +5,10 @@ const ITEMS = [
 ];
 
 function getRandomItems() {
-    
-    
     ritems = [];
+    for (const item of ITEMS) {
+        if (Math.random() <= item.chance) ritems.push(item.id);
+    }
     
     return ritems;
 }
