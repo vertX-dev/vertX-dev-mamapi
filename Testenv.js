@@ -1,7 +1,17 @@
 import { world, EquipmentSlot, system, ItemStack } from "@minecraft/setver";
 
 const ITEMS = [
-    {id: "pa:justice", chance: 0.55}
+    {id: "pa:soul", chance: 0.95},
+    {id: "pa:integrity", chance: 0.55},
+    {id: "pa:perseverance", chance: 0.50},
+    {id: "pa:kindness", chance: 0.45},
+    {id: "pa:patience", chance: 0.40},
+    {id: "pa:bravery", chance: 0.35},
+    {id: "pa:justice", chance: 0.20},
+    {id: "pa:fear", chance: 0.5},
+    {id: "pa:hate", chance: 0.4},
+    {id: "pa:determination", chance: 0.3},
+    {id: "pa:true_determination", chance: 0.1}
 ];
 
 function getRandomItems() {
