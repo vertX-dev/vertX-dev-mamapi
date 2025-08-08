@@ -1,11 +1,13 @@
 import { world, system, MoonPhase, EquipmentSlot } from "@minecraft/server";
+import { AtctionFormData } from "@minecraft/server-ui";
 
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (ev.itemStack.typeId == "pa:undertale_book") uiMenu(ev.source);
+});
 
-system.runInterval(() => {
-    if (world.getMoonPhase() == MoonPhase.FullMoon && world.getTimeOfDay >= 13500 && world.getTimeOfDay <= 23000) {
-        const players = world.getPlayers();
-        for (const player of players) {
-            player.runCommand("function fullmoon_effects");
-        }
-    }
-}, 20);
+function uiMenu(player) {
+    const equippable = player.getComponent("minecraft:equippable");
+    const itemStack = equippable.getEquipment(EquipmentSlot.Mainhand);
+    
+    
+}
