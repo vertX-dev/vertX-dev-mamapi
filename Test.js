@@ -20,8 +20,7 @@ function uiMenu(player) {
                 if (r.selection == 0) {
                     player.runCommand("give @s pa:soul_book_human");
                 }
-                
-                if (r.selection == 0) {
+                if (r.selection == 1) {
                     player.runCommand("give @s pa:soul_book_monster");
                 }
             }
