@@ -16,13 +16,13 @@ function uiMenu(player) {
             .button("[Monster]");
         form.show(player).then((r) => {
             if (!r.canceled) {
-                player.runCommand("clear @s pa:undertale_book 0 1")
+                player.runCommand("clear @s pa:undertale_book 0 1");
                 if (r.selection == 0) {
-                    
+                    player.runCommand("give @s pa:soul_book_human");
                 }
                 
                 if (r.selection == 0) {
-                    
+                    player.runCommand("give @s pa:soul_book_monster");
                 }
             }
         });
