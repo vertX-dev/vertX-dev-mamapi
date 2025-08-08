@@ -18,6 +18,7 @@ function getRandomItems() {
     let ritems = [];
     for (const item of ITEMS) {
         if (Math.random() <= item.chance) ritems.push(item.id);
+        if (ritems.length >= 1) break;
     }
     
     return ritems;
