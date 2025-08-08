@@ -16,8 +16,14 @@ function uiMenu(player) {
             .button("[Monster]");
         form.show(player).then((r) => {
             if (!r.canceled) {
-                if (r.selection == 0) human(player);
-                if (r.selection == 0) monster(player);
+                player.runCommand("clear @s pa:undertale_book 0 1")
+                if (r.selection == 0) {
+                    
+                }
+                
+                if (r.selection == 0) {
+                    
+                }
             }
         });
     }
