@@ -1,7 +1,7 @@
 import { world, EquipmentSlot, system, ItemStack } from "@minecraft/server";
 
 const ITEMS = [
-    {id: "pa:monster_soul", chance: 0.95},
+    {id: "pa:human_soul", chance: 0.95},
     {id: "pa:froggit_soul", chance: 0.55},
     {id: "pa:toriel_soul", chance: 0.50},
     {id: "pa:kindness", chance: 0.45},
@@ -48,9 +48,9 @@ function createItems(itemIds) {
 }
 
 world.afterEvents.itemUse.subscribe((ev) => {
-    if (!ev.source.hasTag("getpamonstersoul") && ev.itemStack.typeId == "pa:soul_book_monster") {
-        ev.source.runCommand("clear @s pa:soul_book_monster 0 1");
+    if (!ev.source.hasTag("getpahumansoul") && ev.itemStack.typeId == "pa:soul_book_human") {
+        ev.source.runCommand("clear @s pa:soul_book_human 0 1");
         giveItems(ev.source, createItems(getRandomItems()));
-        ev.source.addTag("getpamonstersoul");
+        ev.source.addTag("getpahumansoul");
     }
 });
