@@ -10,6 +10,14 @@ function uiMenu(player) {
     const itemStack = equippable.getEquipment(EquipmentSlot.Mainhand);
     
     if (itemStack.typeId == "pa:undertale_book") {
-        
+        const form = new AtctionFormData()
+            .title("§l§aSELECT PATH")
+            .button("[Human]")
+            .button("[Monster]");
+        form.show(player).then((r) => {
+            if (!r.canceled) {
+                
+            }
+        });
     }
 }
