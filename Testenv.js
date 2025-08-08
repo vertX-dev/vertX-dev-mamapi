@@ -1,9 +1,9 @@
 import { world, EquipmentSlot, system, ItemStack } from "@minecraft/server";
 
 const ITEMS = [
-    {id: "pa:soul", chance: 0.95},
-    {id: "pa:integrity", chance: 0.55},
-    {id: "pa:perseverance", chance: 0.50},
+    {id: "pa:monster_soul", chance: 0.95},
+    {id: "pa:froggit_soul", chance: 0.55},
+    {id: "pa:toriel_soul", chance: 0.50},
     {id: "pa:kindness", chance: 0.45},
     {id: "pa:patience", chance: 0.40},
     {id: "pa:bravery", chance: 0.35},
@@ -11,7 +11,7 @@ const ITEMS = [
     {id: "pa:fear", chance: 0.5},
     {id: "pa:hate", chance: 0.4},
     {id: "pa:determination", chance: 0.3},
-    {id: "pa:true_determination", chance: 0.1}
+    {id: "pa:sans_soul_complete", chance: 0.1}
 ];
 
 function getRandomItems() {
@@ -47,10 +47,10 @@ function createItems(itemIds) {
     return items;
 }
 
-world.afterEvents.itemUse.subscribe((ev) => {ev.source.runCommand("clear @s pa:soul 0 1");
-    if (!ev.source.hasTag("getpasoul") && ev.itemStack.typeId == "pa:soul_book_human") {
-        ev.source.runCommand("clear @s pa:soul 0 1");
+world.afterEvents.itemUse.subscribe((ev) => {ev.source.runCommand("clear @s pa:soul_book_monster 0 1");
+    if (!ev.source.hasTag("getpamonstersoul") && ev.itemStack.typeId == "pa:soul_book_human") {
+        ev.source.runCommand("clear @s pa:soul_book_monster 0 1");
         giveItems(ev.source, createItems(getRandomItems()));
-        ev.source.addTag("getpasoul");
+        ev.source.addTag("getpamonstersoul");
     }
 });
