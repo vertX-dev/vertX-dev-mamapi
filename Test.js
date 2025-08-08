@@ -9,5 +9,7 @@ function uiMenu(player) {
     const equippable = player.getComponent("minecraft:equippable");
     const itemStack = equippable.getEquipment(EquipmentSlot.Mainhand);
     
-    
+    if (itemStack.typeId == "pa:undertale_book") {
+        
+    }
 }
