@@ -47,8 +47,8 @@ function createItems(itemIds) {
     return items;
 }
 
-world.afterEvents.itemUse.subscribe((ev) => {ev.source.runCommand("clear @s pa:soul_book_monster 0 1");
-    if (!ev.source.hasTag("getpamonstersoul") && ev.itemStack.typeId == "pa:soul_book_human") {
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (!ev.source.hasTag("getpamonstersoul") && ev.itemStack.typeId == "pa:soul_book_monster") {
         ev.source.runCommand("clear @s pa:soul_book_monster 0 1");
         giveItems(ev.source, createItems(getRandomItems()));
         ev.source.addTag("getpamonstersoul");
