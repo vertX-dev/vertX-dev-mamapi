@@ -15,6 +15,10 @@ import {
     ModalFormData
 } from "@minecraft/server-ui";
 
+import { FONTS } from "./buildTextFont.js";
+import { PALLETS } from "./blockPallets.js";
+
+
 // Constants for hidden string markers
 const COMMAND_MARKER = '§c§b§i§n§d§t';
 const FUNCTION_MARKER = '§a§b§i§n§d§f';
@@ -324,11 +328,75 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "Configure block filling performance settings",
         permissionLevel: CommandPermissionLevel.GameDirectors,
         optionalParameters: [
-            { type: CustomCommandParamType.Integer, name: "Blocks per tick (default 100)" },
-            { type: CustomCommandParamType.Integer, name: "Tick delay (default 1)" },
-            { type: CustomCommandParamType.Integer, name: "Max operations (default 50000)" }
+            { type: CustomCommandParamType.Integer, name: "Blocks per tick (default 500)" },
+            { type: CustomCommandParamType.Integer, name: "Tick delay (default 2)" },
+            { type: CustomCommandParamType.Integer, name: "Max operations (default 100000)" }
         ]
     };    
+    
+    const buildTextCommand = {
+        name: "vertx:buildtext",
+        description: "Build 3D text from blocks with customizable options",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Text to build" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Location, name: "Start location" },
+            { type: CustomCommandParamType.Integer, name: "Scale (1-10, default: 3)" },
+            { type: CustomCommandParamType.String, name: "Direction (north/south/east/west, default: north)" },
+            { type: CustomCommandParamType.Boolean, name: "Vertical text (default: false)" },
+            { type: CustomCommandParamType.String, name: "Font style (block/slim, default: block)" }
+        ]
+    };
+    
+    const brushCommand = {
+        name: "vertx:brush",
+        description: "Configure and create brush tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };
+    
+    const largeFillCommand = {
+        name: "vertx:largefill",
+        description: "Fill large areas with blocks using async processing (up to 1M blocks)",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Location, name: "From location" },
+            { type: CustomCommandParamType.Location, name: "To location" },
+            { type: CustomCommandParamType.String, name: "Block to place" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.String, name: "Fill mode (replace/keep/outline/hollow/destroy, default: replace)" },
+            { type: CustomCommandParamType.String, name: "Replace block filter (for replace mode, default: all)" }
+        ]
+    };
+    
+    const fillInfoCommand = {
+        name: "vertx:fillinfo",
+        description: "Calculate fill area size and estimated time",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Location, name: "From location" },
+            { type: CustomCommandParamType.Location, name: "To location" }
+        ]
+    };
+    
+    const createFigureCommand = {
+        name: "vertx:createfigure",
+        description: "Create geometric figures (cube, sphere, cylinder, pyramid) with various options",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Figure type (cube/sphere/cylinder/pyramid)" },
+            { type: CustomCommandParamType.Location, name: "Center location" },
+            { type: CustomCommandParamType.String, name: "Block type" },
+            { type: CustomCommandParamType.Integer, name: "Size (radius/half-width)" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.String, name: "Mode (solid/hollow/keep, default: solid)" },
+            { type: CustomCommandParamType.Integer, name: "Rotation in degrees (default: 0)" },
+            { type: CustomCommandParamType.Integer, name: "Height (for cylinder/pyramid, default: size)" }
+        ]
+    };
     
     // Register all commands
     init.customCommandRegistry.registerCommand(addLoreCommand, addLoreFunction);
@@ -357,6 +425,11 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(getPathToolCommand, getPathToolFunction);
     init.customCommandRegistry.registerCommand(buildPathCommand, buildPathFunction);
     init.customCommandRegistry.registerCommand(configFillCommand, configFillFunction);
+    init.customCommandRegistry.registerCommand(buildTextCommand, buildTextFunction);
+    init.customCommandRegistry.registerCommand(brushCommand, brushFunction);
+    init.customCommandRegistry.registerCommand(fillInfoCommand, fillInfoFunction);
+    init.customCommandRegistry.registerCommand(largeFillCommand, largeFillFunction);
+    init.customCommandRegistry.registerCommand(createFigureCommand, createFigureFunction);
     
 });
 
@@ -1872,14 +1945,6 @@ function fillAreaWithMultiBlockAsyncPath(dimension, from, to, blockList, entity,
     }, BLOCK_FILLING_CONFIG.TICK_DELAY);
 }
 
-// Utility function to shuffle array (Fisher-Yates shuffle)
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
 function configFillFunction(origin, blocksPerTick = null, tickDelay = null, maxOps = null) {
     system.run(() => {
         const entity = origin.sourceEntity;
@@ -2008,51 +2073,192 @@ function createPathPreviewSegment(dimension, from, to, radius, mode, remainingPa
 }
 
 // Main path creation function with async processing
+// Updated: Main path creation function
 function createPath(player, waypoints, radius, mode, replaceBlocks, blockSource, customInput) {
     try {
-        // Determine blocks to use
         const pathBlocks = getPathBlocks(player, blockSource, customInput);
         if (!pathBlocks || pathBlocks.length === 0) {
             player.sendMessage("§cCould not determine blocks to use for path!");
             return;
         }
         
-        // Parse replace blocks
         const shouldReplaceAll = replaceBlocks === "ALL";
         const replaceList = shouldReplaceAll ? [] : replaceBlocks.split(',').map(block => block.trim());
         
-        // Calculate all positions for the entire path
-        const allPositions = [];
-        for (let i = 0; i < waypoints.length - 1; i++) {
-            const from = waypoints[i];
-            const to = waypoints[i + 1];
-            
-            const segmentPositions = calculatePathSegmentPositions(from, to, radius, mode, player.dimension, shouldReplaceAll, replaceList);
-            allPositions.push(...segmentPositions);
-        }
-        
-        if (allPositions.length === 0) {
-            player.sendMessage("§cNo valid positions found for path creation!");
-            return;
-        }
-        
-        // Check if path is too large
-        if (allPositions.length > 200) {
-            player.sendMessage(`§cPath too large! ${allPositions.length} blocks would be placed. Maximum is 50,000.`);
-            player.sendMessage("§7Consider using smaller radius or fewer waypoints.");
-            return;
-        }
-        
-        player.sendMessage(`§aStarting async path creation: ${allPositions.length} blocks...`);
+        player.sendMessage(`§aStarting connected path creation...`);
         player.sendMessage(`§7Mode: ${["Flat", "Vertical Flat", "Spherical", "Square"][mode]}, Radius: ${radius}`);
         
-        // Start async path creation
-        createPathAsync(player, allPositions, pathBlocks);
+        // Start building the connected path
+        createConnectedPathAsync(player, waypoints, radius, mode, pathBlocks, shouldReplaceAll, replaceList);
         
     } catch (e) {
         player.sendMessage(`§cFailed to create path: ${e.message || e}`);
         console.log("Failed to create path: " + e);
     }
+}
+
+// New: Connected path creation with smooth interpolation
+function createConnectedPathAsync(player, waypoints, radius, mode, pathBlocks, shouldReplaceAll, replaceList) {
+    const pathState = {
+        waypoints: waypoints,
+        currentSegment: 0,
+        totalSegments: waypoints.length - 1,
+        radius: radius,
+        mode: mode,
+        pathBlocks: pathBlocks,
+        shouldReplaceAll: shouldReplaceAll,
+        replaceList: replaceList,
+        dimension: player.dimension,
+        player: player,
+        
+        // Current interpolation state
+        currentStep: 0,
+        totalSteps: 0,
+        segmentFrom: null,
+        segmentTo: null,
+        
+        // Statistics
+        totalPlaced: 0,
+        totalFailed: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null
+    };
+    
+    // Initialize first segment
+    initializeSegment(pathState);
+    
+    // Start processing
+    pathState.intervalId = system.runInterval(() => {
+        processConnectedPath(pathState);
+    }, 1);
+}
+
+// Initialize current segment for processing
+function initializeSegment(pathState) {
+    if (pathState.currentSegment >= pathState.totalSegments) {
+        return false; // No more segments
+    }
+    
+    pathState.segmentFrom = pathState.waypoints[pathState.currentSegment];
+    pathState.segmentTo = pathState.waypoints[pathState.currentSegment + 1];
+    
+    const distance = Math.sqrt(
+        Math.pow(pathState.segmentTo.x - pathState.segmentFrom.x, 2) + 
+        Math.pow(pathState.segmentTo.y - pathState.segmentFrom.y, 2) + 
+        Math.pow(pathState.segmentTo.z - pathState.segmentFrom.z, 2)
+    );
+    
+    pathState.totalSteps = Math.min(Math.ceil(distance * 2), 300); // Cap steps per segment
+    pathState.currentStep = 0;
+    
+    pathState.player.sendMessage(`§7Segment ${pathState.currentSegment + 1}/${pathState.totalSegments} - ${pathState.totalSteps} steps`);
+    
+    return true;
+}
+
+// Process connected path step by step
+function processConnectedPath(pathState) {
+    if (pathState.currentStep >= pathState.totalSteps) {
+        // Current segment complete, move to next
+        pathState.currentSegment++;
+        
+        if (!initializeSegment(pathState)) {
+            // All segments complete
+            finishConnectedPath(pathState);
+            return;
+        }
+    }
+    
+    // Process current step
+    const blocksPerStep = 100; // Blocks to process per step
+    let stepPlaced = 0;
+    
+    for (let b = 0; b < blocksPerStep && pathState.currentStep < pathState.totalSteps; b++) {
+        const t = pathState.currentStep / pathState.totalSteps;
+        
+        const centerX = pathState.segmentFrom.x + (pathState.segmentTo.x - pathState.segmentFrom.x) * t;
+        const centerY = pathState.segmentFrom.y + (pathState.segmentTo.y - pathState.segmentFrom.y) * t;
+        const centerZ = pathState.segmentFrom.z + (pathState.segmentTo.z - pathState.segmentFrom.z) * t;
+        
+        // Place blocks in area around this point
+        const placed = placeBlocksAtStep(pathState, centerX, centerY, centerZ);
+        stepPlaced += placed;
+        
+        pathState.currentStep++;
+    }
+    
+    pathState.totalPlaced += stepPlaced;
+    
+    // Show progress every 50 steps
+    if (pathState.currentStep % 20 === 0 || pathState.currentStep >= pathState.totalSteps) {
+        const segmentProgress = Math.round((pathState.currentStep / pathState.totalSteps) * 100);
+        const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
+        
+        pathState.player.sendMessage(
+            `§7Step ${pathState.currentStep}/${pathState.totalSteps} (${segmentProgress}%) - ${pathState.totalPlaced} blocks placed - ${elapsed}s`
+        );
+    }
+}
+
+// Place blocks at current step position
+function placeBlocksAtStep(pathState, centerX, centerY, centerZ) {
+    let placed = 0;
+    const maxRadius = Math.min(pathState.radius, 8); // Cap radius for performance
+    
+    // Limit area scan to prevent hangs
+    for (let x = centerX - Math.ceil(maxRadius); x <= centerX + Math.ceil(maxRadius); x++) {
+        for (let y = centerY - Math.ceil(maxRadius); y <= centerY + Math.ceil(maxRadius); y++) {
+            for (let z = centerZ - Math.ceil(maxRadius); z <= centerZ + Math.ceil(maxRadius); z++) {
+                if (shouldPlaceAtLocation(centerX, centerY, centerZ, x, y, z, pathState.radius, pathState.mode)) {
+                    const location = { x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) };
+                    
+                    // Check replacement rules
+                    if (!pathState.shouldReplaceAll && pathState.replaceList.length > 0) {
+                        try {
+                            const currentBlock = pathState.dimension.getBlock(location);
+                            const currentBlockId = currentBlock.typeId;
+                            
+                            const shouldReplace = pathState.replaceList.some(replaceBlock => 
+                                currentBlockId.includes(replaceBlock)
+                            );
+                            
+                            if (!shouldReplace) continue;
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    
+                    // Place block
+                    try {
+                        const randomBlock = pathState.pathBlocks[Math.floor(Math.random() * pathState.pathBlocks.length)];
+                        const blockPermutation = BlockPermutation.resolve(randomBlock);
+                        pathState.dimension.setBlockPermutation(location, blockPermutation);
+                        placed++;
+                    } catch (e) {
+                        pathState.totalFailed++;
+                        console.log(`Failed to place block at ${location.x},${location.y},${location.z}: ${e}`);
+                    }
+                }
+            }
+        }
+    }
+    
+    return placed;
+}
+
+// Finish connected path creation
+function finishConnectedPath(pathState) {
+    const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
+    const blocksPerSecond = elapsed > 0 ? Math.round(pathState.totalPlaced / elapsed) : pathState.totalPlaced;
+    
+    pathState.player.sendMessage(`§aConnected path creation complete!`);
+    pathState.player.sendMessage(`§7Total placed: ${pathState.totalPlaced}, Failed: ${pathState.totalFailed}`);
+    pathState.player.sendMessage(`§7Time: ${elapsed}s (${blocksPerSecond} blocks/s)`);
+    pathState.player.sendMessage(`§7Path connects all ${pathState.waypoints.length} waypoints smoothly!`);
+    
+    system.clearRun(pathState.intervalId);
 }
 
 // Get blocks to use for path
@@ -2115,93 +2321,83 @@ function getBlocksFromItem(item) {
     return [item.typeId];
 }
 
-// Calculate positions for a path segment without placing blocks
-function calculatePathSegmentPositions(from, to, radius, mode, dimension, shouldReplaceAll, replaceList) {
-    const distance = Math.sqrt(
-        Math.pow(to.x - from.x, 2) + 
-        Math.pow(to.y - from.y, 2) + 
-        Math.pow(to.z - from.z, 2)
-    );
-    
-    const steps = Math.ceil(distance * 2);
-    const positions = [];
-    
-    for (let step = 0; step <= steps; step++) {
-        const t = step / steps;
-        
-        const centerX = from.x + (to.x - from.x) * t;
-        const centerY = from.y + (to.y - from.y) * t;
-        const centerZ = from.z + (to.z - from.z) * t;
-        
-        // Create area around this point based on mode
-        for (let x = centerX - Math.ceil(radius); x <= centerX + Math.ceil(radius); x++) {
-            for (let y = centerY - Math.ceil(radius); y <= centerY + Math.ceil(radius); y++) {
-                for (let z = centerZ - Math.ceil(radius); z <= centerZ + Math.ceil(radius); z++) {
-                    if (shouldPlaceAtLocation(centerX, centerY, centerZ, x, y, z, radius, mode)) {
-                        const location = { x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) };
-                        
-                        // Check replacement rules
-                        if (!shouldReplaceAll) {
-                            try {
-                                const currentBlock = dimension.getBlock(location);
-                                const currentBlockId = currentBlock.typeId;
-                                
-                                const shouldReplace = replaceList.some(replaceBlock => 
-                                    currentBlockId.includes(replaceBlock) || replaceBlock === currentBlockId
-                                );
-                                
-                                if (!shouldReplace) continue;
-                            } catch (e) {
-                                continue; // Skip if can't read block
-                            }
-                        }
-                        
-                        // Avoid duplicate positions
-                        const existing = positions.find(pos => 
-                            pos.x === location.x && pos.y === location.y && pos.z === location.z
-                        );
-                        
-                        if (!existing) {
-                            positions.push(location);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    return positions;
-}
-
-// Async path creation function
-function createPathAsync(player, positions, pathBlocks) {
-    // Shuffle positions for more natural building pattern
-    shuffleArray(positions);
-    
+// Async path creation with segment-by-segment processing
+function createPathAsyncWithCalculation(player, waypoints, radius, mode, pathBlocks, shouldReplaceAll, replaceList) {
     const pathState = {
-        positions: positions,
-        currentIndex: 0,
-        totalBlocks: positions.length,
-        placedBlocks: 0,
-        failedBlocks: 0,
-        startTime: Date.now(),
-        dimension: player.dimension,
+        waypoints: waypoints,
+        currentSegment: 0,
+        totalSegments: waypoints.length - 1,
+        radius: radius,
+        mode: mode,
         pathBlocks: pathBlocks,
+        shouldReplaceAll: shouldReplaceAll,
+        replaceList: replaceList,
+        dimension: player.dimension,
         player: player,
-        intervalId: null
+        
+        // Current segment processing
+        positions: [],
+        currentIndex: 0,
+        
+        // Statistics
+        totalPlaced: 0,
+        totalFailed: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null,
+        isCalculating: true
     };
     
-    player.sendMessage(`§7Building path with ${pathState.totalBlocks} blocks...`);
-    
-    // Start the path building process
+    // Start processing segments one by one
     pathState.intervalId = system.runInterval(() => {
-        processPathBatch(pathState);
-    }, 1); // Process every tick
+        if (pathState.isCalculating) {
+            processSegmentCalculation(pathState);
+        } else {
+            processSegmentBuilding(pathState);
+        }
+    }, 1); // Every tick
 }
 
-// Process a batch of path blocks
-function processPathBatch(pathState) {
-    const blocksToProcess = Math.min(100, pathState.positions.length - pathState.currentIndex); // 100 blocks per tick
+// Calculate positions for current segment in small batches
+function processSegmentCalculation(pathState) {
+    if (pathState.currentSegment >= pathState.totalSegments) {
+        // All segments calculated and built, finish
+        finishPathCreation(pathState);
+        return;
+    }
+    
+    const from = pathState.waypoints[pathState.currentSegment];
+    const to = pathState.waypoints[pathState.currentSegment + 1];
+    
+    // Calculate this segment's positions (in small batches to avoid hang)
+    const segmentPositions = calculatePathSegmentPositionsBatched(
+        from, to, pathState.radius, pathState.mode, 
+        pathState.dimension, pathState.shouldReplaceAll, pathState.replaceList
+    );
+    
+    if (segmentPositions.length === 0) {
+        // No positions in this segment, move to next
+        pathState.currentSegment++;
+        pathState.player.sendMessage(`§7Segment ${pathState.currentSegment}/${pathState.totalSegments} - no valid positions`);
+        return;
+    }
+    
+    // Shuffle positions for natural building
+    shuffleArray(segmentPositions);
+    
+    pathState.positions = segmentPositions;
+    pathState.currentIndex = 0;
+    pathState.isCalculating = false;
+    
+    pathState.player.sendMessage(`§7Segment ${pathState.currentSegment + 1}/${pathState.totalSegments} - building ${segmentPositions.length} blocks...`);
+}
+
+// Build current segment in small batches
+function processSegmentBuilding(pathState) {
+    const blocksToProcess = Math.min(100, pathState.positions.length - pathState.currentIndex);
+    let segmentPlaced = 0;
+    let segmentFailed = 0;
     
     for (let i = 0; i < blocksToProcess; i++) {
         if (pathState.currentIndex >= pathState.positions.length) {
@@ -2214,35 +2410,108 @@ function processPathBatch(pathState) {
         try {
             const blockPermutation = BlockPermutation.resolve(randomBlock);
             pathState.dimension.setBlockPermutation(position, blockPermutation);
-            pathState.placedBlocks++;
+            segmentPlaced++;
+            pathState.totalPlaced++;
         } catch (e) {
-            pathState.failedBlocks++;
+            segmentFailed++;
+            pathState.totalFailed++;
             console.log(`Failed to place path block ${randomBlock} at ${position.x},${position.y},${position.z}: ${e}`);
         }
         
         pathState.currentIndex++;
     }
     
-    // Show progress updates every 1000 blocks
-    if (pathState.placedBlocks % 1000 === 0 || pathState.currentIndex >= pathState.positions.length) {
-        const progress = Math.round((pathState.currentIndex / pathState.totalBlocks) * 100);
-        const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
+    // Check if current segment is complete
+    if (pathState.currentIndex >= pathState.positions.length) {
+        // Segment complete, move to next
+        pathState.currentSegment++;
+        pathState.isCalculating = true;
         
-        pathState.player.sendMessage(
-            `§7Path Progress: ${progress}% (${pathState.placedBlocks}/${pathState.totalBlocks}) - ${elapsed}s`
-        );
+        const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
+        pathState.player.sendMessage(`§aSegment complete! Total: ${pathState.totalPlaced} blocks placed (${elapsed}s)`);
+    }
+}
+
+// Finish path creation
+function finishPathCreation(pathState) {
+    const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
+    const blocksPerSecond = elapsed > 0 ? Math.round(pathState.totalPlaced / elapsed) : pathState.totalPlaced;
+    
+    pathState.player.sendMessage(`§aPath creation complete!`);
+    pathState.player.sendMessage(`§7Total placed: ${pathState.totalPlaced}, Failed: ${pathState.totalFailed}`);
+    pathState.player.sendMessage(`§7Time: ${elapsed}s (${blocksPerSecond} blocks/s)`);
+    
+    system.clearRun(pathState.intervalId);
+}
+
+// Calculate positions for a single segment with lighter processing
+function calculatePathSegmentPositionsBatched(from, to, radius, mode, dimension, shouldReplaceAll, replaceList) {
+    const distance = Math.sqrt(
+        Math.pow(to.x - from.x, 2) + 
+        Math.pow(to.y - from.y, 2) + 
+        Math.pow(to.z - from.z, 2)
+    );
+    
+    // Limit steps to prevent massive calculations
+    const maxSteps = Math.min(Math.ceil(distance * 2), 200); // Cap at 200 steps per segment
+    const positions = [];
+    const maxPositions = 5000; // Cap positions per segment
+    
+    for (let step = 0; step <= maxSteps && positions.length < maxPositions; step++) {
+        const t = step / maxSteps;
+        
+        const centerX = from.x + (to.x - from.x) * t;
+        const centerY = from.y + (to.y - from.y) * t;
+        const centerZ = from.z + (to.z - from.z) * t;
+        
+        // Limit radius scanning to prevent massive loops
+        const scanRadius = Math.min(radius, 10); // Cap scan radius
+        
+        for (let x = centerX - Math.ceil(scanRadius); x <= centerX + Math.ceil(scanRadius) && positions.length < maxPositions; x++) {
+            for (let y = centerY - Math.ceil(scanRadius); y <= centerY + Math.ceil(scanRadius) && positions.length < maxPositions; y++) {
+                for (let z = centerZ - Math.ceil(scanRadius); z <= centerZ + Math.ceil(scanRadius) && positions.length < maxPositions; z++) {
+                    if (shouldPlaceAtLocation(centerX, centerY, centerZ, x, y, z, radius, mode)) {
+                        const location = { x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) };
+                        
+                        // Quick duplicate check (only check last few positions for performance)
+                        const recentPositions = positions.slice(-50);
+                        const isDuplicate = recentPositions.some(pos => 
+                            pos.x === location.x && pos.y === location.y && pos.z === location.z
+                        );
+                        
+                        if (!isDuplicate) {
+                            // Simplified replacement check (only for critical blocks)
+                            if (!shouldReplaceAll && replaceList.length > 0) {
+                                try {
+                                    const currentBlock = dimension.getBlock(location);
+                                    const currentBlockId = currentBlock.typeId;
+                                    
+                                    const shouldReplace = replaceList.some(replaceBlock => 
+                                        currentBlockId.includes(replaceBlock)
+                                    );
+                                    
+                                    if (!shouldReplace) continue;
+                                } catch (e) {
+                                    continue;
+                                }
+                            }
+                            
+                            positions.push(location);
+                        }
+                    }
+                }
+            }
+        }
     }
     
-    // Check if complete
-    if (pathState.currentIndex >= pathState.positions.length) {
-        const elapsed = Math.round((Date.now() - pathState.startTime) / 1000);
-        const blocksPerSecond = elapsed > 0 ? Math.round(pathState.placedBlocks / elapsed) : pathState.placedBlocks;
-        
-        pathState.player.sendMessage(`§aPath creation complete!`);
-        pathState.player.sendMessage(`§7Placed: ${pathState.placedBlocks}, Failed: ${pathState.failedBlocks}`);
-        pathState.player.sendMessage(`§7Time: ${elapsed}s (${blocksPerSecond} blocks/s)`);
-        
-        system.clearRun(pathState.intervalId);
+    return positions;
+}
+
+// Utility function to shuffle array (Fisher-Yates shuffle)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
     }
 }
 
@@ -2281,7 +2550,7 @@ world.afterEvents.itemUse.subscribe((ev) => {
     
     try {
         // Get block player is looking at
-        const blockFromView = player.getBlockFromViewDirection({ maxDistance: 10 });
+        const blockFromView = player.getBlockFromViewDirection({ maxDistance: 64 });
         
         if (!blockFromView || !blockFromView.block) {
             player.sendMessage("§cNo block found in view direction!");
@@ -2326,3 +2595,1633 @@ world.afterEvents.itemUse.subscribe((ev) => {
         player.sendMessage("§cFailed to add waypoint!");
     }
 });
+
+
+
+// Main build text function
+function buildTextFunction(origin, text, location = null, scale = 3, direction = "north", vertical = false, fontStyle = "slim") {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Build text requires a player");
+                return;
+            }
+            
+            // Validate inputs
+            const validationResult = validateTextInput(text, scale, direction, fontStyle, player);
+            if (!validationResult.valid) {
+                return;
+            }
+            
+            const startLocation = location || player.location;
+            
+            // Get blocks to use
+            const blocks = getTextBlocks(player);
+            if (!blocks || blocks.length === 0) {
+                player.sendMessage("§cNo valid blocks found! Hold a block or multi-block item.");
+                return;
+            }
+            
+            player.sendMessage(`§aStarting text build: "${text}"`);
+            player.sendMessage(`§7Font: ${fontStyle}, Scale: ${scale}x, Direction: ${direction}${vertical ? " (vertical)" : ""}`);
+            
+            // Start async text building
+            buildTextAsync(player, text, startLocation, scale, direction, vertical, fontStyle, blocks);
+            
+        } catch (e) {
+            console.log("Failed to build text: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to build text: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Validate input parameters
+function validateTextInput(text, scale, direction, fontStyle, player) {
+    // Check text length
+    if (text.length > 20) {
+        player.sendMessage("§cText too long! Maximum 20 characters.");
+        return { valid: false };
+    }
+    
+    // Check scale
+    if (scale < 1 || scale > 10) {
+        player.sendMessage("§cInvalid scale! Use 1-10.");
+        return { valid: false };
+    }
+    
+    // Check direction
+    const validDirections = ["north", "south", "east", "west"];
+    if (!validDirections.includes(direction.toLowerCase())) {
+        player.sendMessage("§cInvalid direction! Use: north, south, east, west");
+        return { valid: false };
+    }
+    
+    // Check font style
+    if (!FONTS[fontStyle]) {
+        player.sendMessage(`§cInvalid font style! Available: ${Object.keys(FONTS).join(", ")}`);
+        return { valid: false };
+    }
+    
+    // Check for unsupported characters
+    const font = FONTS[fontStyle];
+    const unsupported = [];
+    for (const char of text.toUpperCase()) {
+        if (!font[char]) {
+            unsupported.push(char);
+        }
+    }
+    
+    if (unsupported.length > 0) {
+        player.sendMessage(`§cUnsupported characters: ${unsupported.join(", ")}`);
+        player.sendMessage(`§7Available: ${Object.keys(font).join("")}`);
+        return { valid: false };
+    }
+    
+    return { valid: true };
+}
+
+// Get blocks from player's item
+function getTextBlocks(player) {
+    const equippable = player.getComponent("minecraft:equippable");
+    const item = equippable?.getEquipment(EquipmentSlot.Mainhand);
+    
+    if (!item) return null;
+    
+    // Check if it's a multi-block item
+    const loreArray = item.getLore();
+    if (loreArray && loreArray.some(lore => lore === "§6Multi-Block Item")) {
+        const blocks = [];
+        let foundBlocksSection = false;
+        
+        for (const lore of loreArray) {
+            if (lore === "§7Blocks:") {
+                foundBlocksSection = true;
+                continue;
+            }
+            if (foundBlocksSection && lore.startsWith("§8- ")) {
+                const blockId = lore.replace("§8- ", "");
+                blocks.push(blockId);
+            }
+        }
+        
+        return blocks.length > 0 ? blocks : [item.typeId];
+    }
+    
+    return [item.typeId];
+}
+
+// Main async text building function
+function buildTextAsync(player, text, startLocation, scale, direction, vertical, fontStyle, blocks) {
+    const font = FONTS[fontStyle];
+    const upperText = text.toUpperCase();
+    
+    // Calculate text dimensions and positions
+    const textInfo = calculateTextLayout(upperText, font, scale, direction, vertical);
+    
+    // Estimate total blocks
+    const estimatedBlocks = estimateBlockCount(upperText, font, scale);
+    if (estimatedBlocks > 500000) {
+        player.sendMessage(`§cText too large! Estimated ${estimatedBlocks} blocks. Maximum is 50,000.`);
+        player.sendMessage("§7Try smaller scale or shorter text.");
+        return;
+    }
+    
+    player.sendMessage(`§7Building ${upperText.length} characters, estimated ${estimatedBlocks} blocks...`);
+    
+    // Initialize build state
+    const buildState = {
+        player: player,
+        text: upperText,
+        font: font,
+        startLocation: startLocation,
+        scale: scale,
+        direction: direction,
+        vertical: vertical,
+        blocks: blocks,
+        textInfo: textInfo,
+        dimension: player.dimension,
+        
+        // Progress tracking
+        currentChar: 0,
+        currentRow: 0,
+        totalChars: upperText.length,
+        blocksPlaced: 0,
+        blocksFailed: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null
+    };
+    
+    // Start building
+    buildState.intervalId = system.runInterval(() => {
+        processTextBuilding(buildState);
+    }, 1);
+}
+
+// Calculate text layout and dimensions
+function calculateTextLayout(text, font, scale, direction, vertical) {
+    let totalWidth = 0;
+    let maxHeight = 0;
+    const charWidths = [];
+    
+    // Calculate dimensions
+    for (const char of text) {
+        const pattern = font[char];
+        if (pattern) {
+            const charWidth = pattern[0].length;
+            charWidths.push(charWidth);
+            totalWidth += charWidth + 1; // +1 for spacing between characters
+            maxHeight = Math.max(maxHeight, pattern.length);
+        }
+    }
+    
+    totalWidth = Math.max(0, totalWidth - 1); // Remove last spacing
+    
+    return {
+        totalWidth: totalWidth * scale,
+        totalHeight: maxHeight * scale,
+        charWidths: charWidths,
+        maxHeight: maxHeight
+    };
+}
+
+// Estimate total block count
+function estimateBlockCount(text, font, scale) {
+    let totalBlocks = 0;
+    
+    for (const char of text) {
+        const pattern = font[char];
+        if (pattern) {
+            for (const row of pattern) {
+                for (const pixel of row) {
+                    if (pixel === '#') {
+                        totalBlocks += scale * scale; // Each pixel becomes scale×scale blocks
+                    }
+                }
+            }
+        }
+    }
+    
+    return totalBlocks;
+}
+
+// Process text building character by character
+function processTextBuilding(buildState) {
+    if (buildState.currentChar >= buildState.totalChars) {
+        // Building complete
+        finishTextBuilding(buildState);
+        return;
+    }
+    
+    const char = buildState.text[buildState.currentChar];
+    const pattern = buildState.font[char];
+    
+    if (!pattern) {
+        // Skip unsupported character
+        buildState.currentChar++;
+        buildState.currentRow = 0;
+        return;
+    }
+    
+    // Process current row of current character
+    const blocksThisTick = buildCharacterRow(buildState, char, pattern);
+    buildState.blocksPlaced += blocksThisTick;
+    
+    buildState.currentRow++;
+    
+    // Check if character is complete
+    if (buildState.currentRow >= pattern.length) {
+        buildState.currentChar++;
+        buildState.currentRow = 0;
+        
+        // Show progress
+        const progress = Math.round((buildState.currentChar / buildState.totalChars) * 100);
+        const elapsed = Math.round((Date.now() - buildState.startTime) / 1000);
+        
+        buildState.player.sendMessage(
+            `§7Character ${buildState.currentChar}/${buildState.totalChars} (${progress}%) - ${buildState.blocksPlaced} blocks - ${elapsed}s`
+        );
+    }
+}
+
+// Build one row of a character
+function buildCharacterRow(buildState, char, pattern) {
+    const row = pattern[buildState.currentRow];
+    let blocksPlaced = 0;
+    
+    // Calculate character start position
+    const charStartX = calculateCharacterStartX(buildState);
+    const charStartY = calculateCharacterStartY(buildState);
+    const charStartZ = calculateCharacterStartZ(buildState);
+    
+    // Build each pixel in the row
+    for (let col = 0; col < row.length; col++) {
+        if (row[col] === '#') {
+            // Calculate pixel position
+            const pixelPos = calculatePixelPosition(
+                charStartX, charStartY, charStartZ,
+                col, buildState.currentRow,
+                buildState.scale, buildState.direction, buildState.vertical, buildState
+            );
+            
+            // Place scaled block(s) for this pixel
+            blocksPlaced += placeScaledPixel(buildState, pixelPos);
+        }
+    }
+    
+    return blocksPlaced;
+}
+
+// Calculate character starting X position
+function calculateCharacterStartX(buildState) {
+    let offsetX = 0;
+    
+    // Calculate offset for current character
+    for (let i = 0; i < buildState.currentChar; i++) {
+        const char = buildState.text[i];
+        const pattern = buildState.font[char];
+        if (pattern) {
+            offsetX += (pattern[0].length + 1) * buildState.scale; // +1 for spacing
+        }
+    }
+    
+    // Apply direction
+    switch (buildState.direction.toLowerCase()) {
+        case "north": return buildState.startLocation.x - offsetX;
+        case "south": return buildState.startLocation.x + offsetX;
+        case "east": return buildState.startLocation.x;
+        case "west": return buildState.startLocation.x;
+        default: return buildState.startLocation.x - offsetX;
+    }
+}
+
+// Calculate character starting Y position
+function calculateCharacterStartY(buildState) {
+    if (buildState.vertical) {
+        // In vertical mode, each character goes down by character height + spacing
+        const charHeight = buildState.textInfo.maxHeight * buildState.scale;
+        const spacing = buildState.scale; // Gap between characters
+        return buildState.startLocation.y - (buildState.currentChar * (charHeight + spacing));
+    }
+    return buildState.startLocation.y;
+}
+
+// Calculate character starting Z position
+function calculateCharacterStartZ(buildState) {
+    let offsetZ = 0;
+    
+    // Calculate offset for current character
+    for (let i = 0; i < buildState.currentChar; i++) {
+        const char = buildState.text[i];
+        const pattern = buildState.font[char];
+        if (pattern) {
+            offsetZ += (pattern[0].length + 1) * buildState.scale;
+        }
+    }
+    
+    // Apply direction
+    switch (buildState.direction.toLowerCase()) {
+        case "north": return buildState.startLocation.z;
+        case "south": return buildState.startLocation.z;
+        case "east": return buildState.startLocation.z + offsetZ;
+        case "west": return buildState.startLocation.z - offsetZ;
+        default: return buildState.startLocation.z;
+    }
+}
+
+// Calculate pixel position in world coordinates
+function calculatePixelPosition(startX, startY, startZ, col, row, scale, direction, vertical, buildState) {
+    let pixelX = startX;
+    let pixelY = startY;
+    let pixelZ = startZ;
+    
+    if (vertical) {
+        // Vertical text - characters stack vertically, but each character is still readable
+        // Y position is based on the row within the character (same as horizontal)
+        pixelY = startY + ((buildState.font[buildState.text[buildState.currentChar]].length - 1 - row) * scale);
+        
+        // X/Z position is based on column within character (same orientation as horizontal)
+        switch (direction.toLowerCase()) {
+            case "north":
+                pixelX = startX - (col * scale);
+                break;
+            case "south":
+                pixelX = startX + (col * scale);
+                break;
+            case "east":
+                pixelZ = startZ + (col * scale);
+                break;
+            case "west":
+                pixelZ = startZ - (col * scale);
+                break;
+        }
+    } else {
+        // Horizontal text - same as before
+        pixelY = startY + ((buildState.font[buildState.text[buildState.currentChar]].length - 1 - row) * scale);
+        
+        switch (direction.toLowerCase()) {
+            case "north":
+                pixelX = startX - (col * scale);
+                break;
+            case "south":
+                pixelX = startX + (col * scale);
+                break;
+            case "east":
+                pixelZ = startZ + (col * scale);
+                break;
+            case "west":
+                pixelZ = startZ - (col * scale);
+                break;
+        }
+    }
+    
+    return { x: Math.floor(pixelX), y: Math.floor(pixelY), z: Math.floor(pixelZ) };
+}
+
+// Place scaled pixel (scale×scale blocks)
+function placeScaledPixel(buildState, basePos) {
+    let blocksPlaced = 0;
+    
+    for (let x = 0; x < buildState.scale; x++) {
+        for (let y = 0; y < buildState.scale; y++) {
+            for (let z = 0; z < buildState.scale; z++) {
+                const blockPos = {
+                    x: basePos.x + x,
+                    y: basePos.y + y,
+                    z: basePos.z + z
+                };
+                
+                try {
+                    const randomBlock = buildState.blocks[Math.floor(Math.random() * buildState.blocks.length)];
+                    const blockPermutation = BlockPermutation.resolve(randomBlock);
+                    buildState.dimension.setBlockPermutation(blockPos, blockPermutation);
+                    blocksPlaced++;
+                } catch (e) {
+                    buildState.blocksFailed++;
+                    console.log(`Failed to place text block at ${blockPos.x},${blockPos.y},${blockPos.z}: ${e}`);
+                }
+            }
+        }
+    }
+    
+    return blocksPlaced;
+}
+
+// Finish text building
+function finishTextBuilding(buildState) {
+    const elapsed = Math.round((Date.now() - buildState.startTime) / 1000);
+    const blocksPerSecond = elapsed > 0 ? Math.round(buildState.blocksPlaced / elapsed) : buildState.blocksPlaced;
+    
+    buildState.player.sendMessage(`§aText building complete!`);
+    buildState.player.sendMessage(`§7Text: "${buildState.text}"`);
+    buildState.player.sendMessage(`§7Blocks placed: ${buildState.blocksPlaced}, Failed: ${buildState.blocksFailed}`);
+    buildState.player.sendMessage(`§7Time: ${elapsed}s (${blocksPerSecond} blocks/s)`);
+    buildState.player.sendMessage(`§7Font: ${Object.keys(FONTS).find(key => FONTS[key] === buildState.font)}, Scale: ${buildState.scale}x`);
+    
+    system.clearRun(buildState.intervalId);
+}
+
+
+
+// Global brush storage for active brushes
+const ACTIVE_BRUSHES = new Map(); // playerId -> brushConfig
+
+// Main brush function - opens GUI
+function brushFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Brush requires a player");
+                return;
+            }
+            
+            showBrushConfigGUI(player);
+            
+        } catch (e) {
+            console.log("Failed to open brush GUI: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to open brush GUI: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Show brush configuration GUI
+function showBrushConfigGUI(player) {
+    // Get current brush config if exists
+    const currentBrush = ACTIVE_BRUSHES.get(player.id) || {
+        form: "sphere",
+        size: 3,
+        range: 50,
+        blockSource: "offhand",
+        customBlock: "minecraft:stone",
+        replaceMode: "all",
+        replaceBlocks: "air"
+    };
+    
+    const form = new ModalFormData()
+        .title("§6Brush Configuration")
+        .dropdown("Brush Form", ["Sphere", "Cube", "Cylinder", "Cone"], 
+            { defaultValueIndex: ["sphere", "cube", "cylinder", "cone"].indexOf(currentBrush.form)})
+        .slider("Brush Size", 1, 20, { defaultValue: currentBrush.size})
+        .slider("Brush Range (blocks)", 10, 100, { defaultValue: currentBrush.range})
+        .dropdown("Block Source", ["Offhand Item", "Mainhand Item", "Custom Block ID"], 
+            { defaultValueIndex: ["offhand", "mainhand", "custom"].indexOf(currentBrush.blockSource)})
+        .textField("Custom Block ID (if Custom selected):", currentBrush.customBlock, { defaultValue: currentBrush.customBlock})
+        .dropdown("Replace Mode", ["Replace All", "Replace Specific"], 
+            { defaultValueIndex: ["all", "specific"].indexOf(currentBrush.replaceMode)})
+        .textField("Blocks to Replace (comma separated, if Specific):", currentBrush.replaceBlocks, { defaultValue: currentBrush.replaceBlocks})
+        .toggle("Preview Mode (show affected area with particles)");
+    
+    form.show(player).then((response) => {
+        if (response.canceled) return;
+        
+        const [formIndex, size, range, blockSourceIndex, customBlock, replaceModeIndex, replaceBlocks, previewMode] = response.formValues;
+        
+        const forms = ["sphere", "cube", "cylinder", "cone"];
+        const blockSources = ["offhand", "mainhand", "custom"];
+        const replaceModes = ["all", "specific"];
+        
+        const brushConfig = {
+            form: forms[formIndex],
+            size: size,
+            range: range,
+            blockSource: blockSources[blockSourceIndex],
+            customBlock: customBlock,
+            replaceMode: replaceModes[replaceModeIndex],
+            replaceBlocks: replaceBlocks
+        };
+        
+        if (previewMode) {
+            // Show preview without creating brush
+            showBrushPreview(player, brushConfig);
+        } else {
+            // Create/update brush
+            createBrushTool(player, brushConfig);
+        }
+    });
+}
+
+// Create brush tool item
+function createBrushTool(player, brushConfig) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        
+        // Create brush tool (wooden axe with special lore)
+        const brushTool = new ItemStack("minecraft:wooden_axe", 1);
+        brushTool.nameTag = "§eBrush Tool";
+        
+        // Create lore with configuration
+        const loreLines = [
+            "§7Right-click to brush at target block",
+            "§7Left-click to open configuration",
+            "§8§l--- BRUSH CONFIG ---",
+            `§7Form: §f${brushConfig.form.charAt(0).toUpperCase() + brushConfig.form.slice(1)}`,
+            `§7Size: §f${brushConfig.size} blocks`,
+            `§7Range: §f${brushConfig.range} blocks`,
+            `§7Block Source: §f${brushConfig.blockSource}`,
+            `§7Replace Mode: §f${brushConfig.replaceMode}`
+        ];
+        
+        if (brushConfig.blockSource === "custom") {
+            loreLines.push(`§7Custom Block: §f${brushConfig.customBlock}`);
+        }
+        
+        if (brushConfig.replaceMode === "specific") {
+            loreLines.push(`§7Replace: §f${brushConfig.replaceBlocks}`);
+        }
+        
+        brushTool.setLore(loreLines);
+        
+        equippable.setEquipment(EquipmentSlot.Mainhand, brushTool);
+        
+        // Store brush config
+        ACTIVE_BRUSHES.set(player.id, brushConfig);
+        
+        player.sendMessage("§aBrush tool created!");
+        player.sendMessage(`§7${brushConfig.form} brush, size ${brushConfig.size}, range ${brushConfig.range}`);
+        player.sendMessage("§7Right-click blocks to brush, left-click tool to reconfigure");
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to create brush tool: ${e}`);
+        console.log("Failed to create brush tool: " + e);
+    }
+}
+
+// Show brush preview with particles
+function showBrushPreview(player, brushConfig) {
+    // Get target block player is looking at
+    const blockFromView = player.getBlockFromViewDirection({ maxDistance: brushConfig.range });
+    
+    if (!blockFromView || !blockFromView.block) {
+        player.sendMessage("§cNo block found in view direction within range!");
+        return;
+    }
+    
+    const targetLocation = blockFromView.block.location;
+    player.sendMessage(`§aShowing brush preview at ${targetLocation.x}, ${targetLocation.y}, ${targetLocation.z}`);
+    
+    // Generate preview positions
+    const positions = generateBrushPositions(targetLocation, brushConfig);
+    
+    // Show particles (limit to prevent lag)
+    const maxParticles = Math.min(positions.length, 200);
+    let particleCount = 0;
+    
+    for (const pos of positions) {
+        if (particleCount >= maxParticles) break;
+        
+        try {
+            player.dimension.spawnParticle("minecraft:heart_particle", {
+                x: pos.x + 0.5,
+                y: pos.y + 0.5,
+                z: pos.z + 0.5
+            });
+            particleCount++;
+        } catch (e) {
+            // Particle failed, continue
+        }
+    }
+    
+    player.sendMessage(`§7Preview: ${particleCount} particles shown (${positions.length} total positions)`);
+    player.sendMessage("§7Use form again without preview to create brush tool");
+}
+
+// Generate positions based on brush form and size
+function generateBrushPositions(centerLocation, brushConfig) {
+    const positions = [];
+    const { form, size } = brushConfig;
+    
+    switch (form) {
+        case "sphere":
+            positions.push(...generateSpherePositions(centerLocation, size));
+            break;
+        case "cube":
+            positions.push(...generateCubePositions(centerLocation, size));
+            break;
+        case "cylinder":
+            positions.push(...generateCylinderPositions(centerLocation, size));
+            break;
+        case "cone":
+            positions.push(...generateConePositions(centerLocation, size));
+            break;
+    }
+    
+    return positions;
+}
+
+// Generate sphere positions
+function generateSpherePositions(center, radius) {
+    const positions = [];
+    
+    for (let x = -radius; x <= radius; x++) {
+        for (let y = -radius; y <= radius; y++) {
+            for (let z = -radius; z <= radius; z++) {
+                const distance = Math.sqrt(x * x + y * y + z * z);
+                if (distance <= radius) {
+                    positions.push({
+                        x: center.x + x,
+                        y: center.y + y,
+                        z: center.z + z
+                    });
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Generate cube positions
+function generateCubePositions(center, size) {
+    const positions = [];
+    
+    for (let x = -size; x <= size; x++) {
+        for (let y = -size; y <= size; y++) {
+            for (let z = -size; z <= size; z++) {
+                positions.push({
+                    x: center.x + x,
+                    y: center.y + y,
+                    z: center.z + z
+                });
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Generate cylinder positions (vertical)
+function generateCylinderPositions(center, radius) {
+    const positions = [];
+    
+    for (let x = -radius; x <= radius; x++) {
+        for (let z = -radius; z <= radius; z++) {
+            const distance = Math.sqrt(x * x + z * z);
+            if (distance <= radius) {
+                for (let y = -radius; y <= radius; y++) {
+                    positions.push({
+                        x: center.x + x,
+                        y: center.y + y,
+                        z: center.z + z
+                    });
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Generate cone positions (point up)
+function generateConePositions(center, size) {
+    const positions = [];
+    
+    for (let y = 0; y <= size; y++) {
+        const currentRadius = size - y;
+        
+        for (let x = -currentRadius; x <= currentRadius; x++) {
+            for (let z = -currentRadius; z <= currentRadius; z++) {
+                const distance = Math.sqrt(x * x + z * z);
+                if (distance <= currentRadius) {
+                    positions.push({
+                        x: center.x + x,
+                        y: center.y + y,
+                        z: center.z + z
+                    });
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Get blocks for brushing
+function getBrushBlocks(player, brushConfig) {
+    const equippable = player.getComponent("minecraft:equippable");
+    
+    switch (brushConfig.blockSource) {
+        case "mainhand":
+            const mainhandItem = equippable.getEquipment(EquipmentSlot.Mainhand);
+            // Don't use the brush tool itself
+            if (mainhandItem && (!mainhandItem.nameTag || !mainhandItem.nameTag.includes("Brush Tool"))) {
+                return getBlocksFromItem(mainhandItem);
+            }
+            break;
+            
+        case "offhand":
+            const offhandItem = equippable.getEquipment(EquipmentSlot.Offhand);
+            if (offhandItem) {
+                return getBlocksFromItem(offhandItem);
+            }
+            break;
+            
+        case "custom":
+            return [brushConfig.customBlock];
+    }
+    
+    return null;
+}
+
+// Perform brush operation
+function performBrushOperation(player, targetLocation, brushConfig) {
+    try {
+        // Get blocks to use
+        const blocks = getBrushBlocks(player, brushConfig);
+        if (!blocks || blocks.length === 0) {
+            player.sendMessage("§cNo blocks available for brushing! Check your block source.");
+            return;
+        }
+        
+        // Generate positions
+        const positions = generateBrushPositions(targetLocation, brushConfig);
+        
+        if (positions.length > 10000) {
+            player.sendMessage(`§cBrush too large! ${positions.length} blocks. Maximum 10000 per brush.`);
+            return;
+        }
+        
+        // Filter positions based on replace mode
+        const validPositions = filterPositionsByReplaceMode(player.dimension, positions, brushConfig);
+        
+        if (validPositions.length === 0) {
+            player.sendMessage("§eNo valid blocks to replace found.");
+            return;
+        }
+        
+        // Start async brushing
+        player.sendMessage(`§7Brushing ${validPositions.length} blocks...`);
+        performAsyncBrush(player, validPositions, blocks);
+        
+    } catch (e) {
+        player.sendMessage(`§cBrush operation failed: ${e}`);
+        console.log("Brush operation failed: " + e);
+    }
+}
+
+// Filter positions by replace mode
+function filterPositionsByReplaceMode(dimension, positions, brushConfig) {
+    if (brushConfig.replaceMode === "all") {
+        return positions;
+    }
+    
+    // Specific replacement mode
+    const replaceList = brushConfig.replaceBlocks.split(',').map(block => block.trim().toLowerCase());
+    const validPositions = [];
+    
+    for (const pos of positions) {
+        try {
+            const currentBlock = dimension.getBlock(pos);
+            const currentBlockId = currentBlock.typeId.toLowerCase();
+            
+            const shouldReplace = replaceList.some(replaceBlock => 
+                currentBlockId.includes(replaceBlock) || replaceBlock === "air" && currentBlockId === "minecraft:air"
+            );
+            
+            if (shouldReplace) {
+                validPositions.push(pos);
+            }
+        } catch (e) {
+            // Skip invalid positions
+        }
+    }
+    
+    return validPositions;
+}
+
+// Perform async brush operation
+function performAsyncBrush(player, positions, blocks) {
+    const brushState = {
+        player: player,
+        positions: positions,
+        blocks: blocks,
+        currentIndex: 0,
+        blocksPlaced: 0,
+        blocksFailed: 0,
+        startTime: Date.now(),
+        dimension: player.dimension,
+        intervalId: null
+    };
+    
+    // Shuffle positions for more natural brushing
+    shuffleArray(brushState.positions);
+    
+    brushState.intervalId = system.runInterval(() => {
+        const blocksPerTick = Math.min(500, brushState.positions.length - brushState.currentIndex);
+        
+        for (let i = 0; i < blocksPerTick; i++) {
+            if (brushState.currentIndex >= brushState.positions.length) break;
+            
+            const position = brushState.positions[brushState.currentIndex];
+            const randomBlock = brushState.blocks[Math.floor(Math.random() * brushState.blocks.length)];
+            
+            try {
+                const blockPermutation = BlockPermutation.resolve(randomBlock);
+                brushState.dimension.setBlockPermutation(position, blockPermutation);
+                brushState.blocksPlaced++;
+            } catch (e) {
+                brushState.blocksFailed++;
+            }
+            
+            brushState.currentIndex++;
+        }
+        
+        // Check if complete
+        if (brushState.currentIndex >= brushState.positions.length) {
+            const elapsed = Math.round((Date.now() - brushState.startTime) / 1000);
+            brushState.player.sendMessage(`§aBrush complete! ${brushState.blocksPlaced} blocks placed (${elapsed}s)`);
+            
+            system.clearRun(brushState.intervalId);
+        }
+    }, 1);
+}
+
+// Event handler for brush tool left-click - OPEN CONFIG GUI
+world.beforeEvents.playerBreakBlock.subscribe((ev) => {
+    const player = ev.player;
+    const equippable = player.getComponent("minecraft:equippable");
+    const heldItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+    
+    // Check if holding brush tool
+    if (!heldItem || !heldItem.nameTag || !heldItem.nameTag.includes("Brush Tool")) return;
+    
+    // Cancel the break event
+    ev.cancel = true;
+    
+    // Left-click opens configuration GUI
+    system.runTimeout(() => showBrushConfigGUI(player), 5);
+});
+
+// Event handler for brush tool right-click - BRUSH OPERATION
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (ev.source.typeId !== "minecraft:player" || !ev.itemStack) return;
+    
+    const player = ev.source;
+    const itemStack = ev.itemStack;
+    
+    // Check if it's the brush tool
+    if (!itemStack.nameTag || !itemStack.nameTag.includes("Brush Tool")) return;
+    
+    // Get target block player is looking at
+    const brushConfig = ACTIVE_BRUSHES.get(player.id);
+    if (!brushConfig) {
+        player.sendMessage("§cBrush not configured! Left-click the tool to configure.");
+        return;
+    }
+    
+    const blockFromView = player.getBlockFromViewDirection({ maxDistance: brushConfig.range });
+    if (!blockFromView || !blockFromView.block) {
+        player.sendMessage("§cNo block found in view direction within range!");
+        return;
+    }
+    
+    // Perform brush operation at target location
+    performBrushOperation(player, blockFromView.block.location, brushConfig);
+});
+
+
+
+
+// Main large fill function
+function largeFillFunction(origin, fromLocation, toLocation, blockType, fillMode = "replace", replaceFilter = "all") {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Large fill requires a player source");
+                return;
+            }
+            
+            // Validate fill mode
+            const validModes = ["replace", "keep", "outline", "hollow", "destroy"];
+            if (!validModes.includes(fillMode.toLowerCase())) {
+                player.sendMessage(`§cInvalid fill mode! Use: ${validModes.join(", ")}`);
+                return;
+            }
+            
+            // Calculate area size
+            const volume = Math.abs(toLocation.x - fromLocation.x + 1) * 
+                          Math.abs(toLocation.y - fromLocation.y + 1) * 
+                          Math.abs(toLocation.z - fromLocation.z + 1);
+            
+            // Size validation
+            if (volume > 1000000) {
+                player.sendMessage(`§cArea too large! ${volume.toLocaleString()} blocks. Maximum is 1,000,000.`);
+                player.sendMessage("§7Consider breaking the fill into smaller sections.");
+                return;
+            }
+            
+            if (volume > 100000) {
+                player.sendMessage(`§eWarning: Large fill of ${volume.toLocaleString()} blocks. This will take time!`);
+            }
+            
+            // Validate block type
+            try {
+                BlockPermutation.resolve(blockType);
+            } catch (e) {
+                player.sendMessage(`§cInvalid block type: ${blockType}`);
+                return;
+            }
+            
+            player.sendMessage(`§aStarting large fill: ${volume.toLocaleString()} blocks`);
+            player.sendMessage(`§7Mode: ${fillMode}, Block: ${blockType}`);
+            if (fillMode === "replace" && replaceFilter !== "all") {
+                player.sendMessage(`§7Replace filter: ${replaceFilter}`);
+            }
+            
+            // Start async fill operation
+            performLargeFillAsync(player, fromLocation, toLocation, blockType, fillMode.toLowerCase(), replaceFilter);
+            
+        } catch (e) {
+            console.log("Failed to perform large fill: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to perform large fill: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Perform async large fill operation
+function performLargeFillAsync(player, fromLoc, toLoc, blockType, fillMode, replaceFilter) {
+    // Calculate bounds
+    const minX = Math.min(fromLoc.x, toLoc.x);
+    const maxX = Math.max(fromLoc.x, toLoc.x);
+    const minY = Math.min(fromLoc.y, toLoc.y);
+    const maxY = Math.max(fromLoc.y, toLoc.y);
+    const minZ = Math.min(fromLoc.z, toLoc.z);
+    const maxZ = Math.max(fromLoc.z, toLoc.z);
+    
+    const fillState = {
+        player: player,
+        dimension: player.dimension,
+        minX, maxX, minY, maxY, minZ, maxZ,
+        blockType: blockType,
+        fillMode: fillMode,
+        replaceFilter: replaceFilter,
+        
+        // Progress tracking
+        currentX: minX,
+        currentY: minY,
+        currentZ: minZ,
+        totalVolume: (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1),
+        processedBlocks: 0,
+        placedBlocks: 0,
+        skippedBlocks: 0,
+        failedBlocks: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null,
+        isComplete: false
+    };
+    
+    // Parse replace filter if needed
+    if (fillMode === "replace" && replaceFilter !== "all") {
+        fillState.replaceList = replaceFilter.split(',').map(block => block.trim().toLowerCase());
+    }
+    
+    // Prepare block permutation
+    fillState.blockPermutation = BlockPermutation.resolve(blockType);
+    
+    player.sendMessage(`§7Processing ${fillState.totalVolume.toLocaleString()} block area...`);
+    
+    // Start processing
+    fillState.intervalId = system.runInterval(() => {
+        processLargeFillBatch(fillState);
+    }, 1);
+}
+
+// Process a batch of blocks for large fill
+function processLargeFillBatch(fillState) {
+    const batchSize = 500; // Blocks per tick - can handle larger batches for fills
+    let processed = 0;
+    
+    while (processed < batchSize && !fillState.isComplete) {
+        const location = {
+            x: fillState.currentX,
+            y: fillState.currentY,
+            z: fillState.currentZ
+        };
+        
+        // Process current block based on fill mode
+        const blockPlaced = processLargeFillBlock(fillState, location);
+        if (blockPlaced) {
+            fillState.placedBlocks++;
+        } else if (blockPlaced === false) {
+            fillState.skippedBlocks++;
+        } else {
+            fillState.failedBlocks++;
+        }
+        
+        fillState.processedBlocks++;
+        processed++;
+        
+        // Move to next position
+        fillState.currentZ++;
+        if (fillState.currentZ > fillState.maxZ) {
+            fillState.currentZ = fillState.minZ;
+            fillState.currentY++;
+            if (fillState.currentY > fillState.maxY) {
+                fillState.currentY = fillState.minY;
+                fillState.currentX++;
+                if (fillState.currentX > fillState.maxX) {
+                    fillState.isComplete = true;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Show progress updates
+    if (fillState.processedBlocks % 10000 === 0 || fillState.isComplete) {
+        const progress = Math.round((fillState.processedBlocks / fillState.totalVolume) * 100);
+        const elapsed = Math.round((Date.now() - fillState.startTime) / 1000);
+        const rate = elapsed > 0 ? Math.round(fillState.processedBlocks / elapsed) : 0;
+        
+        fillState.player.sendMessage(
+            `§7Progress: ${progress}% (${fillState.processedBlocks.toLocaleString()}/${fillState.totalVolume.toLocaleString()}) - ${rate}/s - ${elapsed}s`
+        );
+    }
+    
+    // Check if complete
+    if (fillState.isComplete) {
+        finishLargeFill(fillState);
+    }
+}
+
+// Process a single block for large fill
+function processLargeFillBlock(fillState, location) {
+    try {
+        const currentBlock = fillState.dimension.getBlock(location);
+        const currentBlockType = currentBlock.typeId;
+        
+        switch (fillState.fillMode) {
+            case "replace":
+                return processReplaceMode(fillState, location, currentBlock, currentBlockType);
+                
+            case "keep":
+                // Only place if current block is air
+                if (currentBlockType === "minecraft:air") {
+                    fillState.dimension.setBlockPermutation(location, fillState.blockPermutation);
+                    return true;
+                }
+                return false;
+                
+            case "outline":
+                return processOutlineMode(fillState, location);
+                
+            case "hollow":
+                return processHollowMode(fillState, location);
+                
+            case "destroy":
+                // Always place, destroying what's there
+                fillState.dimension.setBlockPermutation(location, fillState.blockPermutation);
+                return true;
+                
+            default:
+                return null; // Error case
+        }
+        
+    } catch (e) {
+        console.log(`Failed to process block at ${location.x},${location.y},${location.z}: ${e}`);
+        return null; // Failed
+    }
+}
+
+// Process replace mode
+function processReplaceMode(fillState, location, currentBlock, currentBlockType) {
+    if (fillState.replaceFilter === "all") {
+        // Replace everything
+        fillState.dimension.setBlockPermutation(location, fillState.blockPermutation);
+        return true;
+    } else {
+        // Replace only specific blocks
+        const shouldReplace = fillState.replaceList.some(replaceBlock => 
+            currentBlockType.toLowerCase().includes(replaceBlock) ||
+            replaceBlock === "air" && currentBlockType === "minecraft:air"
+        );
+        
+        if (shouldReplace) {
+            fillState.dimension.setBlockPermutation(location, fillState.blockPermutation);
+            return true;
+        }
+        return false;
+    }
+}
+
+// Process outline mode - only edges of the area
+function processOutlineMode(fillState, location) {
+    const isEdge = location.x === fillState.minX || location.x === fillState.maxX ||
+                   location.y === fillState.minY || location.y === fillState.maxY ||
+                   location.z === fillState.minZ || location.z === fillState.maxZ;
+    
+    if (isEdge) {
+        fillState.dimension.setBlockPermutation(location, fillState.blockPermutation);
+        return true;
+    }
+    return false;
+}
+
+// Process hollow mode - only outer shell
+function processHollowMode(fillState, location) {
+    // Check if this is on the outer shell (at least one coordinate is at min/max)
+    const isOnShell = (location.x === fillState.minX || location.x === fillState.maxX) ||
+                      (location.y === fillState.minY || location.y === fillState.maxY) ||
+                      (location.z === fillState.minZ || location.z === fillState.maxZ);
+    
+    if (isOnShell) {
+        fillState.dimension.setBlockPermutation(location, fillState.blockPermutation);
+        return true;
+    }
+    return false;
+}
+
+// Finish large fill operation
+function finishLargeFill(fillState) {
+    const elapsed = Math.round((Date.now() - fillState.startTime) / 1000);
+    const rate = elapsed > 0 ? Math.round(fillState.processedBlocks / elapsed) : 0;
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+    
+    fillState.player.sendMessage(`§aLarge fill complete!`);
+    fillState.player.sendMessage(`§7Processed: ${fillState.processedBlocks.toLocaleString()} blocks`);
+    fillState.player.sendMessage(`§7Placed: ${fillState.placedBlocks.toLocaleString()}, Skipped: ${fillState.skippedBlocks.toLocaleString()}, Failed: ${fillState.failedBlocks.toLocaleString()}`);
+    fillState.player.sendMessage(`§7Time: ${timeStr} (${rate.toLocaleString()} blocks/s)`);
+    fillState.player.sendMessage(`§7Mode: ${fillState.fillMode}, Block: ${fillState.blockType}`);
+    
+    system.clearRun(fillState.intervalId);
+}
+
+function fillInfoFunction(origin, fromLocation, toLocation) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) return;
+            
+            const volume = Math.abs(toLocation.x - fromLocation.x + 1) * 
+                          Math.abs(toLocation.y - fromLocation.y + 1) * 
+                          Math.abs(toLocation.z - fromLocation.z + 1);
+            
+            const dimensions = `${Math.abs(toLocation.x - fromLocation.x + 1)}×${Math.abs(toLocation.y - fromLocation.y + 1)}×${Math.abs(toLocation.z - fromLocation.z + 1)}`;
+            
+            // Estimate time (based on 500 blocks/tick, 20 ticks/second)
+            const estimatedSeconds = Math.ceil(volume / (500 * 20));
+            const estimatedMinutes = Math.floor(estimatedSeconds / 60);
+            const remainingSeconds = estimatedSeconds % 60;
+            
+            player.sendMessage(`§a--- Fill Area Information ---`);
+            player.sendMessage(`§7Dimensions: §f${dimensions}`);
+            player.sendMessage(`§7Total volume: §f${volume.toLocaleString()} blocks`);
+            
+            if (volume > 1000000) {
+                player.sendMessage(`§cToo large for largefill! Maximum is 1,000,000 blocks.`);
+            } else if (volume > 100000) {
+                const timeStr = estimatedMinutes > 0 ? `${estimatedMinutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+                player.sendMessage(`§eEstimated time: §f~${timeStr}`);
+                player.sendMessage(`§7This is a large operation - ensure good performance before starting.`);
+            } else {
+                const timeStr = estimatedMinutes > 0 ? `${estimatedMinutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+                player.sendMessage(`§aEstimated time: §f~${timeStr}`);
+            }
+            
+            player.sendMessage(`§7Use: §f/largefill ${fromLocation.x} ${fromLocation.y} ${fromLocation.z} ${toLocation.x} ${toLocation.y} ${toLocation.z} <block> [mode]`);
+            
+        } catch (e) {
+            console.log("Failed to calculate fill info: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to calculate fill info: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+
+
+// Main create figure function
+function createFigureFunction(origin, figureType, centerLocation, blockType, size, mode = "solid", rotation = 0, height = null) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Create figure requires a player source");
+                return;
+            }
+            
+            // Validate figure type
+            const validFigures = ["cube", "sphere", "cylinder", "pyramid"];
+            if (!validFigures.includes(figureType.toLowerCase())) {
+                player.sendMessage(`§cInvalid figure type! Use: ${validFigures.join(", ")}`);
+                return;
+            }
+            
+            // Validate mode
+            const validModes = ["solid", "hollow", "keep"];
+            if (!validModes.includes(mode.toLowerCase())) {
+                player.sendMessage(`§cInvalid mode! Use: ${validModes.join(", ")}`);
+                return;
+            }
+            
+            // Validate size
+            if (size < 1 || size > 50) {
+                player.sendMessage("§cSize must be between 1 and 50!");
+                return;
+            }
+            
+            // Validate rotation
+            rotation = ((rotation % 360) + 360) % 360; // Normalize to 0-359
+            
+            // Set default height for cylinder/pyramid
+            if (height === null) {
+                height = size;
+            }
+            
+            // Validate height
+            if (height < 1 || height > 100) {
+                player.sendMessage("§cHeight must be between 1 and 100!");
+                return;
+            }
+            
+            // Validate block type
+            try {
+                BlockPermutation.resolve(blockType);
+            } catch (e) {
+                player.sendMessage(`§cInvalid block type: ${blockType}`);
+                return;
+            }
+            
+            // Calculate estimated block count
+            const estimatedBlocks = estimateFigureBlocks(figureType.toLowerCase(), size, height, mode.toLowerCase());
+            
+            if (estimatedBlocks > 100000) {
+                player.sendMessage(`§cFigure too large! Estimated ${estimatedBlocks.toLocaleString()} blocks. Maximum is 100,000.`);
+                return;
+            }
+            
+            player.sendMessage(`§aCreating ${figureType.toLowerCase()} figure...`);
+            player.sendMessage(`§7Size: ${size}, Mode: ${mode.toLowerCase()}, Rotation: ${rotation}°`);
+            if (["cylinder", "pyramid"].includes(figureType.toLowerCase())) {
+                player.sendMessage(`§7Height: ${height}`);
+            }
+            player.sendMessage(`§7Estimated blocks: ${estimatedBlocks.toLocaleString()}`);
+            
+            // Start async figure creation
+            createFigureAsync(player, figureType.toLowerCase(), centerLocation, blockType, size, mode.toLowerCase(), rotation, height);
+            
+        } catch (e) {
+            console.log("Failed to create figure: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create figure: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Estimate block count for different figures
+function estimateFigureBlocks(figureType, size, height, mode) {
+    let estimate = 0;
+    
+    switch (figureType) {
+        case "cube":
+            if (mode === "solid") {
+                estimate = (size * 2 + 1) ** 3;
+            } else if (mode === "hollow") {
+                const outer = (size * 2 + 1) ** 3;
+                const inner = Math.max(0, (size * 2 - 1) ** 3);
+                estimate = outer - inner;
+            }
+            break;
+            
+        case "sphere":
+            if (mode === "solid") {
+                estimate = Math.floor((4/3) * Math.PI * size ** 3);
+            } else if (mode === "hollow") {
+                const outer = Math.floor((4/3) * Math.PI * size ** 3);
+                const inner = Math.floor((4/3) * Math.PI * Math.max(0, size - 1) ** 3);
+                estimate = outer - inner;
+            }
+            break;
+            
+        case "cylinder":
+            if (mode === "solid") {
+                estimate = Math.floor(Math.PI * size ** 2 * height);
+            } else if (mode === "hollow") {
+                const outer = Math.floor(Math.PI * size ** 2 * height);
+                const inner = Math.floor(Math.PI * Math.max(0, size - 1) ** 2 * height);
+                estimate = outer - inner;
+            }
+            break;
+            
+        case "pyramid":
+            if (mode === "solid") {
+                estimate = Math.floor((size ** 2 * height) / 3);
+            } else if (mode === "hollow") {
+                estimate = Math.floor(size ** 2 * 0.3); // Rough estimate for hollow pyramid
+            }
+            break;
+    }
+    
+    return Math.max(1, estimate);
+}
+
+// Create figure asynchronously
+function createFigureAsync(player, figureType, centerLocation, blockType, size, mode, rotation, height) {
+    const figureState = {
+        player: player,
+        dimension: player.dimension,
+        figureType: figureType,
+        centerLocation: centerLocation,
+        blockType: blockType,
+        size: size,
+        mode: mode,
+        rotation: rotation,
+        height: height,
+        
+        // Generate all positions first
+        positions: [],
+        currentIndex: 0,
+        
+        // Progress tracking
+        blocksPlaced: 0,
+        blocksSkipped: 0,
+        blocksFailed: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null,
+        blockPermutation: BlockPermutation.resolve(blockType)
+    };
+    
+    // Generate all positions for the figure
+    figureState.positions = generateFigurePositions(figureState);
+    
+    if (figureState.positions.length === 0) {
+        player.sendMessage("§cNo valid positions generated for figure!");
+        return;
+    }
+    
+    player.sendMessage(`§7Building ${figureState.positions.length} blocks...`);
+    
+    // Start building
+    figureState.intervalId = system.runInterval(() => {
+        processFigureBatch(figureState);
+    }, 1);
+}
+
+// Generate positions for different figure types
+function generateFigurePositions(figureState) {
+    switch (figureState.figureType) {
+        case "cube":
+            return generateCubePositions2(figureState);
+        case "sphere":
+            return generateSpherePositions2(figureState);
+        case "cylinder":
+            return generateCylinderPositions2(figureState);
+        case "pyramid":
+            return generatePyramidPositions2(figureState);
+        default:
+            return [];
+    }
+}
+
+// Generate cube positions
+function generateCubePositions2(figureState) {
+    const positions = [];
+    const { centerLocation, size, mode, rotation } = figureState;
+    
+    for (let x = -size; x <= size; x++) {
+        for (let y = -size; y <= size; y++) {
+            for (let z = -size; z <= size; z++) {
+                let shouldPlace = false;
+                
+                if (mode === "solid") {
+                    shouldPlace = true;
+                } else if (mode === "hollow") {
+                    // Only place on faces of the cube
+                    shouldPlace = (Math.abs(x) === size || Math.abs(y) === size || Math.abs(z) === size);
+                }
+                
+                if (shouldPlace) {
+                    const rotatedPos = rotatePosition(x, y, z, rotation);
+                    positions.push({
+                        x: centerLocation.x + rotatedPos.x,
+                        y: centerLocation.y + rotatedPos.y,
+                        z: centerLocation.z + rotatedPos.z
+                    });
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Generate sphere positions
+function generateSpherePositions2(figureState) {
+    const positions = [];
+    const { centerLocation, size, mode, rotation } = figureState;
+    
+    for (let x = -size; x <= size; x++) {
+        for (let y = -size; y <= size; y++) {
+            for (let z = -size; z <= size; z++) {
+                const distance = Math.sqrt(x * x + y * y + z * z);
+                let shouldPlace = false;
+                
+                if (mode === "solid") {
+                    shouldPlace = distance <= size;
+                } else if (mode === "hollow") {
+                    shouldPlace = distance <= size && distance > size - 1;
+                }
+                
+                if (shouldPlace) {
+                    const rotatedPos = rotatePosition(x, y, z, rotation);
+                    positions.push({
+                        x: centerLocation.x + rotatedPos.x,
+                        y: centerLocation.y + rotatedPos.y,
+                        z: centerLocation.z + rotatedPos.z
+                    });
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Generate cylinder positions
+function generateCylinderPositions2(figureState) {
+    const positions = [];
+    const { centerLocation, size, mode, rotation, height } = figureState;
+    const halfHeight = Math.floor(height / 2);
+    
+    for (let x = -size; x <= size; x++) {
+        for (let z = -size; z <= size; z++) {
+            const distance = Math.sqrt(x * x + z * z);
+            let shouldPlaceXZ = false;
+            
+            if (mode === "solid") {
+                shouldPlaceXZ = distance <= size;
+            } else if (mode === "hollow") {
+                shouldPlaceXZ = distance <= size && distance > size - 1;
+            }
+            
+            if (shouldPlaceXZ) {
+                for (let y = -halfHeight; y <= halfHeight; y++) {
+                    let shouldPlace = true;
+                    
+                    if (mode === "hollow" && Math.abs(y) < halfHeight) {
+                        // For hollow cylinder, only place on top/bottom circles or outer ring
+                        shouldPlace = distance > size - 1 || Math.abs(y) === halfHeight;
+                    }
+                    
+                    if (shouldPlace) {
+                        const rotatedPos = rotatePosition(x, y, z, rotation);
+                        positions.push({
+                            x: centerLocation.x + rotatedPos.x,
+                            y: centerLocation.y + rotatedPos.y,
+                            z: centerLocation.z + rotatedPos.z
+                        });
+                    }
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Generate pyramid positions
+function generatePyramidPositions2(figureState) {
+    const positions = [];
+    const { centerLocation, size, mode, rotation, height } = figureState;
+    
+    for (let y = 0; y < height; y++) {
+        // Calculate radius at this height (linear reduction)
+        const currentRadius = size * (1 - y / height);
+        const currentSize = Math.floor(currentRadius);
+        
+        if (currentSize < 1 && y < height - 1) continue;
+        
+        for (let x = -currentSize; x <= currentSize; x++) {
+            for (let z = -currentSize; z <= currentSize; z++) {
+                let shouldPlace = false;
+                
+                if (mode === "solid") {
+                    shouldPlace = true;
+                } else if (mode === "hollow") {
+                    // Only place on the edges or top
+                    shouldPlace = (Math.abs(x) === currentSize || Math.abs(z) === currentSize || y === height - 1 || y === 0);
+                }
+                
+                if (shouldPlace) {
+                    const rotatedPos = rotatePosition(x, y, z, rotation);
+                    positions.push({
+                        x: centerLocation.x + rotatedPos.x,
+                        y: centerLocation.y + rotatedPos.y,
+                        z: centerLocation.z + rotatedPos.z
+                    });
+                }
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Rotate position around Y axis
+function rotatePosition(x, y, z, rotation) {
+    if (rotation === 0) {
+        return { x, y, z };
+    }
+    
+    const radians = (rotation * Math.PI) / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    
+    return {
+        x: Math.round(x * cos - z * sin),
+        y: y,
+        z: Math.round(x * sin + z * cos)
+    };
+}
+
+// Process batch of figure blocks
+function processFigureBatch(figureState) {
+    const batchSize = 100; // Blocks per tick
+    let processed = 0;
+    
+    while (processed < batchSize && figureState.currentIndex < figureState.positions.length) {
+        const position = figureState.positions[figureState.currentIndex];
+        
+        try {
+            if (figureState.mode === "keep") {
+                // Only place if current block is air
+                const currentBlock = figureState.dimension.getBlock(position);
+                if (currentBlock.typeId === "minecraft:air") {
+                    figureState.dimension.setBlockPermutation(position, figureState.blockPermutation);
+                    figureState.blocksPlaced++;
+                } else {
+                    figureState.blocksSkipped++;
+                }
+            } else {
+                // Solid or hollow mode - always place
+                figureState.dimension.setBlockPermutation(position, figureState.blockPermutation);
+                figureState.blocksPlaced++;
+            }
+        } catch (e) {
+            figureState.blocksFailed++;
+            console.log(`Failed to place figure block at ${position.x},${position.y},${position.z}: ${e}`);
+        }
+        
+        figureState.currentIndex++;
+        processed++;
+    }
+    
+    // Show progress updates
+    if (figureState.currentIndex % 1000 === 0 || figureState.currentIndex >= figureState.positions.length) {
+        const progress = Math.round((figureState.currentIndex / figureState.positions.length) * 100);
+        const elapsed = Math.round((Date.now() - figureState.startTime) / 1000);
+        
+        figureState.player.sendMessage(
+            `§7Progress: ${progress}% (${figureState.currentIndex}/${figureState.positions.length}) - ${elapsed}s`
+        );
+    }
+    
+    // Check if complete
+    if (figureState.currentIndex >= figureState.positions.length) {
+        finishFigureCreation(figureState);
+    }
+}
+
+// Finish figure creation
+function finishFigureCreation(figureState) {
+    const elapsed = Math.round((Date.now() - figureState.startTime) / 1000);
+    const rate = elapsed > 0 ? Math.round(figureState.blocksPlaced / elapsed) : 0;
+    
+    figureState.player.sendMessage(`§aFigure creation complete!`);
+    figureState.player.sendMessage(`§7Figure: ${figureState.figureType} (${figureState.mode} mode)`);
+    figureState.player.sendMessage(`§7Size: ${figureState.size}, Rotation: ${figureState.rotation}°`);
+    if (["cylinder", "pyramid"].includes(figureState.figureType)) {
+        figureState.player.sendMessage(`§7Height: ${figureState.height}`);
+    }
+    figureState.player.sendMessage(`§7Blocks placed: ${figureState.blocksPlaced}, Skipped: ${figureState.blocksSkipped}, Failed: ${figureState.blocksFailed}`);
+    figureState.player.sendMessage(`§7Time: ${elapsed}s (${rate} blocks/s)`);
+    
+    system.clearRun(figureState.intervalId);
+}
