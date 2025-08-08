@@ -1,4 +1,4 @@
-import { world, EquipmentSlot, system, ItemStack } from "@minecraft/setver";
+import { world, EquipmentSlot, system, ItemStack } from "@minecraft/server";
 
 const ITEMS = [
     {id: "pa:soul", chance: 0.95},
@@ -19,7 +19,7 @@ function getRandomItems() {
     for (const item of ITEMS) {
         if (Math.random() <= item.chance) ritems.push(item.id);
         if (ritems.length >= 1) break;
-    }
+    } 
     
     return ritems;
 }
@@ -47,8 +47,8 @@ function createItems(itemIds) {
     return items;
 }
 
-world.afterEvents.itemUse.subscribe((ev) => {
-    if (!ev.source.hasTag("getpasoul") && ev.itemStack.typeId == "pa:soul") {
+world.afterEvents.itemUse.subscribe((ev) => {ev.source.runCommand("clear @s pa:soul 0 1");
+    if (!ev.source.hasTag("getpasoul") && ev.itemStack.typeId == "pa:soul_book_human") {
         ev.source.runCommand("clear @s pa:soul 0 1");
         giveItems(ev.source, createItems(getRandomItems()));
         ev.source.addTag("getpasoul");
