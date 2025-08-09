@@ -40,6 +40,15 @@ function revealString(hidden, marker = COMMAND_MARKER) {
 }
 
 system.beforeEvents.startup.subscribe((init) => {
+    // Register enums for parameters that previously used raw strings
+    const LargeFillModeEnum = init.customCommandRegistry.registerEnum("LargeFillMode", ["replace", "keep", "outline", "hollow", "destroy"]);
+    const FigureModeEnum = init.customCommandRegistry.registerEnum("FigureMode", ["solid", "hollow", "keep"]);
+    const FindSlotModeEnum = init.customCommandRegistry.registerEnum("FindSlotMode", ["first", "all"]);
+    const HealModeEnum = init.customCommandRegistry.registerEnum("HealMode", ["health", "hunger", "both"]);
+    const DirectionEnum = init.customCommandRegistry.registerEnum("Direction", ["north", "south", "east", "west"]);
+    const FigureTypeEnum = init.customCommandRegistry.registerEnum("FigureType", ["cube", "sphere", "cylinder", "pyramid"]);
+    const FontStyleEnum = init.customCommandRegistry.registerEnum("FontStyle", Object.keys(FONTS));
+
     // Original commands
     const addLoreCommand = {
         name: "vertx:addlore",
@@ -182,7 +191,7 @@ system.beforeEvents.startup.subscribe((init) => {
         permissionLevel: CommandPermissionLevel.GameDirectors,
         optionalParameters: [
             { type: CustomCommandParamType.EntitySelector, name: "Target"},
-            { type: CustomCommandParamType.String, name: "Heal type (health/hunger/both, default both)"}
+            { type: CustomCommandParamType.Enum, name: "HealMode"}
         ]
     };
     
@@ -200,7 +209,7 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "Spawn entities with optional equipment and effects",
         permissionLevel: CommandPermissionLevel.GameDirectors,
         mandatoryParameters: [
-            { type: CustomCommandParamType.String, name: "Entity type"},
+            { type: CustomCommandParamType.EntityType, name: "EntityType"},
             { type: CustomCommandParamType.Integer, name: "Amount"}
         ],
         optionalParameters: [
@@ -306,7 +315,7 @@ system.beforeEvents.startup.subscribe((init) => {
             { type: CustomCommandParamType.String, name: "Item ID or partial name" }
         ],
         optionalParameters: [
-            { type: CustomCommandParamType.String, name: "Mode ('first' or 'all', default: first)" },
+            { type: CustomCommandParamType.Enum, name: "FindSlotMode" },
             { type: CustomCommandParamType.EntitySelector, name: "Target player" }
         ]
     };
@@ -344,9 +353,9 @@ system.beforeEvents.startup.subscribe((init) => {
         optionalParameters: [
             { type: CustomCommandParamType.Location, name: "Start location" },
             { type: CustomCommandParamType.Integer, name: "Scale (1-10, default: 3)" },
-            { type: CustomCommandParamType.String, name: "Direction (north/south/east/west, default: north)" },
+            { type: CustomCommandParamType.Enum, name: "Direction" },
             { type: CustomCommandParamType.Boolean, name: "Vertical text (default: false)" },
-            { type: CustomCommandParamType.String, name: "Font style (block/slim, default: block)" }
+            { type: CustomCommandParamType.Enum, name: "FontStyle" }
         ]
     };
     
@@ -363,10 +372,10 @@ system.beforeEvents.startup.subscribe((init) => {
         mandatoryParameters: [
             { type: CustomCommandParamType.Location, name: "From location" },
             { type: CustomCommandParamType.Location, name: "To location" },
-            { type: CustomCommandParamType.String, name: "Block to place" }
+            { type: CustomCommandParamType.BlockType, name: "Block" }
         ],
         optionalParameters: [
-            { type: CustomCommandParamType.String, name: "Fill mode (replace/keep/outline/hollow/destroy, default: replace)" },
+            { type: CustomCommandParamType.Enum, name: "LargeFillMode" },
             { type: CustomCommandParamType.String, name: "Replace block filter (for replace mode, default: all)" }
         ]
     };
@@ -386,13 +395,13 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "Create geometric figures (cube, sphere, cylinder, pyramid) with various options",
         permissionLevel: CommandPermissionLevel.GameDirectors,
         mandatoryParameters: [
-            { type: CustomCommandParamType.String, name: "Figure type (cube/sphere/cylinder/pyramid)" },
+            { type: CustomCommandParamType.Enum, name: "FigureType" },
             { type: CustomCommandParamType.Location, name: "Center location" },
-            { type: CustomCommandParamType.String, name: "Block type" },
+            { type: CustomCommandParamType.BlockType, name: "Block" },
             { type: CustomCommandParamType.Integer, name: "Size (radius/half-width)" }
         ],
         optionalParameters: [
-            { type: CustomCommandParamType.String, name: "Mode (solid/hollow/keep, default: solid)" },
+            { type: CustomCommandParamType.Enum, name: "FigureMode" },
             { type: CustomCommandParamType.Integer, name: "Rotation in degrees (default: 0)" },
             { type: CustomCommandParamType.Integer, name: "Height (for cylinder/pyramid, default: size)" }
         ]
@@ -893,7 +902,7 @@ function spawnEntityFunction(origin, entityType, amount, location = origin.sourc
             
             // Spawn entities
             for (let i = 0; i < amount; i++) {
-                const entity = dimension.spawnEntity(entityType, location);
+                const entity = dimension.spawnEntity(entityType.typeId ?? entityType, location);
                 spawnedEntities.push(entity);
             }
             
@@ -997,7 +1006,7 @@ function spawnEntityFunction(origin, entityType, amount, location = origin.sourc
             }
             
             if (origin.sourceEntity) {
-                origin.sourceEntity.sendMessage(`§aSpawned ${spawnedEntities.length} ${entityType} entities`);
+                origin.sourceEntity.sendMessage(`§aSpawned ${spawnedEntities.length} ${entityType.typeId ?? entityType} entities`);
             }
             
         } catch (e) {
@@ -3493,7 +3502,7 @@ world.afterEvents.itemUse.subscribe((ev) => {
 
 
 // Main large fill function
-function largeFillFunction(origin, fromLocation, toLocation, blockType, fillMode = "replace", replaceFilter = "all") {
+function largeFillFunction(origin, fromLocation, toLocation, block, fillMode = "replace", replaceFilter = "all") {
     system.run(() => {
         try {
             const player = origin.sourceEntity;
@@ -3527,20 +3536,20 @@ function largeFillFunction(origin, fromLocation, toLocation, blockType, fillMode
             
             // Validate block type
             try {
-                BlockPermutation.resolve(blockType);
+                BlockPermutation.resolve(block.id);
             } catch (e) {
-                player.sendMessage(`§cInvalid block type: ${blockType}`);
+                player.sendMessage(`§cInvalid block type: ${block?.id}`);
                 return;
             }
             
             player.sendMessage(`§aStarting large fill: ${volume.toLocaleString()} blocks`);
-            player.sendMessage(`§7Mode: ${fillMode}, Block: ${blockType}`);
+            player.sendMessage(`§7Mode: ${fillMode}, Block: ${block.id}`);
             if (fillMode === "replace" && replaceFilter !== "all") {
                 player.sendMessage(`§7Replace filter: ${replaceFilter}`);
             }
             
             // Start async fill operation
-            performLargeFillAsync(player, fromLocation, toLocation, blockType, fillMode.toLowerCase(), replaceFilter);
+            performLargeFillAsync(player, fromLocation, toLocation, block.id, fillMode.toLowerCase(), replaceFilter);
             
         } catch (e) {
             console.log("Failed to perform large fill: " + e);
@@ -3813,7 +3822,7 @@ function fillInfoFunction(origin, fromLocation, toLocation) {
 
 
 // Main create figure function
-function createFigureFunction(origin, figureType, centerLocation, blockType, size, mode = "solid", rotation = 0, height = null) {
+function createFigureFunction(origin, figureType, centerLocation, block, size, mode = "solid", rotation = 0, height = null) {
     system.run(() => {
         try {
             const player = origin.sourceEntity;
@@ -3824,7 +3833,7 @@ function createFigureFunction(origin, figureType, centerLocation, blockType, siz
             
             // Validate figure type
             const validFigures = ["cube", "sphere", "cylinder", "pyramid"];
-            if (!validFigures.includes(figureType.toLowerCase())) {
+            if (!validFigures.includes((figureType?.toLowerCase?.() ?? figureType).toLowerCase())) {
                 player.sendMessage(`§cInvalid figure type! Use: ${validFigures.join(", ")}`);
                 return;
             }
@@ -3858,29 +3867,30 @@ function createFigureFunction(origin, figureType, centerLocation, blockType, siz
             
             // Validate block type
             try {
-                BlockPermutation.resolve(blockType);
+                BlockPermutation.resolve(block.id);
             } catch (e) {
-                player.sendMessage(`§cInvalid block type: ${blockType}`);
+                player.sendMessage(`§cInvalid block type: ${block?.id}`);
                 return;
             }
             
             // Calculate estimated block count
-            const estimatedBlocks = estimateFigureBlocks(figureType.toLowerCase(), size, height, mode.toLowerCase());
+            const figureTypeStr = (figureType?.toLowerCase?.() ?? figureType).toLowerCase();
+            const estimatedBlocks = estimateFigureBlocks(figureTypeStr, size, height, mode.toLowerCase());
             
             if (estimatedBlocks > 100000) {
                 player.sendMessage(`§cFigure too large! Estimated ${estimatedBlocks.toLocaleString()} blocks. Maximum is 100,000.`);
                 return;
             }
             
-            player.sendMessage(`§aCreating ${figureType.toLowerCase()} figure...`);
+            player.sendMessage(`§aCreating ${figureTypeStr} figure...`);
             player.sendMessage(`§7Size: ${size}, Mode: ${mode.toLowerCase()}, Rotation: ${rotation}°`);
-            if (["cylinder", "pyramid"].includes(figureType.toLowerCase())) {
+            if (["cylinder", "pyramid"].includes(figureTypeStr)) {
                 player.sendMessage(`§7Height: ${height}`);
             }
             player.sendMessage(`§7Estimated blocks: ${estimatedBlocks.toLocaleString()}`);
             
             // Start async figure creation
-            createFigureAsync(player, figureType.toLowerCase(), centerLocation, blockType, size, mode.toLowerCase(), rotation, height);
+            createFigureAsync(player, figureTypeStr, centerLocation, block.id, size, mode.toLowerCase(), rotation, height);
             
         } catch (e) {
             console.log("Failed to create figure: " + e);
