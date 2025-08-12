@@ -6,7 +6,8 @@ import {
     CustomCommandParamType,
     EquipmentSlot,
     BlockPermutation,
-    ItemStack
+    ItemStack,
+    MoonPhase
 } from "@minecraft/server";
 
 import {
@@ -41,14 +42,21 @@ function revealString(hidden, marker = COMMAND_MARKER) {
 
 system.beforeEvents.startup.subscribe((init) => {
     // Register enums for parameters that previously used raw strings
-    const LargeFillModeEnum = init.customCommandRegistry.registerEnum("LargeFillMode", ["replace", "keep", "outline", "hollow", "destroy"]);
-    const FigureModeEnum = init.customCommandRegistry.registerEnum("FigureMode", ["solid", "hollow", "keep"]);
-    const FindSlotModeEnum = init.customCommandRegistry.registerEnum("FindSlotMode", ["first", "all"]);
-    const HealModeEnum = init.customCommandRegistry.registerEnum("HealMode", ["health", "hunger", "both"]);
-    const DirectionEnum = init.customCommandRegistry.registerEnum("Direction", ["north", "south", "east", "west"]);
-    const FigureTypeEnum = init.customCommandRegistry.registerEnum("FigureType", ["cube", "sphere", "cylinder", "pyramid"]);
-    const FontStyleEnum = init.customCommandRegistry.registerEnum("FontStyle", Object.keys(FONTS));
+    init.customCommandRegistry.registerEnum("vertx:LargeFillMode", ["replace", "keep", "outline", "hollow", "destroy"]);
+    init.customCommandRegistry.registerEnum("vertx:FigureMode", ["solid", "hollow", "keep"]);
+    init.customCommandRegistry.registerEnum("vertx:FindSlotMode", ["first", "all"]);
+    init.customCommandRegistry.registerEnum("vertx:HealMode", ["health", "hunger", "both"]);
+    init.customCommandRegistry.registerEnum("vertx:Direction", ["north", "south", "east", "west"]);
+    init.customCommandRegistry.registerEnum("vertx:FigureType", ["cube", "sphere", "cylinder", "pyramid"]);
+    init.customCommandRegistry.registerEnum("vertx:FontStyle", Object.keys(FONTS));
+    init.customCommandRegistry.registerEnum("vertx:GameMode", ["survival", "creative", "adventure", "spectator", "s", "c", "a", "sp"]);
+    init.customCommandRegistry.registerEnum("vertx:BoostDirection", ["up", "forward", "backward", "left", "right", "down"]);
+    init.customCommandRegistry.registerEnum("vertx:SurfaceMode", ["circle", "square"]);
+    init.customCommandRegistry.registerEnum("vertx:PlainMode", ["square", "triangle", "circle"]);
+    init.customCommandRegistry.registerEnum("vertx:WorldInfoType", ["time", "day", "moonphase", "players", "difficulty", "absolutetime", "weather", "spawn", "entities", "dimensions", "all"]);
 
+
+    
     // Original commands
     const addLoreCommand = {
         name: "vertx:addlore",
@@ -191,7 +199,7 @@ system.beforeEvents.startup.subscribe((init) => {
         permissionLevel: CommandPermissionLevel.GameDirectors,
         optionalParameters: [
             { type: CustomCommandParamType.EntitySelector, name: "Target"},
-            { type: CustomCommandParamType.Enum, name: "HealMode"}
+            { type: CustomCommandParamType.Enum, name: "vertx:HealMode"}
         ]
     };
     
@@ -315,7 +323,7 @@ system.beforeEvents.startup.subscribe((init) => {
             { type: CustomCommandParamType.String, name: "Item ID or partial name" }
         ],
         optionalParameters: [
-            { type: CustomCommandParamType.Enum, name: "FindSlotMode" },
+            { type: CustomCommandParamType.Enum, name: "vertx:FindSlotMode" },
             { type: CustomCommandParamType.EntitySelector, name: "Target player" }
         ]
     };
@@ -353,9 +361,9 @@ system.beforeEvents.startup.subscribe((init) => {
         optionalParameters: [
             { type: CustomCommandParamType.Location, name: "Start location" },
             { type: CustomCommandParamType.Integer, name: "Scale (1-10, default: 3)" },
-            { type: CustomCommandParamType.Enum, name: "Direction" },
+            { type: CustomCommandParamType.Enum, name: "vertx:Direction" },
             { type: CustomCommandParamType.Boolean, name: "Vertical text (default: false)" },
-            { type: CustomCommandParamType.Enum, name: "FontStyle" }
+            { type: CustomCommandParamType.Enum, name: "vertx:FontStyle" }
         ]
     };
     
@@ -375,7 +383,7 @@ system.beforeEvents.startup.subscribe((init) => {
             { type: CustomCommandParamType.BlockType, name: "Block" }
         ],
         optionalParameters: [
-            { type: CustomCommandParamType.Enum, name: "LargeFillMode" },
+            { type: CustomCommandParamType.Enum, name: "vertx:LargeFillMode" },
             { type: CustomCommandParamType.String, name: "Replace block filter (for replace mode, default: all)" }
         ]
     };
@@ -395,17 +403,121 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "Create geometric figures (cube, sphere, cylinder, pyramid) with various options",
         permissionLevel: CommandPermissionLevel.GameDirectors,
         mandatoryParameters: [
-            { type: CustomCommandParamType.Enum, name: "FigureType" },
+            { type: CustomCommandParamType.Enum, name: "vertx:FigureType" },
             { type: CustomCommandParamType.Location, name: "Center location" },
             { type: CustomCommandParamType.BlockType, name: "Block" },
             { type: CustomCommandParamType.Integer, name: "Size (radius/half-width)" }
         ],
         optionalParameters: [
-            { type: CustomCommandParamType.Enum, name: "FigureMode" },
+            { type: CustomCommandParamType.Enum, name: "vertx:FigureMode" },
             { type: CustomCommandParamType.Integer, name: "Rotation in degrees (default: 0)" },
             { type: CustomCommandParamType.Integer, name: "Height (for cylinder/pyramid, default: size)" }
         ]
     };
+    
+    const gamemodeCommand = {
+        name: "vertx:gm",
+        description: "Change gamemode (defaults to creative)",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Enum, name: "vertx:GameMode" },
+            { type: CustomCommandParamType.EntitySelector, name: "Target player(s)" }
+        ]
+    };
+    
+    const boostCommand = {
+        name: "vertx:boost",
+        description: "Apply impulse boost to entities",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Float, name: "Power (0.1-100.0)" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Enum, name: "vertx:BoostDirection" },
+            { type: CustomCommandParamType.EntitySelector, name: "Target entities" },
+            { type: CustomCommandParamType.Location, name: "Custom direction" },
+        ]
+    };
+    
+    const randomCommand = {
+        name: "vertx:random",
+        description: "Random number",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Integer, name: "Max"}
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Integer, name: "Min"},
+            { type: CustomCommandParamType.Boolean, name: "FloorResult"}
+        ]
+    };
+    
+    const transferLoreCommand = {
+        name: "vertx:tlore",
+        description: "Transfer lore from one item to another",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.EntitySelector, name: "FromEntity"},
+            { type: CustomCommandParamType.Integer, name: "FromSlot"},
+            { type: CustomCommandParamType.EntitySelector, name: "ToEntity"},
+            { type: CustomCommandParamType.Integer, name: "ToSlot"}
+        ]
+    };
+    
+    const removeCommand = {
+        name: "vertx:remove",
+        description: "Remove entities",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.EntitySelector, name: "Targets"}
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Boolean, name: "Show removed entities"}
+        ]
+    };
+    
+    const surfaceCommand = {
+        name: "vertx:surface",
+        description: "Create surface patterns (circle/square) on terrain",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Enum, name: "vertx:SurfaceMode" },
+            { type: CustomCommandParamType.Location, name: "Center" },
+            { type: CustomCommandParamType.Integer, name: "Radius" },
+            { type: CustomCommandParamType.BlockType, name: "Block" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Integer, name: "MaxHeight" },
+            { type: CustomCommandParamType.Integer, name: "MinHeight" },
+            { type: CustomCommandParamType.Boolean, name: "ReplaceBelow" },
+            { type: CustomCommandParamType.Boolean, name: "MainhandBlock" }
+        ]
+    };    
+    
+    const plainCommand = {
+        name: "vertx:plain",
+        description: "Create plains by removing blocks above ground level in specified shapes",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Location, name: "Center position" },
+            { type: CustomCommandParamType.Integer, name: "Radius" },
+            { type: CustomCommandParamType.Enum, name: "vertx:PlainMode" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Integer, name: "Max height (default: 320)" }
+        ]
+    };    
+    
+    const getWorldInfoCommand = {
+        name: "vertx:getworldinfo",
+        description: "Get various world information",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Enum, name: "vertx:WorldInfoType" }
+        ]
+    };    
+    
+    
     
     // Register all commands
     init.customCommandRegistry.registerCommand(addLoreCommand, addLoreFunction);
@@ -439,6 +551,15 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(fillInfoCommand, fillInfoFunction);
     init.customCommandRegistry.registerCommand(largeFillCommand, largeFillFunction);
     init.customCommandRegistry.registerCommand(createFigureCommand, createFigureFunction);
+    init.customCommandRegistry.registerCommand(gamemodeCommand, gamemodeFunction);
+    init.customCommandRegistry.registerCommand(boostCommand, boostFunction);
+    init.customCommandRegistry.registerCommand(randomCommand, randomFunction);
+    init.customCommandRegistry.registerCommand(transferLoreCommand, transferLoreFunction);
+    init.customCommandRegistry.registerCommand(removeCommand, removeFunction);
+    init.customCommandRegistry.registerCommand(surfaceCommand, surfaceFunction);
+    init.customCommandRegistry.registerCommand(plainCommand, plainFunction);
+    init.customCommandRegistry.registerCommand(getWorldInfoCommand, getWorldInfoFunction);
+
     
 });
 
@@ -467,6 +588,18 @@ function addLoreFunction(origin, lore, entities = [origin.sourceEntity], bottom 
                 console.log("failed to add lore for " + entity.typeId);
             }
         }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function randomFunction(origin, max, min = 0, floor = true) {
+    system.run(() => {
+        let rnum = (Math.random() * (max - min)) + min;
+        if (floor) {
+            rnum = Math.floor(rnum);
+        }
+        origin.sourceEntity.sendMessage("Random number: " + rnum);
     });
     
     return { status: CustomCommandStatus.Success };
@@ -545,6 +678,34 @@ function clearLoreFunction(origin, lines = 100) {
     });
     
     return { status: CustomCommandStatus.Success};
+}
+
+function transferLoreFunction(origin, FromEntity, FromSlot, ToEntity, ToSlot) {
+    system.run(() => {
+        const fromInventory = FromEntity[0]?.getComponent("minecraft:inventory")?.container;
+        const fromItem = fromInventory?.getItem(FromSlot);
+    
+        // If no item or no lore, fail gracefully
+        if (!fromItem) {
+            return { status: CustomCommandStatus.Invalid };
+        }
+    
+        const itemLore = fromItem.getLore();
+    
+        for (const toEntity of ToEntity) {
+            const toInventory = toEntity?.getComponent("minecraft:inventory")?.container;
+            const targetItem = toInventory?.getItem(ToSlot);
+    
+            // Only update if there’s an item in the target slot
+            if (targetItem) {
+                const clonedItem = targetItem.clone();
+                clonedItem.setLore(itemLore);
+                toInventory.setItem(ToSlot, clonedItem);
+            }
+        }
+    });
+
+    return { status: CustomCommandStatus.Success };
 }
 
 function bindCommandFunction(origin, command, entities = [origin.sourceEntity]) {
@@ -682,38 +843,51 @@ function setItemNameFunction(origin, name) {
     return { status: CustomCommandStatus.Success};
 }
 
-function cloneItemFunction(origin, fromEntity, fromSlot, toEntity, toSlot, amount = 1) {
+function cloneItemFunction(origin, fromEntityArr, fromSlot, toEntityArr, toSlot, amount = 1) {
     system.run(() => {
         try {
-            const fromInventory = fromEntity.getComponent("minecraft:inventory")?.container;
-            const toInventory = toEntity.getComponent("minecraft:inventory")?.container;
-    
-            if (!fromInventory || !toInventory) {
-                fromEntity.sendMessage("§cError: One or both entities have no inventory.");
+            if (!fromEntityArr.length) {
+                world.sendMessage("§cError: No source entity provided.");
                 return;
             }
-    
+
+            const fromEntity = fromEntityArr[0];
+            const fromInventory = fromEntity.getComponent("minecraft:inventory")?.container;
+            if (!fromInventory) {
+                fromEntity.sendMessage("§cError: Source entity has no inventory.");
+                return;
+            }
+
             const sourceItem = fromInventory.getItem(fromSlot);
             if (!sourceItem) {
                 fromEntity.sendMessage("§cError: No item in source slot.");
                 return;
             }
-            // Clone the item
+
+            // Clone item safely
             const clonedItem = sourceItem.clone();
-            // Place into target slot
-            toInventory.setItem(toSlot, clonedItem);
-    
-            fromEntity.sendMessage(`§aCloned item '${sourceItem.typeId}' x${amount} to ${toEntity.name}'s slot ${toSlot}.`);
-    
+
+            // Give to each target entity
+            for (const target of toEntityArr) {
+                const toInventory = target.getComponent("minecraft:inventory")?.container;
+                if (!toInventory) {
+                    target.sendMessage("§cError: Target has no inventory.");
+                    continue;
+                }
+                toInventory.setItem(toSlot, clonedItem);
+                target.sendMessage(`§aReceived '${sourceItem.typeId}' x${amount} in slot ${toSlot}.`);
+            }
+
+            fromEntity.sendMessage(`§aCloned item '${sourceItem.typeId}' x${amount} to ${toEntityArr.length} entities.`);
         } catch (e) {
             world.sendMessage(`§cCloneItemFunction Error: ${e}`);
         }
     });
-    
-    return { status: CustomCommandStatus.Success};
+
+    return { status: CustomCommandStatus.Success };
 }
 
-// FIXED: showCreateMultiBlockGUI - Fixed ItemStack constructor and proper lore system
+
 function showCreateMultiBlockGUI(player) {
     const form = new ModalFormData()
         .title("§aCreate Multi-Block")
@@ -852,7 +1026,6 @@ function healFunction(origin, targets = [origin.sourceEntity], healType = "both"
         for (const entity of targets) {
             try {
                 const health = entity.getComponent("minecraft:health");
-                const food = entity.getComponent("minecraft:food");
                 
                 if (healType === "health" || healType === "both") {
                     if (health) {
@@ -861,9 +1034,7 @@ function healFunction(origin, targets = [origin.sourceEntity], healType = "both"
                 }
                 
                 if (healType === "hunger" || healType === "both") {
-                    if (food) {
-                        food.value = 20;
-                    }
+                    entity.addEffect("saturation", 30, { amplifier: 200});
                 }
                 
                 entity.sendMessage("§aYou have been healed!");
@@ -902,7 +1073,7 @@ function spawnEntityFunction(origin, entityType, amount, location = origin.sourc
             
             // Spawn entities
             for (let i = 0; i < amount; i++) {
-                const entity = dimension.spawnEntity(entityType.typeId ?? entityType, location);
+                const entity = dimension.spawnEntity(entityType.id ?? entityType, location);
                 spawnedEntities.push(entity);
             }
             
@@ -1006,7 +1177,7 @@ function spawnEntityFunction(origin, entityType, amount, location = origin.sourc
             }
             
             if (origin.sourceEntity) {
-                origin.sourceEntity.sendMessage(`§aSpawned ${spawnedEntities.length} ${entityType.typeId ?? entityType} entities`);
+                origin.sourceEntity.sendMessage(`§aSpawned ${spawnedEntities.length} ${entityType.id ?? entityType} entities`);
             }
             
         } catch (e) {
@@ -1083,7 +1254,7 @@ function knockbackFunction(origin, targets, strength, direction = null, vertical
                 const velocityY = verticalStrength;
                 
                 // Apply knockback
-                entity.applyKnockback(velocityX, velocityZ, strength, velocityY);
+                entity.applyKnockback({ x: velocityX, z: velocityZ }, strength);
                 
                 if (sourceEntity) {
                     sourceEntity.sendMessage(`§aApplied knockback to ${entity.typeId}`);
@@ -3355,8 +3526,8 @@ function performBrushOperation(player, targetLocation, brushConfig) {
         // Generate positions
         const positions = generateBrushPositions(targetLocation, brushConfig);
         
-        if (positions.length > 10000) {
-            player.sendMessage(`§cBrush too large! ${positions.length} blocks. Maximum 10000 per brush.`);
+        if (positions.length > 100000) {
+            player.sendMessage(`§cBrush too large! ${positions.length} blocks. Maximum 100000 per brush.`);
             return;
         }
         
@@ -3524,8 +3695,8 @@ function largeFillFunction(origin, fromLocation, toLocation, block, fillMode = "
                           Math.abs(toLocation.z - fromLocation.z + 1);
             
             // Size validation
-            if (volume > 1000000) {
-                player.sendMessage(`§cArea too large! ${volume.toLocaleString()} blocks. Maximum is 1,000,000.`);
+            if (volume > 5000000) {
+                player.sendMessage(`§cArea too large! ${volume.toLocaleString()} blocks. Maximum is 5,000,000.`);
                 player.sendMessage("§7Consider breaking the fill into smaller sections.");
                 return;
             }
@@ -3795,8 +3966,8 @@ function fillInfoFunction(origin, fromLocation, toLocation) {
             player.sendMessage(`§7Dimensions: §f${dimensions}`);
             player.sendMessage(`§7Total volume: §f${volume.toLocaleString()} blocks`);
             
-            if (volume > 1000000) {
-                player.sendMessage(`§cToo large for largefill! Maximum is 1,000,000 blocks.`);
+            if (volume > 5000000) {
+                player.sendMessage(`§cToo large for largefill! Maximum is 5,000,000 blocks.`);
             } else if (volume > 100000) {
                 const timeStr = estimatedMinutes > 0 ? `${estimatedMinutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
                 player.sendMessage(`§eEstimated time: §f~${timeStr}`);
@@ -4235,3 +4406,1216 @@ function finishFigureCreation(figureState) {
     
     system.clearRun(figureState.intervalId);
 }
+
+
+// Main gamemode function
+function gamemodeFunction(origin, gamemode = "creative", targets = [origin.sourceEntity]) {
+    system.run(() => {
+        try {
+            if (!targets || targets.length === 0) {
+                if (origin.sourceEntity) {
+                    origin.sourceEntity.sendMessage("§cNo valid targets specified!");
+                }
+                return;
+            }
+            
+            // Map gamemode names to Minecraft gamemode IDs
+            const gamemodeMap = {
+                "survival": "s",
+                "creative": "c", 
+                "adventure": "a",
+                "spectator": "spectator",
+                "s": "s",
+                "c": "c",
+                "a": "a",
+                "sp": "spectator"
+            };
+            
+            const gamemodeId = gamemodeMap[gamemode.toLowerCase()];
+            if (!gamemodeId) {
+                if (origin.sourceEntity) {
+                    origin.sourceEntity.sendMessage(`§cInvalid gamemode: ${gamemode}`);
+                    origin.sourceEntity.sendMessage("§7Valid modes: survival, creative, adventure, spectator");
+                }
+                return;
+            }
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            // Apply gamemode to all targets
+            for (const target of targets) {
+                try {
+                    if (target.typeId !== "minecraft:player") {
+                        failCount++;
+                        continue;
+                    }
+                    
+                    // Use the vanilla gamemode command
+                    target.runCommand(`gamemode ${gamemodeId}`);
+                    successCount++;
+                    
+                    // Send confirmation to the target
+                    const modeDisplayName = gamemode.charAt(0).toUpperCase() + gamemode.slice(1);
+                    target.sendMessage(`§aGamemode set to §e${modeDisplayName}`);
+                    
+                } catch (e) {
+                    console.log(`Failed to set gamemode for ${target.name}: ${e}`);
+                    failCount++;
+                }
+            }
+            
+            // Send summary to command executor (if different from targets)
+            if (origin.sourceEntity && (targets.length > 1 || !targets.includes(origin.sourceEntity))) {
+                const modeDisplayName = gamemode.charAt(0).toUpperCase() + gamemode.slice(1);
+                
+                if (successCount > 0) {
+                    origin.sourceEntity.sendMessage(`§aSet gamemode to §e${modeDisplayName} §afor §f${successCount} §aplayer${successCount > 1 ? 's' : ''}`);
+                }
+                
+                if (failCount > 0) {
+                    origin.sourceEntity.sendMessage(`§cFailed to change gamemode for §f${failCount} §ctarget${failCount > 1 ? 's' : ''}`);
+                }
+            }
+            
+        } catch (e) {
+            console.log("Failed to change gamemode: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to change gamemode: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+
+// Main boost function
+function boostFunction(origin, power, direction = "up", targets = [origin.sourceEntity], location = {x: null, y: null, z: null}) {
+    system.run(() => {
+        try {
+            if (!targets || targets.length === 0) {
+                if (origin.sourceEntity) {
+                    origin.sourceEntity.sendMessage("§cNo valid targets specified!");
+                }
+                return;
+            }
+            
+            // Validate power
+            if (power < 0.1 || power > 100.0) {
+                if (origin.sourceEntity) {
+                    origin.sourceEntity.sendMessage("§cPower must be between 0.1 and 10.0!");
+                }
+                return;
+            }
+            
+            let impulseVector = { x: 0, y: 0, z: 0 };
+            
+            // Use custom direction if all three components are provided
+            if (location.x !== null && location.y !== null && location.z !== null) {
+                impulseVector = { x: location.x, y: location.y, z: location.z };
+                
+                // Normalize and apply power
+                const magnitude = Math.sqrt(location.x * location.x + location.y * location.y + location.z * location.z);
+                if (magnitude > 0) {
+                    impulseVector.x = (location.x / magnitude) * power;
+                    impulseVector.y = (location.y / magnitude) * power;
+                    impulseVector.z = (location.z / magnitude) * power;
+                }
+            } else {
+                // Use predefined direction
+                impulseVector = calculateDirectionVector(origin.sourceEntity, direction, power);
+            }
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            // Apply boost to all targets
+            for (const target of targets) {
+                try {
+                    // Apply the impulse
+                    target.applyImpulse(impulseVector);
+                    successCount++;
+                    
+                    // Visual/audio feedback
+                    try {
+                        // Spawn boost particles
+                        target.dimension.spawnParticle("minecraft:huge_explosion_emitter", {
+                            x: target.location.x,
+                            y: target.location.y + 1,
+                            z: target.location.z
+                        });
+                        
+                        // Play boost sound
+                        target.dimension.playSound("firework.launch", target.location, { volume: 0.5, pitch: 1.2 });
+                    } catch (e) {
+                        // Visual effects failed, but boost still worked
+                    }
+                    
+                    // Send feedback to boosted entity (if it's a player)
+                    if (target.typeId === "minecraft:player") {
+                        const directionText = location.x !== null ? "custom direction" : direction;
+                        target.sendMessage(`§aYou were boosted ${directionText} with power ${power}!`);
+                    }
+                    
+                } catch (e) {
+                    console.log(`Failed to boost ${target.typeId}: ${e}`);
+                    failCount++;
+                }
+            }
+            
+            // Send summary to command executor
+            if (origin.sourceEntity) {
+                const directionText = location.x !== null ? 
+                    `custom (${location.x.toFixed(1)}, ${location.y.toFixed(1)}, ${location.z.toFixed(1)})` : 
+                    direction;
+                
+                if (successCount > 0) {
+                    origin.sourceEntity.sendMessage(`§aBoosted §f${successCount} §aentit${successCount > 1 ? 'ies' : 'y'} §a${directionText} with power §f${power}`);
+                }
+                
+                if (failCount > 0) {
+                    origin.sourceEntity.sendMessage(`§cFailed to boost §f${failCount} §centit${failCount > 1 ? 'ies' : 'y'}`);
+                }
+            }
+            
+        } catch (e) {
+            console.log("Failed to execute boost command: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to boost: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Calculate direction vector based on direction name and player facing
+function calculateDirectionVector(player, direction, power) {
+    let vector = { x: 0, y: 0, z: 0 };
+    
+    switch (direction.toLowerCase()) {
+        case "up":
+            vector = { x: 0, y: power, z: 0 };
+            break;
+            
+        case "down":
+            vector = { x: 0, y: -power, z: 0 };
+            break;
+            
+        case "forward":
+            if (player) {
+                const rotation = player.getRotation();
+                const yawRadians = (rotation.y * Math.PI) / 180;
+                vector = {
+                    x: Math.sin(yawRadians) * power,
+                    y: 0,
+                    z: -Math.cos(yawRadians) * power
+                };
+            } else {
+                vector = { x: 0, y: 0, z: -power }; // Default forward (north)
+            }
+            break;
+            
+        case "backward":
+            if (player) {
+                const rotation = player.getRotation();
+                const yawRadians = (rotation.y * Math.PI) / 180;
+                vector = {
+                    x: -Math.sin(yawRadians) * power,
+                    y: 0,
+                    z: Math.cos(yawRadians) * power
+                };
+            } else {
+                vector = { x: 0, y: 0, z: power }; // Default backward (south)
+            }
+            break;
+            
+        case "left":
+            if (player) {
+                const rotation = player.getRotation();
+                const yawRadians = (rotation.y * Math.PI) / 180;
+                vector = {
+                    x: -Math.cos(yawRadians) * power,
+                    y: 0,
+                    z: -Math.sin(yawRadians) * power
+                };
+            } else {
+                vector = { x: -power, y: 0, z: 0 }; // Default left (west)
+            }
+            break;
+            
+        case "right":
+            if (player) {
+                const rotation = player.getRotation();
+                const yawRadians = (rotation.y * Math.PI) / 180;
+                vector = {
+                    x: Math.cos(yawRadians) * power,
+                    y: 0,
+                    z: Math.sin(yawRadians) * power
+                };
+            } else {
+                vector = { x: power, y: 0, z: 0 }; // Default right (east)
+            }
+            break;
+            
+        default:
+            vector = { x: 0, y: power, z: 0 }; // Default to up
+    }
+    
+    return vector;
+}
+
+
+function removeFunction(origin, entities, log = false) {
+    system.run(() => {
+        let logEntity = [];
+        for (const entity of entities) {
+            if (entity.typeId == "minecraft:player") continue;
+            logEntity.push(entity.typeId);
+            entity.remove();
+        }
+        if (log) {
+            origin.sourceEntity.sendMessage(`§2${logEntity.length} entities was removed.\n§eEntities:\n${logEntity.join(", ")}`);
+        } else {
+            origin.sourceEntity.sendMessage("§2Removed entities: " + logEntity.length);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+
+// Main surface function
+function surfaceFunction(origin, mode, centerPosition, radius, blockType, maxH= 6, minH = 4, replaceBelow = false, useMainhand = false) {
+    system.run(() => {
+        try {
+            const minHeight = centerPosition.y - minH;
+            const maxHeight = centerPosition.y + maxH;
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Surface command requires a player source");
+                return;
+            }
+            
+            // Validate radius
+            if (radius < 1 || radius > 100) {
+                player.sendMessage("§cRadius must be between 1 and 100!");
+                return;
+            }
+            
+            // Validate height range
+            if (minHeight > maxHeight) {
+                player.sendMessage("§cMin height cannot be greater than max height!");
+                return;
+            }
+            
+            if (maxHeight > 320 || minHeight < -64) {
+                player.sendMessage("§cHeight must be between -64 and 320!");
+                return;
+            }
+            
+            // Get blocks to use
+            let blocksToUse = [];
+            
+            if (useMainhand) {
+                const blocks = getMainhandBlocks(player);
+                if (!blocks || blocks.length === 0) {
+                    player.sendMessage("§cNo valid blocks in mainhand! Hold a block or multi-block item.");
+                    return;
+                }
+                blocksToUse = blocks;
+            } else {
+                // Validate block type
+                try {
+                    BlockPermutation.resolve(blockType.id);
+                    blocksToUse = [blockType.id];
+                } catch (e) {
+                    player.sendMessage(`§cInvalid block type: ${blockType.id}`);
+                    return;
+                }
+            }
+            
+            // Calculate estimated area
+            const estimatedArea = mode === "circle" 
+                ? Math.floor(Math.PI * radius * radius)
+                : (radius * 2 + 1) * (radius * 2 + 1);
+            
+            if (estimatedArea > 500000) {
+                player.sendMessage(`§cSurface area too large! ${estimatedArea.toLocaleString()} positions. Maximum is 500,000.`);
+                return;
+            }
+            
+            player.sendMessage(`§aStarting surface creation...`);
+            player.sendMessage(`§7Mode: ${mode}, Radius: ${radius}, Area: ~${estimatedArea.toLocaleString()} positions`);
+            player.sendMessage(`§7Height range: ${minHeight} to ${maxHeight}`);
+            player.sendMessage(`§7Replace ${replaceBelow ? "below" : "at"} surface level`);
+            
+            if (useMainhand) {
+                player.sendMessage(`§7Using ${blocksToUse.length} block type${blocksToUse.length > 1 ? 's' : ''} from mainhand`);
+            } else {
+                player.sendMessage(`§7Using block: ${blockType}`);
+            }
+            
+            // Start async surface creation
+            createSurfaceAsync(player, mode, centerPosition, radius, blocksToUse, maxHeight, minHeight, replaceBelow);
+            
+        } catch (e) {
+            console.log("Failed to create surface: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create surface: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Get blocks from player's mainhand
+function getMainhandBlocks(player) {
+    const equippable = player.getComponent("minecraft:equippable");
+    const item = equippable?.getEquipment(EquipmentSlot.Mainhand);
+    
+    if (!item) return null;
+    
+    // Check if it's a multi-block item
+    const loreArray = item.getLore();
+    if (loreArray && loreArray.some(lore => lore === "§6Multi-Block Item")) {
+        const blocks = [];
+        let foundBlocksSection = false;
+        
+        for (const lore of loreArray) {
+            if (lore === "§7Blocks:") {
+                foundBlocksSection = true;
+                continue;
+            }
+            if (foundBlocksSection && lore.startsWith("§8- ")) {
+                const blockId = lore.replace("§8- ", "");
+                blocks.push(blockId);
+            }
+        }
+        
+        return blocks.length > 0 ? blocks : [item.typeId];
+    }
+    
+    return [item.typeId];
+}
+
+// Create surface asynchronously
+function createSurfaceAsync(player, mode, centerPosition, radius, blocksToUse, maxHeight, minHeight, replaceBelow) {
+    const surfaceState = {
+        player: player,
+        dimension: player.dimension,
+        mode: mode,
+        centerPosition: centerPosition,
+        radius: radius,
+        blocksToUse: blocksToUse,
+        maxHeight: maxHeight,
+        minHeight: minHeight,
+        replaceBelow: replaceBelow,
+        
+        // Generate positions to check
+        positions: [],
+        currentIndex: 0,
+        
+        // Progress tracking
+        positionsProcessed: 0,
+        blocksPlaced: 0,
+        positionsSkipped: 0,
+        positionsFailed: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null
+    };
+    
+    // Generate all positions within the shape
+    surfaceState.positions = generateSurfacePositions(surfaceState);
+    
+    if (surfaceState.positions.length === 0) {
+        player.sendMessage("§cNo valid positions found for surface creation!");
+        return;
+    }
+    
+    player.sendMessage(`§7Processing ${surfaceState.positions.length} positions...`);
+    
+    // Start processing
+    surfaceState.intervalId = system.runInterval(() => {
+        processSurfaceBatch(surfaceState);
+    }, 1);
+}
+
+// Generate positions based on surface mode
+function generateSurfacePositions(surfaceState) {
+    const positions = [];
+    const { mode, centerPosition, radius } = surfaceState;
+    
+    if (mode === "circle") {
+        // Generate circle positions
+        for (let x = -radius; x <= radius; x++) {
+            for (let z = -radius; z <= radius; z++) {
+                const distance = Math.sqrt(x * x + z * z);
+                if (distance <= radius) {
+                    positions.push({
+                        x: centerPosition.x + x,
+                        z: centerPosition.z + z
+                    });
+                }
+            }
+        }
+    } else if (mode === "square") {
+        // Generate square positions
+        for (let x = -radius; x <= radius; x++) {
+            for (let z = -radius; z <= radius; z++) {
+                positions.push({
+                    x: centerPosition.x + x,
+                    z: centerPosition.z + z
+                });
+            }
+        }
+    }
+    
+    return positions;
+}
+
+// Process batch of surface positions
+function processSurfaceBatch(surfaceState) {
+    const batchSize = 500; // Positions per tick
+    let processed = 0;
+    
+    while (processed < batchSize && surfaceState.currentIndex < surfaceState.positions.length) {
+        const position = surfaceState.positions[surfaceState.currentIndex];
+        
+        // Find surface level for this X,Z position
+        const surfaceResult = findSurfaceLevel(surfaceState, position.x, position.z);
+        
+        if (surfaceResult.found) {
+            // Place block at or below surface
+            const targetY = surfaceState.replaceBelow ? surfaceResult.y : surfaceResult.y + 1;
+            const blockPosition = { x: position.x, y: targetY, z: position.z };
+            
+            try {
+                const randomBlock = surfaceState.blocksToUse[Math.floor(Math.random() * surfaceState.blocksToUse.length)];
+                const blockPermutation = BlockPermutation.resolve(randomBlock);
+                surfaceState.dimension.setBlockPermutation(blockPosition, blockPermutation);
+                surfaceState.blocksPlaced++;
+            } catch (e) {
+                surfaceState.positionsFailed++;
+                console.log(`Failed to place surface block at ${blockPosition.x},${blockPosition.y},${blockPosition.z}: ${e}`);
+            }
+        } else {
+            surfaceState.positionsSkipped++;
+        }
+        
+        surfaceState.positionsProcessed++;
+        surfaceState.currentIndex++;
+        processed++;
+    }
+    
+    // Show progress updates
+    if (surfaceState.positionsProcessed % 500 === 0 || surfaceState.currentIndex >= surfaceState.positions.length) {
+        const progress = Math.round((surfaceState.currentIndex / surfaceState.positions.length) * 100);
+        const elapsed = Math.round((Date.now() - surfaceState.startTime) / 1000);
+        
+        surfaceState.player.sendMessage(
+            `§7Progress: ${progress}% (${surfaceState.currentIndex}/${surfaceState.positions.length}) - ${elapsed}s`
+        );
+    }
+    
+    // Check if complete
+    if (surfaceState.currentIndex >= surfaceState.positions.length) {
+        finishSurfaceCreation(surfaceState);
+    }
+}
+
+// Find surface level at given X,Z coordinates
+function findSurfaceLevel(surfaceState, x, z) {
+    const { dimension, maxHeight, minHeight } = surfaceState;
+    
+    // Scan from top to bottom to find the first non-air block
+    for (let y = maxHeight; y >= minHeight; y--) {
+        try {
+            const block = dimension.getBlock({ x, y, z });
+            if (block.typeId !== "minecraft:air") {
+                return { found: true, y: y };
+            }
+        } catch (e) {
+            // Block read failed, skip this position
+            continue;
+        }
+    }
+    
+    return { found: false, y: minHeight };
+}
+
+// Finish surface creation
+function finishSurfaceCreation(surfaceState) {
+    const elapsed = Math.round((Date.now() - surfaceState.startTime) / 1000);
+    const rate = elapsed > 0 ? Math.round(surfaceState.positionsProcessed / elapsed) : 0;
+    
+    surfaceState.player.sendMessage(`§aSurface creation complete!`);
+    surfaceState.player.sendMessage(`§7Mode: ${surfaceState.mode}, Radius: ${surfaceState.radius}`);
+    surfaceState.player.sendMessage(`§7Positions processed: ${surfaceState.positionsProcessed.toLocaleString()}`);
+    surfaceState.player.sendMessage(`§7Blocks placed: ${surfaceState.blocksPlaced}, Skipped: ${surfaceState.positionsSkipped}, Failed: ${surfaceState.positionsFailed}`);
+    surfaceState.player.sendMessage(`§7Time: ${elapsed}s (${rate} positions/s)`);
+    
+    if (surfaceState.blocksToUse.length > 1) {
+        surfaceState.player.sendMessage(`§7Used ${surfaceState.blocksToUse.length} different block types`);
+    } else {
+        surfaceState.player.sendMessage(`§7Block used: ${surfaceState.blocksToUse[0]}`);
+    }
+    
+    system.clearRun(surfaceState.intervalId);
+}
+
+
+
+// Main plain function
+function plainFunction(origin, centerPosition, radius, mode, maxHeight = 320) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Plain command requires a player source");
+                return;
+            }
+            
+            // Validate radius
+            if (radius < 1 || radius > 100) {
+                player.sendMessage("§cRadius must be between 1 and 100!");
+                return;
+            }
+            
+            // Validate max height
+            if (maxHeight < centerPosition.y || maxHeight > 320) {
+                player.sendMessage(`§cMax height must be between ${centerPosition.y} and 320!`);
+                return;
+            }
+            
+            // Calculate estimated positions
+            let estimatedPositions = 0;
+            switch (mode) {
+                case "circle":
+                    estimatedPositions = Math.floor(Math.PI * radius * radius);
+                    break;
+                case "square":
+                    estimatedPositions = (radius * 2 + 1) * (radius * 2 + 1);
+                    break;
+                case "triangle":
+                    estimatedPositions = Math.floor((radius * radius * Math.PI) / 2);
+                    break;
+            }
+            
+            // Estimate total blocks to remove (positions × average height)
+            const avgHeight = Math.max(1, maxHeight - centerPosition.y);
+            const estimatedBlocks = estimatedPositions * avgHeight;
+            
+            if (estimatedBlocks > 1000000) {
+                player.sendMessage(`§cPlain area too large! Estimated ${estimatedBlocks.toLocaleString()} blocks. Maximum is 1000,000.`);
+                player.sendMessage("§7Try smaller radius or lower max height.");
+                return;
+            }
+            
+            if (estimatedBlocks > 100000) {
+                player.sendMessage(`§eWarning: Large plain operation! Estimated ${estimatedBlocks.toLocaleString()} blocks to remove.`);
+            }
+            
+            player.sendMessage(`§aStarting plain creation...`);
+            player.sendMessage(`§7Mode: ${mode}, Radius: ${radius}, Max height: ${maxHeight}`);
+            player.sendMessage(`§7Center height: ${centerPosition.y}, Estimated positions: ${estimatedPositions.toLocaleString()}`);
+            player.sendMessage(`§7This will remove all blocks above ground level in the specified area.`);
+            
+            // Start async plain creation
+            createPlainAsync(player, centerPosition, radius, mode, maxHeight);
+            
+        } catch (e) {
+            console.log("Failed to create plain: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create plain: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Create plain asynchronously
+function createPlainAsync(player, centerPosition, radius, mode, maxHeight) {
+    const plainState = {
+        player: player,
+        dimension: player.dimension,
+        centerPosition: centerPosition,
+        radius: radius,
+        mode: mode,
+        maxHeight: maxHeight,
+        
+        // Generate positions to process
+        positions: [],
+        currentIndex: 0,
+        
+        // Progress tracking
+        positionsProcessed: 0,
+        blocksRemoved: 0,
+        positionsSkipped: 0,
+        blocksFailed: 0,
+        startTime: Date.now(),
+        
+        // Control
+        intervalId: null
+    };
+    
+    // Generate all X,Z positions within the shape
+    plainState.positions = generatePlainPositions(plainState);
+    
+    if (plainState.positions.length === 0) {
+        player.sendMessage("§cNo valid positions found for plain creation!");
+        return;
+    }
+    
+    player.sendMessage(`§7Processing ${plainState.positions.length} positions...`);
+    
+    // Start processing
+    plainState.intervalId = system.runInterval(() => {
+        processPlainBatch(plainState);
+    }, 1);
+}
+
+// Generate positions based on plain mode
+function generatePlainPositions(plainState) {
+    const positions = [];
+    const { mode, centerPosition, radius } = plainState;
+    
+    switch (mode) {
+        case "circle":
+            // Generate circle positions
+            for (let x = -radius; x <= radius; x++) {
+                for (let z = -radius; z <= radius; z++) {
+                    const distance = Math.sqrt(x * x + z * z);
+                    if (distance <= radius) {
+                        positions.push({
+                            x: centerPosition.x + x,
+                            z: centerPosition.z + z
+                        });
+                    }
+                }
+            }
+            break;
+            
+        case "square":
+            // Generate square positions
+            for (let x = -radius; x <= radius; x++) {
+                for (let z = -radius; z <= radius; z++) {
+                    positions.push({
+                        x: centerPosition.x + x,
+                        z: centerPosition.z + z
+                    });
+                }
+            }
+            break;
+            
+        case "triangle":
+            // Generate triangle positions (equilateral triangle pointing north)
+            for (let x = -radius; x <= radius; x++) {
+                for (let z = -radius; z <= radius; z++) {
+                    if (isInTriangle(x, z, radius)) {
+                        positions.push({
+                            x: centerPosition.x + x,
+                            z: centerPosition.z + z
+                        });
+                    }
+                }
+            }
+            break;
+    }
+    
+    return positions;
+}
+
+// Check if point is inside triangle
+function isInTriangle(x, z, radius) {
+    // Equilateral triangle pointing north
+    // Vertices at: (0, -radius), (-radius*sqrt(3)/2, radius/2), (radius*sqrt(3)/2, radius/2)
+    
+    const height = radius * Math.sqrt(3) / 2;
+    
+    // Point 1: (0, -radius) - top point
+    // Point 2: (-height, radius/2) - bottom left
+    // Point 3: (height, radius/2) - bottom right
+    
+    const p1x = 0, p1z = -radius;
+    const p2x = -height, p2z = radius / 2;
+    const p3x = height, p3z = radius / 2;
+    
+    // Use barycentric coordinates to check if point is inside triangle
+    const denom = (p2z - p3z) * (p1x - p3x) + (p3x - p2x) * (p1z - p3z);
+    const a = ((p2z - p3z) * (x - p3x) + (p3x - p2x) * (z - p3z)) / denom;
+    const b = ((p3z - p1z) * (x - p3x) + (p1x - p3x) * (z - p3z)) / denom;
+    const c = 1 - a - b;
+    
+    return a >= 0 && b >= 0 && c >= 0;
+}
+
+// Process batch of plain positions
+function processPlainBatch(plainState) {
+    const batchSize = 25; // Positions per tick (each position processes multiple Y levels)
+    let processed = 0;
+    
+    while (processed < batchSize && plainState.currentIndex < plainState.positions.length) {
+        const position = plainState.positions[plainState.currentIndex];
+        
+        // Process this X,Z column from center Y up to max height
+        const result = processPlainColumn(plainState, position.x, position.z);
+        
+        plainState.blocksRemoved += result.removed;
+        plainState.blocksFailed += result.failed;
+        
+        if (result.removed > 0 || result.failed > 0) {
+            plainState.positionsProcessed++;
+        } else {
+            plainState.positionsSkipped++;
+        }
+        
+        plainState.currentIndex++;
+        processed++;
+    }
+    
+    // Show progress updates
+    if (plainState.currentIndex % 200 === 0 || plainState.currentIndex >= plainState.positions.length) {
+        const progress = Math.round((plainState.currentIndex / plainState.positions.length) * 100);
+        const elapsed = Math.round((Date.now() - plainState.startTime) / 1000);
+        const rate = elapsed > 0 ? Math.round(plainState.blocksRemoved / elapsed) : 0;
+        
+        plainState.player.sendMessage(
+            `§7Progress: ${progress}% (${plainState.currentIndex}/${plainState.positions.length}) - ${plainState.blocksRemoved.toLocaleString()} removed - ${rate}/s - ${elapsed}s`
+        );
+    }
+    
+    // Check if complete
+    if (plainState.currentIndex >= plainState.positions.length) {
+        finishPlainCreation(plainState);
+    }
+}
+
+// Process a single X,Z column for plain creation
+function processPlainColumn(plainState, x, z) {
+    let removed = 0;
+    let failed = 0;
+    
+    // Remove blocks from center Y + 1 up to max height
+    const startY = plainState.centerPosition.y + 1;
+    
+    for (let y = startY; y <= plainState.maxHeight; y++) {
+        const blockPos = { x, y, z };
+        
+        try {
+            const block = plainState.dimension.getBlock(blockPos);
+            
+            // Only remove if it's not already air
+            if (block.typeId !== "minecraft:air") {
+                plainState.dimension.setBlockPermutation(blockPos, BlockPermutation.resolve("minecraft:air"));
+                removed++;
+            }
+        } catch (e) {
+            failed++;
+            console.log(`Failed to remove block at ${x},${y},${z}: ${e}`);
+        }
+    }
+    
+    return { removed, failed };
+}
+
+// Finish plain creation
+function finishPlainCreation(plainState) {
+    const elapsed = Math.round((Date.now() - plainState.startTime) / 1000);
+    const rate = elapsed > 0 ? Math.round(plainState.blocksRemoved / elapsed) : 0;
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+    
+    plainState.player.sendMessage(`§aPlain creation complete!`);
+    plainState.player.sendMessage(`§7Mode: ${plainState.mode}, Radius: ${plainState.radius}, Max height: ${plainState.maxHeight}`);
+    plainState.player.sendMessage(`§7Positions processed: ${plainState.positionsProcessed.toLocaleString()}, Skipped: ${plainState.positionsSkipped.toLocaleString()}`);
+    plainState.player.sendMessage(`§7Blocks removed: ${plainState.blocksRemoved.toLocaleString()}, Failed: ${plainState.blocksFailed.toLocaleString()}`);
+    plainState.player.sendMessage(`§7Time: ${timeStr} (${rate.toLocaleString()} blocks/s)`);
+    plainState.player.sendMessage(`§7Area cleared above height ${plainState.centerPosition.y}`);
+    
+    system.clearRun(plainState.intervalId);
+}
+
+
+// Main get world info function
+function getWorldInfoFunction(origin, infoType) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Get world info requires a player source");
+                return;
+            }
+            
+            switch (infoType.toLowerCase()) {
+                case "time":
+                    showTimeInfo(player);
+                    break;
+                case "day":
+                    showDayInfo(player);
+                    break;
+                case "moonphase":
+                    showMoonPhaseInfo(player);
+                    break;
+                case "players":
+                    showPlayersInfo(player);
+                    break;
+                case "difficulty":
+                    showDifficultyInfo(player);
+                    break;
+                case "absolutetime":
+                    showAbsoluteTimeInfo(player);
+                    break;
+                case "weather":
+                    showWeatherInfo(player);
+                    break;
+                case "spawn":
+                    showSpawnInfo(player);
+                    break;
+                case "entities":
+                    showEntitiesInfo(player);
+                    break;
+                case "dimensions":
+                    showDimensionsInfo(player);
+                    break;
+                case "all":
+                    showAllInfo(player);
+                    break;
+                default:
+                    player.sendMessage(`§cInvalid info type: ${infoType}`);
+                    break;
+            }
+            
+        } catch (e) {
+            console.log("Failed to get world info: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to get world info: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Show time information
+function showTimeInfo(player) {
+    try {
+        const timeOfDay = world.getTimeOfDay();
+        const timeFormatted = formatMinecraftTime(timeOfDay);
+        const timePhase = getTimePhase(timeOfDay);
+        
+        player.sendMessage("§a--- Time Information ---");
+        player.sendMessage(`§7Time of Day: §f${timeOfDay} ticks`);
+        player.sendMessage(`§7Formatted Time: §f${timeFormatted}`);
+        player.sendMessage(`§7Time Phase: §f${timePhase}`);
+        player.sendMessage(`§7Progress to Night: §f${Math.round((timeOfDay / 24000) * 100)}%`);
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get time information");
+        console.log("Time info error: " + e);
+    }
+}
+
+// Show day information
+function showDayInfo(player) {
+    try {
+        const absoluteTime = world.getAbsoluteTime();
+        const currentDay = Math.floor(absoluteTime / 24000) + 1;
+        const timeOfDay = world.getTimeOfDay();
+        
+        player.sendMessage("§a--- Day Information ---");
+        player.sendMessage(`§7Current Day: §f${currentDay}`);
+        player.sendMessage(`§7Day Progress: §f${Math.round((timeOfDay / 24000) * 100)}%`);
+        player.sendMessage(`§7Days Since World Creation: §f${currentDay - 1}`);
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get day information");
+        console.log("Day info error: " + e);
+    }
+}
+
+// Show moon phase information
+function showMoonPhaseInfo(player) {
+    try {
+        const moonPhase = world.getMoonPhase();
+        const moonPhaseName = getMoonPhaseName(moonPhase);
+        const moonPhaseDescription = getMoonPhaseDescription(moonPhase);
+        
+        player.sendMessage("§a--- Moon Phase Information ---");
+        player.sendMessage(`§7Moon Phase: §f${moonPhase}`);
+        player.sendMessage(`§7Phase Name: §f${moonPhaseName}`);
+        player.sendMessage(`§7Description: §f${moonPhaseDescription}`);
+        player.sendMessage(`§7Monster Spawn Rate: §f${getMoonPhaseSpawnRate(moonPhase)}`);
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get moon phase information");
+        console.log("Moon phase info error: " + e);
+    }
+}
+
+// Show players information
+function showPlayersInfo(player) {
+    try {
+        const allPlayers = world.getAllPlayers();
+        const onlinePlayers = allPlayers.filter(p => p.isValid);
+        
+        player.sendMessage("§a--- Players Information ---");
+        player.sendMessage(`§7Total Players Online: §f${onlinePlayers.length}`);
+        
+        if (onlinePlayers.length > 0) {
+            player.sendMessage("§7Online Players:");
+            for (let i = 0; i < Math.min(onlinePlayers.length, 20); i++) { // Limit to 20 to avoid spam
+                const p = onlinePlayers[i];
+                const dimension = getDimensionName(p.dimension.id);
+                const gamemode = getPlayerGamemode(p);
+                player.sendMessage(`  §f${p.name} §7(${dimension}, ${gamemode})`);
+            }
+            
+            if (onlinePlayers.length > 20) {
+                player.sendMessage(`  §7... and ${onlinePlayers.length - 20} more players`);
+            }
+        }
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get players information");
+        console.log("Players info error: " + e);
+    }
+}
+
+// Show difficulty information
+function showDifficultyInfo(player) {
+    try {
+        // Note: Difficulty info might not be directly accessible via API
+        // This is a placeholder implementation
+        player.sendMessage("§a--- Difficulty Information ---");
+        player.sendMessage("§7World Difficulty: §fNot directly accessible via API");
+        player.sendMessage("§7Mob Spawning: §fEnabled (assumed)");
+        player.sendMessage("§7Mob Griefing: §fUse /gamerule mobGriefing to check");
+        player.sendMessage("§7Keep Inventory: §fUse /gamerule keepInventory to check");
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get difficulty information");
+        console.log("Difficulty info error: " + e);
+    }
+}
+
+// Show absolute time information
+function showAbsoluteTimeInfo(player) {
+    try {
+        const absoluteTime = world.getAbsoluteTime();
+        const totalDays = Math.floor(absoluteTime / 24000);
+        const currentDayTime = absoluteTime % 24000;
+        const realTimeElapsed = calculateRealTimeElapsed(absoluteTime);
+        
+        player.sendMessage("§a--- Absolute Time Information ---");
+        player.sendMessage(`§7Absolute Time: §f${absoluteTime.toLocaleString()} ticks`);
+        player.sendMessage(`§7Total Days Elapsed: §f${totalDays}`);
+        player.sendMessage(`§7Current Day Time: §f${currentDayTime} ticks`);
+        player.sendMessage(`§7Estimated Real Time: §f${realTimeElapsed}`);
+        player.sendMessage(`§7World Age: §f${Math.round(absoluteTime / 1200)} minutes`);
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get absolute time information");
+        console.log("Absolute time info error: " + e);
+    }
+}
+
+// Show weather information
+function showWeatherInfo(player) {
+    try {
+        // Note: Weather info might require dimension-specific queries
+        const dimension = player.dimension;
+        
+        player.sendMessage("§a--- Weather Information ---");
+        player.sendMessage(`§7Current Dimension: §f${getDimensionName(dimension.id)}`);
+        player.sendMessage("§7Weather: §fAPI access limited");
+        player.sendMessage("§7Use vanilla /weather query for detailed info");
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get weather information");
+        console.log("Weather info error: " + e);
+    }
+}
+
+// Show spawn information
+function showSpawnInfo(player) {
+    try {
+        const spawnPoint = world.getDefaultSpawnLocation();
+        
+        player.sendMessage("§a--- Spawn Information ---");
+        player.sendMessage(`§7World Spawn: §f${spawnPoint.x}, ${spawnPoint.y}, ${spawnPoint.z}`);
+        player.sendMessage(`§7Your Location: §f${Math.floor(player.location.x)}, ${Math.floor(player.location.y)}, ${Math.floor(player.location.z)}`);
+        
+        // Calculate distance to spawn
+        const distance = Math.sqrt(
+            Math.pow(player.location.x - spawnPoint.x, 2) +
+            Math.pow(player.location.z - spawnPoint.z, 2)
+        );
+        player.sendMessage(`§7Distance to Spawn: §f${Math.round(distance)} blocks`);
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get spawn information");
+        console.log("Spawn info error: " + e);
+    }
+}
+
+// Show entities information
+function showEntitiesInfo(player) {
+    try {
+        const dimension = player.dimension;
+        const nearbyEntities = dimension.getEntities({ maxDistance: 100, location: player.location });
+        const allEntities = dimension.getEntities();
+        
+        // Count entities by type
+        const entityCounts = {};
+        for (const entity of allEntities) {
+            const type = entity.typeId;
+            entityCounts[type] = (entityCounts[type] || 0) + 1;
+        }
+        
+        player.sendMessage("§a--- Entities Information ---");
+        player.sendMessage(`§7Total Entities in Dimension: §f${allEntities.length}`);
+        player.sendMessage(`§7Entities within 100 blocks: §f${nearbyEntities.length}`);
+        
+        // Show top entity types
+        const sortedEntities = Object.entries(entityCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10);
+        
+        if (sortedEntities.length > 0) {
+            player.sendMessage("§7Top Entity Types:");
+            for (const [type, count] of sortedEntities) {
+                const simpleName = type.replace("minecraft:", "");
+                player.sendMessage(`  §f${simpleName}: §7${count}`);
+            }
+        }
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get entities information");
+        console.log("Entities info error: " + e);
+    }
+}
+
+// Show dimensions information
+function showDimensionsInfo(player) {
+    try {
+        const currentDimension = getDimensionName(player.dimension.id);
+        
+        player.sendMessage("§a--- Dimensions Information ---");
+        player.sendMessage(`§7Current Dimension: §f${currentDimension}`);
+        player.sendMessage("§7Available Dimensions:");
+        player.sendMessage("  §fOverworld §7(minecraft:overworld)");
+        player.sendMessage("  §fNether §7(minecraft:nether)");
+        player.sendMessage("  §fEnd §7(minecraft:the_end)");
+        
+        // Show current dimension details
+        const dim = player.dimension;
+        player.sendMessage(`§7Current Dimension ID: §f${dim.id}`);
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to get dimensions information");
+        console.log("Dimensions info error: " + e);
+    }
+}
+
+// Show all information
+function showAllInfo(player) {
+    player.sendMessage("§e=== WORLD INFORMATION SUMMARY ===");
+    showTimeInfo(player);
+    player.sendMessage("");
+    showDayInfo(player);
+    player.sendMessage("");
+    showMoonPhaseInfo(player);
+    player.sendMessage("");
+    showPlayersInfo(player);
+    player.sendMessage("");
+    showSpawnInfo(player);
+    player.sendMessage("");
+    showEntitiesInfo(player);
+    player.sendMessage("");
+    showDimensionsInfo(player);
+    player.sendMessage("§e=== END SUMMARY ===");
+}
+
+// Helper functions
+function formatMinecraftTime(ticks) {
+    const totalMinutes = Math.floor((ticks + 6000) / 1000 * 60 / 60); // Offset by 6000 for 6 AM start
+    const hours = Math.floor(totalMinutes / 60) % 24;
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+function getTimePhase(ticks) {
+    if (ticks >= 23000 || ticks < 1000) return "Night";
+    if (ticks >= 1000 && ticks < 6000) return "Morning";
+    if (ticks >= 6000 && ticks < 12000) return "Day";
+    if (ticks >= 12000 && ticks < 18000) return "Afternoon";
+    if (ticks >= 18000 && ticks < 23000) return "Evening";
+    return "Unknown";
+}
+
+function getMoonPhaseName(phase) {
+    const phases = [
+        "Full Moon", "Waning Gibbous", "Third Quarter", "Waning Crescent",
+        "New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous"
+    ];
+    return phases[phase] || "Unknown";
+}
+
+function getMoonPhaseDescription(phase) {
+    const descriptions = [
+        "Brightest night, highest mob spawn rate",
+        "Bright night, high mob spawn rate",
+        "Moderate lighting, normal spawn rate",
+        "Dim night, reduced spawn rate",
+        "Darkest night, lowest mob spawn rate",
+        "Dim night, reduced spawn rate",
+        "Moderate lighting, normal spawn rate",
+        "Bright night, high mob spawn rate"
+    ];
+    return descriptions[phase] || "Unknown effect";
+}
+
+function getMoonPhaseSpawnRate(phase) {
+    // Moon phase affects spawn rates (0 = full moon = highest)
+    const rates = ["Maximum", "High", "Normal", "Reduced", "Minimum", "Reduced", "Normal", "High"];
+    return rates[phase] || "Unknown";
+}
+
+function getDimensionName(dimensionId) {
+    switch (dimensionId) {
+        case "minecraft:overworld": return "Overworld";
+        case "minecraft:nether": return "Nether";
+        case "minecraft:the_end": return "End";
+        default: return dimensionId;
+    }
+}
+
+function getPlayerGamemode(player) {
+    // This would require access to player gamemode, which might not be directly available
+    return "Unknown"; // Placeholder
+}
+
+function calculateRealTimeElapsed(absoluteTime) {
+    // 20 ticks per second in Minecraft
+    const seconds = Math.floor(absoluteTime / 20);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${remainingSeconds}s`;
+    } else {
+        return `${remainingSeconds}s`;
+    }
+}
+
+
