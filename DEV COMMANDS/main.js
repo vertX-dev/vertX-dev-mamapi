@@ -7,7 +7,8 @@ import {
     EquipmentSlot,
     BlockPermutation,
     ItemStack,
-    MoonPhase
+    MoonPhase,
+    EnchantmentSlot
 } from "@minecraft/server";
 
 import {
@@ -54,6 +55,7 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerEnum("vertx:SurfaceMode", ["circle", "square"]);
     init.customCommandRegistry.registerEnum("vertx:PlainMode", ["square", "triangle", "circle"]);
     init.customCommandRegistry.registerEnum("vertx:WorldInfoType", ["time", "day", "moonphase", "players", "difficulty", "absolutetime", "weather", "spawn", "entities", "dimensions", "all"]);
+    init.customCommandRegistry.registerEnum("vertx:EnchantVariant", ["all","sword","swordZombie","axe","pickaxe","shovel","bowInfinity","bowMending","crossbow","helmet","chestplate","leggings","boots","tridentLoyalty","tridentRiptide","fishing_rod"]);
 
 
     
@@ -541,6 +543,89 @@ system.beforeEvents.startup.subscribe((init) => {
         permissionLevel: CommandPermissionLevel.GameDirectors
     };
 
+    const hiddenBlocksCommand = {
+        name: "vertx:hblocks",
+        description: "Open menu with all hidden blocks",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };
+    
+    const copyEntityToolCommand = {
+        name: "vertx:copyentitytool",
+        description: "Get tool that allow copy entities",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };    
+    
+    const loadEntityCommand = {
+        name: "vertx:loadentity",
+        description: "Spawn entities with optional equipment and effects",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Location, name: "Location"},
+            { type: CustomCommandParamType.Integer, name: "Amount"},
+            { type: CustomCommandParamType.String, name: "EntityId"}
+        ]
+    };
+    
+    const maxEnchantCommand = {
+        name: "vertx:maxenchant",
+        description: "Apply maximum enchantments to held item",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Enum, name: "vertx:EnchantVariant" },
+            { type: CustomCommandParamType.EntitySelector, name: "Target player" }
+        ]
+    };    
+    
+    const mobFightCommand = {
+        name: "vertx:mobfight",
+        description: "Get tool that allow copy entities",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.EntitySelector, name: "Entity"},
+            { type: CustomCommandParamType.EntitySelector, name: "Entity"}
+        ]
+    };    
+    
+    const savePositionCommand = {
+        name: "vertx:saveposition",
+        description: "Save current position with a name",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Location name" }
+        ]
+    };
+    
+    const tpsCommand = {
+        name: "vertx:tps",
+        description: "Teleport to saved position",
+        permissionLevel: CommandPermissionLevel.Any,
+        optionalParameters: [
+            { type: CustomCommandParamType.String, name: "Location name (leave empty for GUI)" }
+        ]
+    };
+    
+    const tpsgCommand = {
+        name: "vertx:tpsg",
+        description: "Teleport to saved position with GUI",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const rtpCommand = {
+        name: "vertx:rtp",
+        description: "Random teleport within specified range",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Integer, name: "Min distance (default: 100)" },
+            { type: CustomCommandParamType.Integer, name: "Max distance (default: 2000)" }
+        ]
+    };    
+    
+    const clearPositionsCommand = {
+        name: "vertx:clearpositions",
+        description: "Clear all saved positions",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
     
     
     // Register all commands
@@ -587,8 +672,18 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(clearVeinToolCommand, clearVeinToolFunction);
     init.customCommandRegistry.registerCommand(veinToolInfoCommand, veinToolInfoFunction);
     init.customCommandRegistry.registerCommand(generateVeinsCommand, generateVeinsFunction);
+    init.customCommandRegistry.registerCommand(hiddenBlocksCommand, hiddenBlocksFunction);
+    init.customCommandRegistry.registerCommand(copyEntityToolCommand, copyEntityToolFunction);
+    init.customCommandRegistry.registerCommand(loadEntityCommand, loadEntityFunction);
+    init.customCommandRegistry.registerCommand(maxEnchantCommand, maxEnchantFunction);
+    init.customCommandRegistry.registerCommand(mobFightCommand, mobFightFunction);
+    init.customCommandRegistry.registerCommand(savePositionCommand, savePositionFunction);
+    init.customCommandRegistry.registerCommand(tpsCommand, tpsFunction);
+    init.customCommandRegistry.registerCommand(tpsgCommand, tpsgFunction);
+    init.customCommandRegistry.registerCommand(rtpCommand, rtpFunction);
+    init.customCommandRegistry.registerCommand(clearPositionsCommand, clearPositionsFunction);
 
-    
+
 });
 
 // Original functions
@@ -799,38 +894,6 @@ function explosionFunction(origin, size, location = origin.sourceEntity?.locatio
     return { status: CustomCommandStatus.Success };
 }
 
-// FIXED: createMultiBlockFunction - Creates an item with visible block list in lore
-// function createMultiBlockFunction(origin, blockId, name, blockList, entities = [origin.sourceEntity]) {
-//     system.run(() => {
-//         for (const entity of entities) {
-//             try {
-//                 const equippable = entity.getComponent("minecraft:equippable");
-//                 
-//                 // Create new item of the specified block type
-//                 const newItem = new ItemStack(blockId, 1);
-//                 newItem.nameTag = name;
-//                 
-//                 // Add visible lore showing the block list
-//                 const blocks = blockList.split(',').map(block => block.trim());
-//                 const loreLines = [
-//                     "§6Multi-Block Item",
-//                     "§7Blocks:",
-//                     ...blocks.map(block => `§8- ${block}`)
-//                 ];
-//                 newItem.setLore(loreLines);
-//                 
-//                 equippable.setEquipment(EquipmentSlot.Mainhand, newItem);
-//                 entity.sendMessage(`§aCreated multi-block item: ${name}`);
-//             } catch (e) {
-//                 console.log("failed to create multi-block for " + entity.typeId + ": " + e);
-//             }
-//         }
-//     });
-//     
-//     return { status: CustomCommandStatus.Success };
-// }
-
-// FIXED: createMultiBlockGUIFunction - Shows GUI to create multi-block item
 function createMultiBlockGUIFunction(origin) {
     system.run(() => {
         try {
@@ -6538,3 +6601,961 @@ function finishVeinGeneration(veinState) {
     
     system.clearRun(veinState.intervalId);
 }
+
+
+function hiddenBlocksFunction(origin) {
+    system.run(() => {
+        const player = origin.sourceEntity;
+        
+        const hiddenBlocks = [
+            {
+                id: "minecraft:command_block",
+                name: "Command Block",
+                texture: "textures/blocks/command_block"
+            },
+            {
+                id: "minecraft:chain_command_block",
+                name: "Chain Command Block",
+                texture: "textures/blocks/chain_command_block_front_mipmap"
+            },
+            {
+                id: "minecraft:repeating_command_block",
+                name: "Repeating Command Block",
+                texture: "textures/blocks/repeating_command_block_front_mipmap"
+            },
+            {
+                id: "minecraft:barrier",
+                name: "Barrier",
+                texture: "textures/blocks/barrier"
+            },
+            {
+                id: "minecraft:structure_block",
+                name: "Structure Block",
+                texture: "textures/blocks/structure_block"
+            },
+            {
+                id: "minecraft:jigsaw",
+                name: "Jigsaw Block",
+                texture: "textures/blocks/jigsaw_front"
+            },
+            {
+                id: "minecraft:structure_void",
+                name: "Structure Void",
+                texture: "textures/blocks/structure_void"
+            },
+            {
+                id: "minecraft:allow",
+                name: "Allow",
+                texture: "textures/blocks/build_allow"
+            },
+            {
+                id: "minecraft:deny",
+                name: "Deny",
+                texture: "textures/blocks/build_deny"
+            },
+            {
+                id: "minecraft:border_block",
+                name: "Border Block",
+                texture: "textures/blocks/border"
+            },
+            {
+                id: "minecraft:light_block",
+                name: "Light Block",
+                texture: "textures/items/light_block_15" // 0-15 variants
+            }
+        ];
+        
+        const form = new ActionFormData()
+            .title("§5HIDDEN BLOCKS");
+        
+        for (const block of hiddenBlocks) {
+            form.button(block.name, block.texture);
+        }
+        
+        form.show(player).then((r) => {
+            if (!r.canceled) {
+                player.runCommand(`give @s ${hiddenBlocks[r.selection].id} 1 0`);
+                player.sendMessage(`You can get this block by using\n§e/give @s ${hiddenBlocks[r.selection].id}`);
+            }
+        });
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+
+// Complete copy entity tool function
+function copyEntityToolFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Get copy entity tool requires a player");
+                return;
+            }
+            
+            createCopyEntityTool(player);
+            
+        } catch (e) {
+            console.log("Failed to create copy entity tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create copy entity tool: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Create copy entity tool
+function createCopyEntityTool(player) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        
+        // Create copy entity tool (lead with special lore)
+        const copyTool = new ItemStack("minecraft:golden_sword", 1);
+        copyTool.nameTag = "§aCopy Entity Tool";
+        
+        const loreLines = [
+            "§7Right-click entities to copy them",
+            "§7Right-click blocks to spawn copied entity",
+            "§8§l--- COPIED ENTITIES ---",
+            "§7No entities copied yet"
+        ];
+        
+        copyTool.setLore(loreLines);
+        
+        equippable.setEquipment(EquipmentSlot.Mainhand, copyTool);
+        
+        player.sendMessage("§aCopy Entity Tool created!");
+        player.sendMessage("§7Right-click entities to copy, right-click blocks to spawn");
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to create copy entity tool: ${e}`);
+        console.log("Failed to create copy entity tool: " + e);
+    }
+}
+
+// Generate random 5-character base64 string for entity code
+function generateEntityCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-';
+    let result = '';
+    for (let i = 0; i < 5; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// Extract entity data for copying
+function extractEntityData(entity) {
+    const data = {
+        typeId: entity.typeId,
+        nameTag: entity.nameTag || "",
+        health: null,
+        maxHealth: null,
+        tags: [],
+        effects: []
+    };
+    
+    try {
+        // Get health info
+        const health = entity.getComponent("minecraft:health");
+        if (health) {
+            data.health = health.currentValue;
+            data.maxHealth = health.effectiveMax;
+        }
+    } catch (e) {
+        // Health component not available
+    }
+    
+    try {
+        // Get tags
+        data.tags = entity.getTags();
+    } catch (e) {
+        // Tags not available
+    }
+    
+    try {
+        // Get effects
+        const effects = entity.getEffects();
+        for (const effect of effects) {
+            data.effects.push({
+                type: effect.typeId,
+                duration: effect.duration,
+                amplifier: effect.amplifier
+            });
+        }
+    } catch (e) {
+        // Effects not available
+    }
+    
+    return data;
+}
+
+// Create lore from entity data
+function createEntityLore(entityData, entityCode) {
+    const lore = [];
+    
+    // Basic info
+    lore.push(`§6Code: §f${entityCode}`);
+    lore.push(`§7Type: §f${entityData.typeId.replace("minecraft:", "")}`);
+    
+    if (entityData.nameTag) {
+        lore.push(`§7Name: §f${entityData.nameTag}`);
+    }
+    
+    // Health info
+    if (entityData.health !== null) {
+        lore.push(`§7Health: §f${Math.round(entityData.health)}/${Math.round(entityData.maxHealth)}`);
+    }
+    
+    // Tags
+    if (entityData.tags.length > 0) {
+        lore.push(`§7Tags: §f${entityData.tags.slice(0, 5).join(", ")}${entityData.tags.length > 5 ? "..." : ""}`);
+    }
+    
+    // Effects
+    if (entityData.effects.length > 0) {
+        const effectNames = entityData.effects.slice(0, 5).map(effect => 
+            effect.type.replace("minecraft:", "") + (effect.amplifier > 0 ? ` ${effect.amplifier + 1}` : "")
+        );
+        lore.push(`§7Effects: §f${effectNames.join(", ")}${entityData.effects.length > 2 ? "..." : ""}`);
+    }
+    
+    return lore;
+}
+
+// Save entity data as structure
+function saveEntityStructure(player, entityData, entityCode, entity) {
+    try {
+        ///structure save zombie ~~~~~~ true disk false
+        player.runCommand(`structure save ${entityCode} ${entity.location.x} ${entity.location.y} ${entity.location.z} ${entity.location.x} ${entity.location.y} ${entity.location.z} true disk false`);
+        player.sendMessage(`§aEntity saved with code: §e${entityCode}`);
+            
+        return true;
+        
+    } catch (e) {
+        console.log(`Failed to save entity structure: ${e}`);
+        return false;
+    }
+}
+
+// Load entity from structure/code
+function loadEntityFunction(origin, location, amount, entityCode) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) return;
+            
+            // Spawn entities
+            let spawned = 0;
+            let failed = 0;
+            
+            for (let i = 0; i < amount; i++) {
+                try {
+                    player.runCommand(`structure load ${entityCode} ${location.x} ${location.y} ${location.z}`);
+                    spawned++;
+                } catch (e) {
+                    failed++;
+                    console.log(`Failed to spawn entity: ${e}`);
+                }
+            }
+            
+            player.sendMessage(`§aSpawned: ${spawned}, Failed: ${failed}`);
+            
+        } catch (e) {
+            console.log("Failed to load entity: " + e);
+            if (player) {
+                player.sendMessage(`§cFailed to load entity: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Event handler for copy entity tool usage
+world.afterEvents.itemUse.subscribe((ev) => {
+    const player = ev.source;
+    const itemStack = ev.itemStack;
+    const entities = player.getEntitiesFromViewDirection({maxDistance: 15});
+    
+    let entity;
+    
+    if (entities && entities[0] && entities[0].entity) {
+        entity = entities[0].entity;
+        let distance = entities[0].distance;
+        for (const e of entities) {
+            if (e.distance < distance) {
+                entity = e.entity;
+                distance = e.distance;
+            }
+        }
+    }
+    
+    if (entity && itemStack && itemStack.nameTag.includes("§aCopy Entity Tool") && itemStack.getLore().includes("§7No entities copied yet")) {
+        try {
+            // Copy the entity
+            const entityData = extractEntityData(entity);
+            const entityCode = generateEntityCode();
+            
+            // Save entity data
+            const saved = saveEntityStructure(player, entityData, entityCode, entity);
+                
+            if (saved) {
+                // Update tool lore
+                const equippable = player.getComponent("minecraft:equippable");
+                const currentTool = equippable.getEquipment(EquipmentSlot.Mainhand);
+                    
+                if (currentTool) {
+                    const newTool = currentTool.clone();
+                    const currentLore = newTool.getLore();
+                        
+                    // Remove "No entities copied yet" if present
+                    const filteredLore = currentLore.filter(line => !line.includes("No entities copied yet"));
+                        
+                    // Add new entity info
+                    const entityLore = createEntityLore(entityData, entityCode);
+                    const newLore = [
+                        ...filteredLore.slice(0, 3), // Keep header
+                        `§8--- Entity ---`,
+                        ...entityLore,
+                        ""
+                    ];
+                        
+                    newTool.setLore(newLore);
+                    equippable.setEquipment(EquipmentSlot.Mainhand, newTool);
+                }
+                    
+                player.sendMessage(`§aEntity copied! Code: §e${entityCode}`);
+                player.sendMessage(`§7Entity type: ${entityData.typeId.replace("minecraft:", "")}`);
+            }
+            
+        } catch (e) {
+            console.log("Error using copy entity tool: " + e);
+            player.sendMessage("§cFailed to use copy entity tool!");
+        }
+    } else if (itemStack?.nameTag?.includes("§aCopy Entity Tool")) {
+        spawnEntityFromTool(player, itemStack);
+    }
+});
+
+// Spawn entity from copy tool
+function spawnEntityFromTool(player, copyTool) {
+    system.run(() => {
+        try {
+            let location = player.location;
+            
+            const block = player.getBlockFromViewDirection({ maxDistance: 50});
+            if (block && block.block && block.block.location) {
+                location = block.block.location;
+            }
+            
+            const amount = 1;
+            const loreArray = copyTool.getLore();
+            let entityCode = "";
+            
+            for (const lore of loreArray) {
+                if (lore.startsWith("§6Code: §f")) {
+                    entityCode = lore.slice(10);
+                    break;
+                }
+            }
+            if (entityCode == "") {
+                player.sendMessage("No copied entities found in tool");
+                return;
+            }
+            // Spawn entities
+            let spawned = 0;
+            let failed = 0;
+            
+            for (let i = 0; i < amount; i++) {
+                try {
+                    player.runCommand(`structure load ${entityCode} ${location.x} ${location.y + 1} ${location.z}`);
+                    spawned++;
+                } catch (e) {
+                    failed++;
+                    console.log(`Failed to spawn entity: ${e}`);
+                }
+            }
+            
+            player.sendMessage(`§aSpawned: ${spawned}, Failed: ${failed}`);
+            
+        } catch (e) {
+            console.log("Failed to load entity: " + e);
+            if (player) {
+                player.sendMessage(`§cFailed to load entity: ${e.message || e}`);
+            }
+        }
+    });
+}
+
+
+// Main max enchant function
+function maxEnchantFunction(origin, variant = "all", targets = [origin.sourceEntity]) {
+    system.run(() => {
+        try {
+            for (const target of targets) {
+                applyMaxEnchantments(target, variant);
+            }
+        } catch (e) {
+            console.log("Failed to execute max enchant command: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to apply enchantments: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Apply max enchantments to player's held item
+function applyMaxEnchantments(player, variant) {
+    try {
+        const enchants = ENCHANT_DATA.filter(ed => ed.slot == variant);
+        for (const enchant of enchants) {
+            player.runCommand("enchant @s " + enchant.id + " " + enchant.level);
+        }
+    } catch (e) {
+        console.log(`Error applying enchantments: ${e}`);
+        return { success: false, reason: `Error applying enchantments: ${e.message || e}` };
+    }
+}
+
+const ENCHANT_DATA = [
+    // Universal enchants
+    { id: "unbreaking", slot: "all", level: 3 },
+    { id: "mending", slot: "all", level: 1 },
+
+    // Sword - default (Sharpness build)
+    { id: "sharpness", slot: "sword", level: 5 },
+    { id: "fire_aspect", slot: "sword", level: 2 },
+    { id: "looting", slot: "sword", level: 3 },
+    { id: "unbreaking", slot: "sword", level: 3 },
+    { id: "mending", slot: "sword", level: 1 },
+
+    // Sword - undead (Smite build)
+    { id: "smite", slot: "swordZombie", level: 5 },
+    { id: "fire_aspect", slot: "swordZombie", level: 2 },
+    { id: "looting", slot: "swordZombie", level: 3 },
+    { id: "unbreaking", slot: "swordZombie", level: 3 },
+    { id: "mending", slot: "swordZombie", level: 1 },
+
+    // Axe
+    { id: "sharpness", slot: "axe", level: 5 },
+    { id: "efficiency", slot: "axe", level: 5 },
+    { id: "unbreaking", slot: "axe", level: 3 },
+    { id: "mending", slot: "axe", level: 1 },
+
+    // Pickaxe
+    { id: "efficiency", slot: "pickaxe", level: 5 },
+    { id: "fortune", slot: "pickaxe", level: 3 },
+    { id: "unbreaking", slot: "pickaxe", level: 3 },
+    { id: "mending", slot: "pickaxe", level: 1 },
+
+    // Shovel
+    { id: "efficiency", slot: "shovel", level: 5 },
+    { id: "fortune", slot: "shovel", level: 3 },
+    { id: "unbreaking", slot: "shovel", level: 3 },
+    { id: "mending", slot: "shovel", level: 1 },
+
+    // Bow (Infinity build)
+    { id: "power", slot: "bowInfinity", level: 5 },
+    { id: "infinity", slot: "bowInfinity", level: 1 },
+    { id: "punch", slot: "bowInfinity", level: 2 },
+    { id: "flame", slot: "bowInfinity", level: 1 },
+    { id: "unbreaking", slot: "bowInfinity", level: 3 },
+
+    // Bow (Mending build)
+    { id: "power", slot: "bowMending", level: 5 },
+    { id: "mending", slot: "bowMending", level: 1 },
+    { id: "punch", slot: "bowMending", level: 2 },
+    { id: "flame", slot: "bowMending", level: 1 },
+    { id: "unbreaking", slot: "bowMending", level: 3 },
+
+    // Crossbow
+    { id: "quick_charge", slot: "crossbow", level: 3 },
+    { id: "multishot", slot: "crossbow", level: 1 },
+    { id: "unbreaking", slot: "crossbow", level: 3 },
+    { id: "mending", slot: "crossbow", level: 1 },
+
+    // Helmet
+    { id: "protection", slot: "helmet", level: 4 },
+    { id: "respiration", slot: "helmet", level: 3 },
+    { id: "aqua_affinity", slot: "helmet", level: 1 },
+    { id: "unbreaking", slot: "helmet", level: 3 },
+    { id: "mending", slot: "helmet", level: 1 },
+
+    // Chestplate
+    { id: "protection", slot: "chestplate", level: 4 },
+    { id: "thorns", slot: "chestplate", level: 3 },
+    { id: "unbreaking", slot: "chestplate", level: 3 },
+    { id: "mending", slot: "chestplate", level: 1 },
+
+    // Leggings
+    { id: "protection", slot: "leggings", level: 4 },
+    { id: "unbreaking", slot: "leggings", level: 3 },
+    { id: "mending", slot: "leggings", level: 1 },
+
+    // Boots
+    { id: "protection", slot: "boots", level: 4 },
+    { id: "feather_falling", slot: "boots", level: 4 },
+    { id: "depth_strider", slot: "boots", level: 3 },
+    { id: "unbreaking", slot: "boots", level: 3 },
+    { id: "mending", slot: "boots", level: 1 },
+
+    // Trident (Loyalty build)
+    { id: "impaling", slot: "tridentLoyalty", level: 5 },
+    { id: "loyalty", slot: "tridentLoyalty", level: 3 },
+    { id: "channeling", slot: "tridentLoyalty", level: 1 },
+    { id: "unbreaking", slot: "tridentLoyalty", level: 3 },
+    { id: "mending", slot: "tridentLoyalty", level: 1 },
+
+    // Trident (Riptide build)
+    { id: "impaling", slot: "tridentRiptide", level: 5 },
+    { id: "riptide", slot: "tridentRiptide", level: 3 },
+    { id: "unbreaking", slot: "tridentRiptide", level: 3 },
+    { id: "mending", slot: "tridentRiptide", level: 1 },
+
+    // Fishing Rod
+    { id: "luck_of_the_sea", slot: "fishing_rod", level: 3 },
+    { id: "lure", slot: "fishing_rod", level: 3 },
+    { id: "unbreaking", slot: "fishing_rod", level: 3 },
+    { id: "mending", slot: "fishing_rod", level: 1 }
+];
+
+
+function mobFightFunction(origin, e1, e2) {
+    system.run(() => {
+        const entity1 = e1[0];
+        const entity2 = e2[0];
+        
+        const code = generateEntityCode();
+        
+        entity1.addTag("entity1"+code);
+        entity2.addTag("entity2"+code);
+        
+        entity1.runCommand(`damage @e[tag=entity2${code}] 0 entity_attack entity @s`);
+        entity2.runCommand(`damage @e[tag=entity1${code}] 0 entity_attack entity @s`);
+        
+        entity1.removeTag("entity1"+code);
+        entity2.removeTag("entity2"+code);
+    });
+
+    return { status: CustomCommandStatus.Success };
+}
+
+
+// Save position function
+function savePositionFunction(origin, locationName) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Save position requires a player");
+                return;
+            }
+            
+            // Validate location name (alphanumeric and underscores only)
+            const cleanName = locationName.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+            if (cleanName.length === 0) {
+                player.sendMessage("§cInvalid location name! Use only letters, numbers, and underscores.");
+                return;
+            }
+            
+            if (cleanName.length > 20) {
+                player.sendMessage("§cLocation name too long! Maximum 20 characters.");
+                return;
+            }
+            
+            // Get current position and dimension
+            const location = player.location;
+            const dimension = getDimensionShortName(player.dimension.id);
+            
+            // Create position tag
+            const positionTag = `tps_${dimension}_${Math.floor(location.x)}_${Math.floor(location.y)}_${Math.floor(location.z)}_${cleanName}`;
+            
+            // Check if location name already exists
+            const existingTags = player.getTags().filter(tag => tag.startsWith("tps_") && tag.endsWith(`_${cleanName}`));
+            if (existingTags.length > 0) {
+                // Remove old tag with same name
+                for (const oldTag of existingTags) {
+                    player.removeTag(oldTag);
+                }
+                player.sendMessage(`§eUpdated existing location: ${cleanName}`);
+            }
+            
+            // Add new position tag
+            player.addTag(positionTag);
+            
+            player.sendMessage(`§aPosition saved as: §f${cleanName}`);
+            player.sendMessage(`§7Location: ${Math.floor(location.x)}, ${Math.floor(location.y)}, ${Math.floor(location.z)} (${dimension})`);
+            
+        } catch (e) {
+            console.log("Failed to save position: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to save position: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Teleport to saved position function (text command)
+function tpsFunction(origin, locationName = null) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("TPS requires a player");
+                return;
+            }
+            
+            if (!locationName) {
+                // Open GUI if no location specified
+                showTeleportGUI(player);
+                return;
+            }
+            
+            // Find and teleport to named location
+            const cleanName = locationName.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+            teleportToSavedLocation(player, cleanName);
+            
+        } catch (e) {
+            console.log("Failed to teleport: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to teleport: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Teleport to saved position GUI function
+function tpsgFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("TPSG requires a player");
+                return;
+            }
+            
+            showTeleportGUI(player);
+            
+        } catch (e) {
+            console.log("Failed to open teleport GUI: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to open teleport GUI: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Show teleport GUI
+function showTeleportGUI(player) {
+    try {
+        // Get all saved positions
+        const savedPositions = getSavedPositions(player);
+        
+        if (savedPositions.length === 0) {
+            player.sendMessage("§cNo saved positions found! Use /saveposition <name> to save locations.");
+            return;
+        }
+        
+        // Create action form with buttons for each position
+        const form = new ActionFormData()
+            .title("§6Teleport to Saved Position")
+            .body(`§8Select a location to teleport to:\n§2You have ${savedPositions.length} saved position${savedPositions.length > 1 ? 's' : ''}`);
+        
+        // Add button for each saved position
+        for (const pos of savedPositions) {
+            const buttonText = `§2${pos.name}\n§8${pos.x}, ${pos.y}, ${pos.z} (${pos.dimension})`;
+            form.button(buttonText);
+        }
+        
+        // Add management buttons
+        form.button("§4Delete Position\n§4Remove a saved location");
+        form.button("§eList All Positions\n§eShow all saved locations in chat");
+        
+        form.show(player).then((response) => {
+            if (response.canceled) return;
+            
+            const selection = response.selection;
+            
+            if (selection < savedPositions.length) {
+                // Teleport to selected position
+                const selectedPos = savedPositions[selection];
+                teleportToPosition(player, selectedPos);
+            } else if (selection === savedPositions.length) {
+                // Delete position
+                showDeletePositionGUI(player, savedPositions);
+            } else if (selection === savedPositions.length + 1) {
+                // List all positions
+                listAllPositions(player, savedPositions);
+            }
+        });
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to open teleport GUI!");
+        console.log("Failed to show teleport GUI: " + e);
+    }
+}
+
+// Show delete position GUI
+function showDeletePositionGUI(player, savedPositions) {
+    const form = new ActionFormData()
+        .title("§4Delete Saved Position")
+        .body("§4Select a position to delete:");
+    
+    for (const pos of savedPositions) {
+        const buttonText = `§2${pos.name}\n§8${pos.x}, ${pos.y}, ${pos.z} (${pos.dimension})`;
+        form.button(buttonText);
+    }
+    
+    form.show(player).then((response) => {
+        if (response.canceled) return;
+        
+        const selectedPos = savedPositions[response.selection];
+        
+        // Remove the tag
+        player.removeTag(selectedPos.fullTag);
+        player.sendMessage(`§aDeleted saved position: §f${selectedPos.name}`);
+    });
+}
+
+// Get all saved positions from player tags
+function getSavedPositions(player) {
+    const positions = [];
+    const tags = player.getTags();
+    
+    for (const tag of tags) {
+        if (tag.startsWith("tps_")) {
+            const parsed = parsePositionTag(tag);
+            if (parsed) {
+                positions.push(parsed);
+            }
+        }
+    }
+    
+    // Sort by name
+    positions.sort((a, b) => a.name.localeCompare(b.name));
+    
+    return positions;
+}
+
+// Parse position tag into readable format
+function parsePositionTag(tag) {
+    try {
+        // Format: tps_dim_x_y_z_name
+        const parts = tag.split('_');
+        if (parts.length < 6) return null;
+        
+        const dimension = parts[1];
+        const x = parseInt(parts[2]);
+        const y = parseInt(parts[3]);
+        const z = parseInt(parts[4]);
+        const name = parts.slice(5).join('_'); // Handle names with underscores
+        
+        return {
+            fullTag: tag,
+            dimension: dimension,
+            x: x,
+            y: y,
+            z: z,
+            name: name,
+            dimensionFull: getDimensionFullName(dimension)
+        };
+    } catch (e) {
+        console.log(`Failed to parse position tag: ${tag}`);
+        return null;
+    }
+}
+
+// Teleport to saved location by name
+function teleportToSavedLocation(player, locationName) {
+    const savedPositions = getSavedPositions(player);
+    const targetPosition = savedPositions.find(pos => pos.name === locationName);
+    
+    if (!targetPosition) {
+        player.sendMessage(`§cSaved location '${locationName}' not found!`);
+        
+        if (savedPositions.length > 0) {
+            const suggestions = savedPositions.slice(0, 5).map(pos => pos.name);
+            player.sendMessage(`§7Available locations: ${suggestions.join(", ")}`);
+        } else {
+            player.sendMessage("§7Use /saveposition <name> to save locations.");
+        }
+        return;
+    }
+    
+    teleportToPosition(player, targetPosition);
+}
+
+// Teleport player to position
+function teleportToPosition(player, position) {
+    try {
+        const targetDimension = world.getDimension(getDimensionFullName(position.dimension));
+        const teleportLocation = { x: position.x, y: position.y, z: position.z };
+        
+        // Teleport to the dimension and position
+        player.teleport(teleportLocation, { dimension: targetDimension });
+        
+        player.sendMessage(`§aTeleported to: §f${position.name}`);
+        player.sendMessage(`§7Location: ${position.x}, ${position.y}, ${position.z} (${position.dimensionFull})`);
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to teleport to ${position.name}: ${e.message || e}`);
+        console.log(`Teleport error: ${e}`);
+    }
+}
+
+// List all positions in chat
+function listAllPositions(player, savedPositions) {
+    player.sendMessage("§a--- Your Saved Positions ---");
+    player.sendMessage(`§7Total: ${savedPositions.length} location${savedPositions.length > 1 ? 's' : ''}`);
+    
+    if (savedPositions.length === 0) {
+        player.sendMessage("§7No saved positions. Use /saveposition <name> to save locations.");
+        return;
+    }
+    
+    for (let i = 0; i < savedPositions.length; i++) {
+        const pos = savedPositions[i];
+        player.sendMessage(`§f${i + 1}. ${pos.name} §7- ${pos.x}, ${pos.y}, ${pos.z} (${pos.dimensionFull})`);
+    }
+    
+    player.sendMessage("§7Use /tps <name> or /tpsg to teleport");
+}
+
+// Helper functions
+function getDimensionShortName(dimensionId) {
+    switch (dimensionId) {
+        case "minecraft:overworld": return "ow";
+        case "minecraft:nether": return "nether";
+        case "minecraft:the_end": return "end";
+        default: return dimensionId.replace("minecraft:", "");
+    }
+}
+
+function getDimensionFullName(shortName) {
+    switch (shortName) {
+        case "ow": return "minecraft:overworld";
+        case "nether": return "minecraft:nether";
+        case "end": return "minecraft:the_end";
+        default: return `minecraft:${shortName}`;
+    }
+}
+
+function clearPositionsFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const savedPositions = getSavedPositions(player);
+            
+            if (savedPositions.length === 0) {
+                player.sendMessage("§7No saved positions to clear.");
+                return;
+            }
+            
+            // Remove all position tags
+            for (const pos of savedPositions) {
+                player.removeTag(pos.fullTag);
+            }
+            
+            player.sendMessage(`§aCleared ${savedPositions.length} saved position${savedPositions.length > 1 ? 's' : ''}!`);
+            
+        } catch (e) {
+            console.log("Failed to clear positions: " + e);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function rtpFunction(origin, minDistance = 100, maxDistance = 2000) {
+    system.run(() => {
+        try {
+            const player = origin?.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.warn("RTP requires a player");
+                return;
+            }
+
+            if (minDistance < 0 || maxDistance < minDistance) {
+                player.sendMessage("§cInvalid distance values!");
+                return;
+            }
+            if (maxDistance > 100000) {
+                player.sendMessage("§cMax distance too large! Max is 100,000 blocks.");
+                return;
+            }
+
+            const angle = Math.random() * 2 * Math.PI;
+            const distance = minDistance + Math.random() * (maxDistance - minDistance);
+            const targetX = Math.floor(player.location.x + Math.cos(angle) * distance);
+            const targetZ = Math.floor(player.location.z + Math.sin(angle) * distance);
+            const highY = 250; // Drop from top of world
+
+            player.sendMessage("§7Teleporting to random location...");
+
+            // Give temporary immunity
+            player.addEffect("resistance", 5 * 20, { amplifier: 255 });
+
+            // Initial teleport (will load chunk)
+            player.teleport(
+                { x: targetX + 0.5, y: highY, z: targetZ + 0.5 },
+                { dimension: player.dimension }
+            );
+
+            // Wait ~1 second for chunk to load, then adjust Y
+            system.runTimeout(() => {
+                const safeY = findGroundBelow(player);
+                if (safeY !== null) {
+                    player.teleport(
+                        { x: targetX + 0.5, y: safeY, z: targetZ + 0.5 },
+                        { dimension: player.dimension }
+                    );
+                    player.sendMessage(`§aRandom teleport successful! (${targetX}, ${safeY}, ${targetZ})`);
+                } else {
+                    player.sendMessage("§cCouldn't find safe ground here, staying at high Y.");
+                }
+            }, 60); // 20 ticks = 1s
+        } catch (e) {
+            console.error("RTP error: " + e);
+            origin?.sourceEntity?.sendMessage(`§cRTP failed: ${e.message || e}`);
+        }
+    });
+
+    return { status: CustomCommandStatus.Success };
+}
+
+// Scan down from current location until we hit solid ground
+function findGroundBelow(player) {
+    try {
+        const { x, y, z } = player.location;
+        const dim = player.dimension;
+        for (let yy = Math.floor(y); yy >= -60; yy--) {
+            const block = dim.getBlock({ x: Math.floor(x), y: yy, z: Math.floor(z) });
+            const above = dim.getBlock({ x: Math.floor(x), y: yy + 1, z: Math.floor(z) });
+            if (block && above &&
+                block.typeId !== "minecraft:air" &&
+                block.typeId !== "minecraft:water" &&
+                block.typeId !== "minecraft:lava" &&
+                above.typeId === "minecraft:air") {
+                return yy + 1;
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error(`findGroundBelow error: ${e}`);
+        return null;
+    }
+}
+
