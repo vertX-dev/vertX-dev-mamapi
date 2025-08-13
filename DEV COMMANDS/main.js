@@ -20,6 +20,29 @@ import {
 import { FONTS } from "./buildTextFont.js";
 import { PALLETS } from "./blockPallets.js";
 
+// Import from modular files
+import { 
+    getVeinToolFunction, 
+    clearVeinToolFunction, 
+    veinToolInfoFunction, 
+    generateVeinsFunction,
+    initializeVeinToolEvents 
+} from "./veinGeneration.js";
+
+import { 
+    createPathFunction, 
+    getPathToolFunction, 
+    buildPathFunction,
+    multiBlockFillFunction,
+    configFillFunction,
+    initializePathToolEvents 
+} from "./pathCreation.js";
+
+import { 
+    helpFunction, 
+    searchFunction 
+} from "./commandDefinitions.js";
+
 
 // Constants for hidden string markers
 const COMMAND_MARKER = '§c§b§i§n§d§t';
@@ -625,6 +648,21 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "Clear all saved positions",
         permissionLevel: CommandPermissionLevel.Any
     };
+
+    const helpCommand = {
+        name: "vertx:help",
+        description: "Show categorized help for all commands",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+
+    const searchCommand = {
+        name: "vertx:search",
+        description: "Search commands by keyword",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Search term" }
+        ]
+    };
     
     
     
@@ -682,7 +720,12 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(tpsgCommand, tpsgFunction);
     init.customCommandRegistry.registerCommand(rtpCommand, rtpFunction);
     init.customCommandRegistry.registerCommand(clearPositionsCommand, clearPositionsFunction);
+    init.customCommandRegistry.registerCommand(helpCommand, helpFunction);
+    init.customCommandRegistry.registerCommand(searchCommand, searchFunction);
 
+    // Initialize event handlers for modular tools
+    initializeVeinToolEvents();
+    initializePathToolEvents();
 
 });
 
@@ -5710,11 +5753,7 @@ function calculateRealTimeElapsed(absoluteTime) {
 }
 
 
-// Global storage for vein tool states
-const VEIN_TOOL_STATES = new Map(); // playerId -> { corners: [], breakCount: 0 }
-
-// Main get vein tool function
-function getVeinToolFunction(origin) {
+function hiddenBlocksFunction(origin) {
     system.run(() => {
         try {
             const player = origin.sourceEntity;
