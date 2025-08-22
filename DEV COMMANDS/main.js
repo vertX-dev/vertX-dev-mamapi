@@ -19,29 +19,7 @@ import {
 
 import { FONTS } from "./buildTextFont.js";
 import { PALLETS } from "./blockPallets.js";
-
-// Import from modular files
-import { 
-    getVeinToolFunction, 
-    clearVeinToolFunction, 
-    veinToolInfoFunction, 
-    generateVeinsFunction,
-    initializeVeinToolEvents 
-} from "./veinGeneration.js";
-
-import { 
-    createPathFunction, 
-    getPathToolFunction, 
-    buildPathFunction,
-    multiBlockFillFunction,
-    configFillFunction,
-    initializePathToolEvents 
-} from "./pathCreation.js";
-
-import { 
-    helpFunction, 
-    searchFunction 
-} from "./commandDefinitions.js";
+import { COMMANDS } from "./commandsSearch.js";
 
 
 // Constants for hidden string markers
@@ -224,7 +202,8 @@ system.beforeEvents.startup.subscribe((init) => {
         permissionLevel: CommandPermissionLevel.GameDirectors,
         optionalParameters: [
             { type: CustomCommandParamType.EntitySelector, name: "Target"},
-            { type: CustomCommandParamType.Enum, name: "vertx:HealMode"}
+            { type: CustomCommandParamType.Enum, name: "vertx:HealMode"},
+            { type: CustomCommandParamType.Boolean, name: "vertx:PlayerEntity"}
         ]
     };
     
@@ -648,23 +627,225 @@ system.beforeEvents.startup.subscribe((init) => {
         description: "Clear all saved positions",
         permissionLevel: CommandPermissionLevel.Any
     };
-
+    
     const helpCommand = {
         name: "vertx:help",
-        description: "Show categorized help for all commands",
+        description: "Get list with all commands",
         permissionLevel: CommandPermissionLevel.Any
     };
-
+    
     const searchCommand = {
         name: "vertx:search",
-        description: "Search commands by keyword",
+        description: "Get gui based on search",
         permissionLevel: CommandPermissionLevel.Any,
-        mandatoryParameters: [
-            { type: CustomCommandParamType.String, name: "Search term" }
+        optionalParameters: [
+            { type: CustomCommandParamType.String, name: "search query"}
         ]
     };
     
+    const throwTagToolCommand = {
+        name: "vertx:throwtagtool",
+        description: "Get throw tag tool for applying tags to entities",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };
     
+    const tagToolAddCommand = {
+        name: "vertx:tagtooladd",
+        description: "Add tag to throw tag tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Tag to add" }
+        ]
+    };
+    
+    const tagToolRemoveCommand = {
+        name: "vertx:tagtoolremove",
+        description: "Remove tag from throw tag tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Tag to remove" }
+        ]
+    };
+    
+    const tagToolClearCommand = {
+        name: "vertx:tagtoolclear",
+        description: "Remove all tags from throw tag tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };
+    
+    const removeTagToolCommand = {
+        name: "vertx:removetagtool",
+        description: "Get remove tag tool for removing tags from entities",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };    
+    
+    const copyPasteToolCommand = {
+        name: "vertx:copypastetool",
+        description: "Get copy paste tool for structure operations",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };
+    
+    const setposCommand = {
+        name: "vertx:setpos",
+        description: "Set position for copy paste tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Location, name: "Position coordinates" },
+            { type: CustomCommandParamType.Location, name: "Position coordinates" }
+        ]
+    };
+    
+    const pos1Command = {
+        name: "vertx:pos1",
+        description: "Set position 1 for copy paste tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Location, name: "Position coordinates (default: current)" }
+        ]
+    };
+    
+    const pos2Command = {
+        name: "vertx:pos2", 
+        description: "Set position 2 for copy paste tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Location, name: "Position coordinates (default: current)" }
+        ]
+    };
+    
+    const clearposCommand = {
+        name: "vertx:clearpos",
+        description: "Clear saved positions for copy paste tool",
+        permissionLevel: CommandPermissionLevel.GameDirectors
+    };
+    
+    const copyCommand = {
+        name: "vertx:copy",
+        description: "Copy selected area as structure",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Boolean, name: "Include entities (default: false)" }
+        ]
+    };
+    
+    const pasteCommand = {
+        name: "vertx:paste",
+        description: "Paste copied structure at location",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Location, name: "Paste location (default: current)" }
+        ]
+    };
+    
+    const cutCommand = {
+        name: "vertx:cut",
+        description: "Cut selected area (copy + clear original)",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.Boolean, name: "Include entities (default: false)" }
+        ]
+    };
+    
+    const moveCommand = {
+        name: "vertx:move",
+        description: "Move selected area to new location",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Location, name: "Move to location" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Boolean, name: "Include entities (default: false)" }
+        ]
+    };    
+    
+    const mathCommand = {
+        name: "vertx:math",
+        description: "Evaluate mathematical expressions (unrestricted - creative mode only)",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Mathematical expression" }
+        ]
+    };    
+    
+    const mathSafeCommand = {
+        name: "vertx:mathsafe",
+        description: "Evaluate safe mathematical expressions",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Mathematical expression" }
+        ]
+    };    
+    
+    const mathHelpCommand = {
+        name: "vertx:mathhelp",
+        description: "Show available mathematical functions",
+        permissionLevel: CommandPermissionLevel.Any
+    };
+    
+    const convertCommand = {
+        name: "vertx:convert",
+        description: "Convert between common units",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.Float, name: "Value" },
+            { type: CustomCommandParamType.String, name: "From unit" },
+            { type: CustomCommandParamType.String, name: "To unit" }
+        ]
+    };    
+        
+    const calcCommand = {
+        name: "vertx:calc",
+        description: "Quick calculator (alias for mathsafe)",
+        permissionLevel: CommandPermissionLevel.Any,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.String, name: "Mathematical expression" }
+        ]
+    };    
+    
+    const freezeStatusCommand = {
+        name: "vertx:freezestatus",
+        description: "Check freeze status of players",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        optionalParameters: [
+            { type: CustomCommandParamType.EntitySelector, name: "Target player (default: all frozen players)" }
+        ]
+    };    
+        
+    const freezeCommand = {
+        name: "vertx:freeze",
+        description: "Freeze player (disable movement and permissions)",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.EntitySelector, name: "Target player(s)" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Boolean, name: "Show message (default: true)" },
+            { type: CustomCommandParamType.String, name: "Custom message (optional)" },
+            { type: CustomCommandParamType.Integer, name: "Time in seconds (-1 for infinite, default: 60)" }
+        ]
+    };
+    
+    const unfreezeCommand = {
+        name: "vertx:unfreeze",
+        description: "Unfreeze player (restore movement and permissions)",
+        permissionLevel: CommandPermissionLevel.GameDirectors,
+        mandatoryParameters: [
+            { type: CustomCommandParamType.EntitySelector, name: "Target player(s)" }
+        ],
+        optionalParameters: [
+            { type: CustomCommandParamType.Boolean, name: "Show message (default: true)" },
+            { type: CustomCommandParamType.String, name: "Custom message (optional)" }
+        ]
+    };
+
+
+
+
+
+
+
+
+
     
     // Register all commands
     init.customCommandRegistry.registerCommand(addLoreCommand, addLoreFunction);
@@ -722,10 +903,30 @@ system.beforeEvents.startup.subscribe((init) => {
     init.customCommandRegistry.registerCommand(clearPositionsCommand, clearPositionsFunction);
     init.customCommandRegistry.registerCommand(helpCommand, helpFunction);
     init.customCommandRegistry.registerCommand(searchCommand, searchFunction);
+    init.customCommandRegistry.registerCommand(throwTagToolCommand, throwTagToolFunction);
+    init.customCommandRegistry.registerCommand(tagToolAddCommand, tagToolAddFunction);
+    init.customCommandRegistry.registerCommand(tagToolRemoveCommand, tagToolRemoveFunction);
+    init.customCommandRegistry.registerCommand(tagToolClearCommand, tagToolClearFunction);
+    init.customCommandRegistry.registerCommand(removeTagToolCommand, removeTagToolFunction);
+    init.customCommandRegistry.registerCommand(copyPasteToolCommand, copyPasteToolFunction);
+    init.customCommandRegistry.registerCommand(setposCommand, setposFunction);
+    init.customCommandRegistry.registerCommand(pos1Command, pos1Function);
+    init.customCommandRegistry.registerCommand(pos2Command, pos2Function);
+    init.customCommandRegistry.registerCommand(clearposCommand, clearposFunction);
+    init.customCommandRegistry.registerCommand(copyCommand, copyFunction);
+    init.customCommandRegistry.registerCommand(pasteCommand, pasteFunction);
+    init.customCommandRegistry.registerCommand(cutCommand, cutFunction);
+    init.customCommandRegistry.registerCommand(moveCommand, moveFunction);
+    init.customCommandRegistry.registerCommand(mathCommand, mathFunction);
+    init.customCommandRegistry.registerCommand(mathSafeCommand, mathSafeFunction);
+    init.customCommandRegistry.registerCommand(mathHelpCommand, mathHelpFunction);
+    init.customCommandRegistry.registerCommand(convertCommand, convertFunction);
+    init.customCommandRegistry.registerCommand(calcCommand, (origin, expression) => mathSafeFunction(origin, expression));
+    init.customCommandRegistry.registerCommand(freezeCommand, freezeFunction);
+    init.customCommandRegistry.registerCommand(unfreezeCommand, unfreezeFunction);
+    init.customCommandRegistry.registerCommand(freezeStatusCommand, freezeStatusFunction);
 
-    // Initialize event handlers for modular tools
-    initializeVeinToolEvents();
-    initializePathToolEvents();
+
 
 });
 
@@ -1155,7 +1356,7 @@ world.afterEvents.playerPlaceBlock.subscribe((ev) => {
     }
 });
 
-function healFunction(origin, targets = [origin.sourceEntity], healType = "both") {
+function healFunction(origin, targets = [origin.sourceEntity], healType = "both", playerEntity = false) {
     system.run(() => {
         for (const entity of targets) {
             try {
@@ -1171,7 +1372,7 @@ function healFunction(origin, targets = [origin.sourceEntity], healType = "both"
                     entity.addEffect("saturation", 30, { amplifier: 200});
                 }
                 
-                entity.sendMessage("§aYou have been healed!");
+                if (playerEntity) entity.sendMessage("§aYou have been healed!");
             } catch (e) {
                 console.log("failed to heal " + entity.typeId + ": " + e);
             }
@@ -5753,7 +5954,11 @@ function calculateRealTimeElapsed(absoluteTime) {
 }
 
 
-function hiddenBlocksFunction(origin) {
+// Global storage for vein tool states
+const VEIN_TOOL_STATES = new Map(); // playerId -> { corners: [], breakCount: 0 }
+
+// Main get vein tool function
+function getVeinToolFunction(origin) {
     system.run(() => {
         try {
             const player = origin.sourceEntity;
@@ -6776,10 +6981,10 @@ function createCopyEntityTool(player) {
 }
 
 // Generate random 5-character base64 string for entity code
-function generateEntityCode() {
+function generateEntityCode(length = 5) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-';
     let result = '';
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
@@ -6880,11 +7085,16 @@ function saveEntityStructure(player, entityData, entityCode, entity) {
 }
 
 // Load entity from structure/code
-function loadEntityFunction(origin, location, amount, entityCode) {
+function loadEntityFunction(origin, location, amount = 1, code = undefined) {
     system.run(() => {
         try {
+            let entityCode = code;
             const player = origin.sourceEntity;
             if (!player) return;
+            
+            if (!entityCode) {
+                entityCode = player.getComponent("minecraft:equippable").getEquipment(EquipmentSlot.Mainhand).getLore().find(l => l.startsWith("§6Code: §f")).slice(10);
+            }
             
             // Spawn entities
             let spawned = 0;
@@ -6900,6 +7110,10 @@ function loadEntityFunction(origin, location, amount, entityCode) {
                 }
             }
             
+            system.runTimeout(() => {
+                player.runCommand(`execute as @s positioned ${location.x} ${location.y} ${location.z} run heal @e[r=64,type=!player,tag=setMaxHealth] health`);
+                player.runCommand(`execute as @s positioned ${location.x} ${location.y} ${location.z} run tag @e[r=64,type=!player,tag=setMaxHealth] remove setMaxHealth`);
+            }, 10);
             player.sendMessage(`§aSpawned: ${spawned}, Failed: ${failed}`);
             
         } catch (e) {
@@ -6932,7 +7146,7 @@ world.afterEvents.itemUse.subscribe((ev) => {
         }
     }
     
-    if (entity && itemStack && itemStack.nameTag.includes("§aCopy Entity Tool") && itemStack.getLore().includes("§7No entities copied yet")) {
+    if (entity && itemStack && itemStack.nameTag.includes("§aCopy Entity Tool") && itemStack.getLore().length >= 1 && itemStack.getLore().includes("§7No entities copied yet")) {
         try {
             // Copy the entity
             const entityData = extractEntityData(entity);
@@ -7017,7 +7231,10 @@ function spawnEntityFromTool(player, copyTool) {
                     console.log(`Failed to spawn entity: ${e}`);
                 }
             }
-            
+            system.runTimeout(() => {
+                player.runCommand(`execute as @s positioned ${location.x} ${location.y} ${location.z} run heal @e[r=64,type=!player,tag=setMaxHealth] health`);
+                player.runCommand(`execute as @s positioned ${location.x} ${location.y} ${location.z} run tag @e[r=64,type=!player,tag=setMaxHealth] remove setMaxHealth`);
+            }, 10);
             player.sendMessage(`§aSpawned: ${spawned}, Failed: ${failed}`);
             
         } catch (e) {
@@ -7553,7 +7770,7 @@ function rtpFunction(origin, minDistance = 100, maxDistance = 2000) {
                 { dimension: player.dimension }
             );
 
-            // Wait ~1 second for chunk to load, then adjust Y
+            // Wait ~3 second for chunk to load, then adjust Y
             system.runTimeout(() => {
                 const safeY = findGroundBelow(player);
                 if (safeY !== null) {
@@ -7564,6 +7781,7 @@ function rtpFunction(origin, minDistance = 100, maxDistance = 2000) {
                     player.sendMessage(`§aRandom teleport successful! (${targetX}, ${safeY}, ${targetZ})`);
                 } else {
                     player.sendMessage("§cCouldn't find safe ground here, staying at high Y.");
+                    player.runCommand("rtp 100 500");
                 }
             }, 60); // 20 ticks = 1s
         } catch (e) {
@@ -7598,3 +7816,2029 @@ function findGroundBelow(player) {
     }
 }
 
+function helpFunction(origin) {
+    system.run(() => {
+        for (const cmd of COMMANDS) {
+            origin.sourceEntity.sendMessage(`§2${cmd.command} - §e${cmd.description}`);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success};
+}
+
+
+// Main search function
+function searchFunction(origin, searchQuery = "") {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Search requires a player");
+                return;
+            }
+            
+            // Get search results
+            const results = searchCommands(searchQuery);
+            
+            if (results.length === 0) {
+                if (searchQuery) {
+                    player.sendMessage(`§cNo commands found matching: "${searchQuery}"`);
+                    player.sendMessage("§7Try different keywords like: lore, block, teleport, heal");
+                } else {
+                    player.sendMessage("§cNo commands available in search database.");
+                }
+                return;
+            }
+            
+            // Show search GUI
+            showSearchGUI(player, results, searchQuery);
+            
+        } catch (e) {
+            console.log("Failed to execute search: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to search commands: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Search through commands array
+function searchCommands(query) {
+    if (!query || query.trim() === "") {
+        // Return all commands if no query (limited to top 10)
+        return COMMANDS.slice(0, 30);
+    }
+    
+    const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+    const results = [];
+    
+    // Score each command based on matches
+    for (const cmd of COMMANDS) {
+        let score = 0;
+        const commandText = cmd.command.toLowerCase();
+        const descriptionText = cmd.description.toLowerCase();
+        const keywords = cmd.keyWords.map(kw => kw.toLowerCase());
+        
+        for (const term of searchTerms) {
+            // Exact command match (highest priority)
+            if (commandText.includes(term)) {
+                score += 10;
+            }
+            
+            // Description match (medium priority)
+            if (descriptionText.includes(term)) {
+                score += 5;
+            }
+            
+            // Keyword match (high priority)
+            for (const keyword of keywords) {
+                if (keyword.includes(term) || term.includes(keyword)) {
+                    score += 7;
+                }
+                if (keyword === term) {
+                    score += 10; // Exact keyword match
+                }
+            }
+        }
+        
+        if (score > 0) {
+            results.push({
+                ...cmd,
+                score: score,
+                matchedTerms: searchTerms.filter(term => 
+                    commandText.includes(term) || 
+                    descriptionText.includes(term) ||
+                    keywords.some(kw => kw.includes(term) || term.includes(kw))
+                )
+            });
+        }
+    }
+    
+    // Sort by score (descending) and return top 10
+    results.sort((a, b) => b.score - a.score);
+    return results.slice(0, 10);
+}
+
+// Show search results GUI
+function showSearchGUI(player, results, searchQuery) {
+    try {
+        const queryText = searchQuery ? `"${searchQuery}"` : "all commands";
+        
+        const form = new ActionFormData()
+            .title("§6Command Search")
+            .body(`§7Search results for: §f${queryText}\n§2Found ${results.length} command${results.length > 1 ? 's' : ''}`);
+        
+        // Add button for each command result
+        for (let i = 0; i < results.length; i++) {
+            const cmd = results[i];
+            
+            // Create button text with command and preview
+            let buttonText = `§f${cmd.command}\n§8${cmd.description}`;
+            
+            // Add matched terms indicator if search was performed
+            if (searchQuery && cmd.matchedTerms && cmd.matchedTerms.length > 0) {
+                buttonText += `\n§8Matched: ${cmd.matchedTerms.join(", ")}`;
+            }
+            
+            form.button(buttonText);
+        }
+        
+        // Add utility buttons
+        if (searchQuery) {
+            form.button("§eNew Search\n§8Search with different keywords");
+        }
+        form.button("§2Browse All\n§8Show all available commands");
+        form.button("§4Close\n§8Exit search");
+        
+        form.show(player).then((response) => {
+            if (response.canceled) return;
+            
+            const selection = response.selection;
+            
+            if (selection < results.length) {
+                // Show detailed command info
+                showCommandDetails(player, results[selection], results, searchQuery);
+            } else {
+                const utilityIndex = selection - results.length;
+                
+                if (searchQuery && utilityIndex === 0) {
+                    // New search
+                    showSearchInputGUI(player);
+                } else if ((searchQuery && utilityIndex === 1) || (!searchQuery && utilityIndex === 0)) {
+                    // Browse all
+                    const allResults = COMMANDS.slice(0, 10);
+                    showSearchGUI(player, allResults, "");
+                }
+                // Close option does nothing (form closes automatically)
+            }
+        });
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to show search GUI!");
+        console.log("Search GUI error: " + e);
+    }
+}
+
+// Show detailed command information
+function showCommandDetails(player, command, allResults, originalQuery) {
+    try {
+        // Create detailed description
+        let detailText = `§f${command.command}\n\n`;
+        detailText += `§7Description:\n§f${command.description}\n\n`;
+        
+        if (command.keyWords && command.keyWords.length > 0) {
+            detailText += `§7Keywords:\n§f${command.keyWords.join(", ")}\n\n`;
+        }
+        
+        if (command.matchedTerms && command.matchedTerms.length > 0) {
+            detailText += `§7Matched Terms:\n§e${command.matchedTerms.join(", ")}\n\n`;
+        }
+        
+        // Add usage examples if available
+        if (command.examples) {
+            detailText += `§7Examples:\n`;
+            for (const example of command.examples) {
+                detailText += `§f${example}\n`;
+            }
+        }
+        
+        const form = new ActionFormData()
+            .title(`§6${command.command}`)
+            .body(detailText)
+            .button("§aBack to Results\n§8Return to search results")
+            .button("§eCopy Command\n§8Copy command to chat")
+            .button("§7Close\n§8Exit command info");
+        
+        form.show(player).then((response) => {
+            if (response.canceled) return;
+            
+            switch (response.selection) {
+                case 0: // Back to results
+                    showSearchGUI(player, allResults, originalQuery);
+                    break;
+                case 1: // Copy command (simulate by showing in chat)
+                    player.sendMessage(`§7Command: §f${command.command}`);
+                    player.sendMessage("§7Command copied to chat!");
+                    break;
+                case 2: // Close
+                default:
+                    // Do nothing, form closes
+                    break;
+            }
+        });
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to show command details!");
+        console.log("Command details error: " + e);
+    }
+}
+
+// Show search input GUI (for new searches)
+function showSearchInputGUI(player) {
+    try {
+        const form = new ModalFormData()
+            .title("§6New Command Search")
+            .textField("Search Query:", "Enter keywords or command name")
+            .dropdown("Search Mode", ["Keyword Search", "Command Name", "Description Only"])
+            .toggle("Show Advanced Info");
+        
+        form.show(player).then((response) => {
+            if (response.canceled) return;
+            
+            const [searchQuery, searchMode, showAdvanced] = response.formValues;
+            
+            if (!searchQuery || searchQuery.trim() === "") {
+                player.sendMessage("§cPlease enter a search query!");
+                return;
+            }
+            
+            // Perform search with mode-specific filtering
+            let results = [];
+            
+            switch (searchMode) {
+                case 0: // Keyword search (default)
+                    results = searchCommands(searchQuery);
+                    break;
+                case 1: // Command name only
+                    results = searchCommandsByName(searchQuery);
+                    break;
+                case 2: // Description only
+                    results = searchCommandsByDescription(searchQuery);
+                    break;
+            }
+            
+            if (results.length === 0) {
+                player.sendMessage(`§cNo commands found for: "${searchQuery}"`);
+                return;
+            }
+            
+            showSearchGUI(player, results, searchQuery);
+        });
+        
+    } catch (e) {
+        player.sendMessage("§cFailed to show search input!");
+        console.log("Search input error: " + e);
+    }
+}
+
+// Search commands by name only
+function searchCommandsByName(query) {
+    const searchTerm = query.toLowerCase();
+    const results = [];
+    
+    for (const cmd of COMMANDS) {
+        if (cmd.command.toLowerCase().includes(searchTerm)) {
+            results.push({
+                ...cmd,
+                score: cmd.command.toLowerCase().indexOf(searchTerm) === 0 ? 10 : 5, // Prefer commands starting with term
+                matchedTerms: [searchTerm]
+            });
+        }
+    }
+    
+    results.sort((a, b) => b.score - a.score);
+    return results.slice(0, 10);
+}
+
+// Search commands by description only
+function searchCommandsByDescription(query) {
+    const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+    const results = [];
+    
+    for (const cmd of COMMANDS) {
+        const description = cmd.description.toLowerCase();
+        let score = 0;
+        const matched = [];
+        
+        for (const term of searchTerms) {
+            if (description.includes(term)) {
+                score += 5;
+                matched.push(term);
+            }
+        }
+        
+        if (score > 0) {
+            results.push({
+                ...cmd,
+                score: score,
+                matchedTerms: matched
+            });
+        }
+    }
+    
+    results.sort((a, b) => b.score - a.score);
+    return results.slice(0, 10);
+}
+
+// Main throw tag tool function
+function throwTagToolFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Throw tag tool requires a player");
+                return;
+            }
+            
+            createThrowTagTool(player);
+            
+        } catch (e) {
+            console.log("Failed to create throw tag tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create throw tag tool: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Create throw tag tool
+function createThrowTagTool(player) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        
+        // Create throw tag tool
+        const tagTool = new ItemStack("minecraft:lime_dye", 1);
+        tagTool.nameTag = "§2Throw Tag Tool";
+        
+        const loreLines = [
+            "§7Right-click to apply tags to target entity",
+            "§7Range: 30 blocks",
+            "§8§l--- TAGS TO APPLY ---",
+            "§7No tags configured",
+            "§7Use /tagtooladd <tag> to add tags"
+        ];
+        
+        tagTool.setLore(loreLines);
+        
+        equippable.setEquipment(EquipmentSlot.Mainhand, tagTool);
+        
+        player.sendMessage("§aThrow Tag Tool created!");
+        player.sendMessage("§7Right-click entities to apply tags");
+        player.sendMessage("§7Use /tagtooladd <tag> to add tags to the tool");
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to create throw tag tool: ${e}`);
+        console.log("Failed to create throw tag tool: " + e);
+    }
+}
+
+// Create remove tag tool
+function removeTagToolFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Remove tag tool requires a player");
+                return;
+            }
+            
+            createRemoveTagTool(player);
+            
+        } catch (e) {
+            console.log("Failed to create remove tag tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create remove tag tool: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Create remove tag tool
+function createRemoveTagTool(player) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        
+        // Create remove tag tool
+        const removeTool = new ItemStack("minecraft:red_dye", 1);
+        removeTool.nameTag = "§cRemove Tag Tool";
+        
+        const loreLines = [
+            "§7Right-click to remove all tags from target entity",
+            "§7Range: 30 blocks",
+            "§7This will remove ALL tags from the entity"
+        ];
+        
+        removeTool.setLore(loreLines);
+        
+        equippable.setEquipment(EquipmentSlot.Mainhand, removeTool);
+        
+        player.sendMessage("§cRemove Tag Tool created!");
+        player.sendMessage("§7Right-click entities to remove all their tags");
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to create remove tag tool: ${e}`);
+        console.log("Failed to create remove tag tool: " + e);
+    }
+}
+
+// Add tag to tool function
+function tagToolAddFunction(origin, tagToAdd) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const equippable = player.getComponent("minecraft:equippable");
+            const heldItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+            
+            if (!heldItem || !heldItem.nameTag || !heldItem.nameTag.includes("Throw Tag Tool")) {
+                player.sendMessage("§cYou must be holding a Throw Tag Tool!");
+                return;
+            }
+            
+            // Validate tag name
+            const cleanTag = tagToAdd.replace(/[^a-zA-Z0-9_.-]/g, "");
+            if (cleanTag.length === 0) {
+                player.sendMessage("§cInvalid tag name! Use only letters, numbers, dots, dashes, and underscores.");
+                return;
+            }
+            
+            if (cleanTag.length > 50) {
+                player.sendMessage("§cTag name too long! Maximum 50 characters.");
+                return;
+            }
+            
+            // Get current tags from lore
+            const currentTags = getTagsFromTool(heldItem);
+            
+            // Check if tag already exists
+            if (currentTags.includes(cleanTag)) {
+                player.sendMessage(`§eTag "${cleanTag}" already exists in tool!`);
+                return;
+            }
+            
+            // Check tag limit
+            if (currentTags.length >= 20) {
+                player.sendMessage("§cTag limit reached! Maximum 20 tags per tool.");
+                return;
+            }
+            
+            // Add tag to tool
+            currentTags.push(cleanTag);
+            updateToolLore(player, heldItem, currentTags, "add");
+            
+            player.sendMessage(`§aAdded tag: §f${cleanTag}`);
+            player.sendMessage(`§7Tool now has ${currentTags.length} tag${currentTags.length > 1 ? 's' : ''}`);
+            
+        } catch (e) {
+            console.log("Failed to add tag to tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to add tag: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Remove tag from tool function
+function tagToolRemoveFunction(origin, tagToRemove) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const equippable = player.getComponent("minecraft:equippable");
+            const heldItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+            
+            if (!heldItem || !heldItem.nameTag || !heldItem.nameTag.includes("Throw Tag Tool")) {
+                player.sendMessage("§cYou must be holding a Throw Tag Tool!");
+                return;
+            }
+            
+            // Get current tags from lore
+            const currentTags = getTagsFromTool(heldItem);
+            
+            // Find and remove tag
+            const tagIndex = currentTags.indexOf(tagToRemove);
+            if (tagIndex === -1) {
+                player.sendMessage(`§cTag "${tagToRemove}" not found in tool!`);
+                
+                if (currentTags.length > 0) {
+                    player.sendMessage(`§7Available tags: ${currentTags.slice(0, 5).join(", ")}${currentTags.length > 5 ? "..." : ""}`);
+                }
+                return;
+            }
+            
+            currentTags.splice(tagIndex, 1);
+            updateToolLore(player, heldItem, currentTags, "remove");
+            
+            player.sendMessage(`§aRemoved tag: §f${tagToRemove}`);
+            player.sendMessage(`§7Tool now has ${currentTags.length} tag${currentTags.length > 1 ? 's' : ''}`);
+            
+        } catch (e) {
+            console.log("Failed to remove tag from tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to remove tag: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Clear all tags from tool function
+function tagToolClearFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const equippable = player.getComponent("minecraft:equippable");
+            const heldItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+            
+            if (!heldItem || !heldItem.nameTag || !heldItem.nameTag.includes("Throw Tag Tool")) {
+                player.sendMessage("§cYou must be holding a Throw Tag Tool!");
+                return;
+            }
+            
+            // Get current tag count
+            const currentTags = getTagsFromTool(heldItem);
+            const tagCount = currentTags.length;
+            
+            if (tagCount === 0) {
+                player.sendMessage("§7Tool has no tags to clear.");
+                return;
+            }
+            
+            // Clear all tags
+            updateToolLore(player, heldItem, [], "clear");
+            
+            player.sendMessage(`§aCleared ${tagCount} tag${tagCount > 1 ? 's' : ''} from tool!`);
+            
+        } catch (e) {
+            console.log("Failed to clear tags from tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to clear tags: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Get tags from tool lore
+function getTagsFromTool(item) {
+    const tags = [];
+    const loreArray = item.getLore();
+    let foundTagSection = false;
+    
+    for (const line of loreArray) {
+        if (line === "§8§l--- TAGS TO APPLY ---") {
+            foundTagSection = true;
+            continue;
+        }
+        
+        if (foundTagSection) {
+            // Skip info lines
+            if (line.includes("No tags configured") || line.includes("Use /tagtooladd")) {
+                continue;
+            }
+            
+            // Extract tag from format "§a• tagname"
+            if (line.startsWith("§a• ")) {
+                const tag = line.replace("§a• ", "");
+                tags.push(tag);
+            }
+        }
+    }
+    
+    return tags;
+}
+
+// Update tool lore with new tags
+function updateToolLore(player, item, tags, action) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        const newTool = item.clone();
+        
+        const loreLines = [
+            "§7Right-click to apply tags to target entity",
+            "§7Range: 30 blocks",
+            "§8§l--- TAGS TO APPLY ---"
+        ];
+        
+        if (tags.length === 0) {
+            loreLines.push("§7No tags configured");
+            loreLines.push("§7Use /tagtooladd <tag> to add tags");
+        } else {
+            loreLines.push(`§7${tags.length} tag${tags.length > 1 ? 's' : ''} configured:`);
+            
+            // Add each tag
+            for (const tag of tags) {
+                loreLines.push(`§a• ${tag}`);
+            }
+            
+            // Add help text
+            loreLines.push("");
+            loreLines.push("§7Use /tagtoolremove <tag> to remove");
+        }
+        
+        newTool.setLore(loreLines);
+        equippable.setEquipment(EquipmentSlot.Mainhand, newTool);
+        
+    } catch (e) {
+        console.log(`Failed to update tool lore: ${e}`);
+    }
+}
+
+// Event handler for tag tool usage
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (ev.source.typeId !== "minecraft:player" || !ev.itemStack) return;
+    
+    const player = ev.source;
+    const itemStack = ev.itemStack;
+    
+    // Check if it's a tag tool
+    if (!itemStack.nameTag) return;
+    
+    try {
+        if (itemStack.nameTag.includes("Throw Tag Tool")) {
+            handleThrowTagTool(player, itemStack);
+        } else if (itemStack.nameTag.includes("Remove Tag Tool")) {
+            handleRemoveTagTool(player, itemStack);
+        }
+    } catch (e) {
+        console.log("Error using tag tool: " + e);
+        player.sendMessage("§cFailed to use tag tool!");
+    }
+});
+
+// Handle throw tag tool usage
+function handleThrowTagTool(player, tagTool) {
+    try {
+        // Get entities from view direction
+        const entitiesFromView = player.getEntitiesFromViewDirection({ maxDistance: 30 });
+        
+        if (!entitiesFromView || entitiesFromView.length === 0) {
+            player.sendMessage("§cNo entity found in view direction within 30 blocks!");
+            return;
+        }
+        
+        const targetEntity = entitiesFromView[0].entity;
+        
+        if (!targetEntity || targetEntity === player) {
+            player.sendMessage("§cInvalid target entity!");
+            return;
+        }
+        
+        // Get tags from tool
+        const tagsToApply = getTagsFromTool(tagTool);
+        
+        if (tagsToApply.length === 0) {
+            player.sendMessage("§cNo tags configured in tool! Use /tagtooladd <tag> to add tags.");
+            return;
+        }
+        
+        // Apply tags to entity
+        let appliedCount = 0;
+        let alreadyHadCount = 0;
+        
+        for (const tag of tagsToApply) {
+            try {
+                if (targetEntity.hasTag(tag)) {
+                    alreadyHadCount++;
+                } else {
+                    targetEntity.addTag(tag);
+                    appliedCount++;
+                }
+            } catch (e) {
+                console.log(`Failed to apply tag ${tag}: ${e}`);
+            }
+        }
+        
+        // Show results
+        const distance = Math.floor(entitiesFromView[0].distance);
+        const entityType = targetEntity.typeId.replace("minecraft:", "");
+        
+        player.sendMessage(`§aTarget: §f${entityType} §7(${distance} blocks)`);
+        
+        if (appliedCount > 0) {
+            player.sendMessage(`§aApplied ${appliedCount} new tag${appliedCount > 1 ? 's' : ''}`);
+        }
+        
+        if (alreadyHadCount > 0) {
+            player.sendMessage(`§e${alreadyHadCount} tag${alreadyHadCount > 1 ? 's' : ''} already existed`);
+        }
+        
+        // Show applied tags
+        if (appliedCount > 0) {
+            const appliedTags = tagsToApply.filter(tag => !targetEntity.hasTag(tag) || appliedCount > 0);
+            player.sendMessage(`§7Tags: ${tagsToApply.join(", ")}`);
+        }
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to apply tags: ${e}`);
+        console.log("Failed to handle throw tag tool: " + e);
+    }
+}
+
+// Handle remove tag tool usage
+function handleRemoveTagTool(player, removeTool) {
+    try {
+        // Get entities from view direction
+        const entitiesFromView = player.getEntitiesFromViewDirection({ maxDistance: 30 });
+        
+        if (!entitiesFromView || entitiesFromView.length === 0) {
+            player.sendMessage("§cNo entity found in view direction within 30 blocks!");
+            return;
+        }
+        
+        const targetEntity = entitiesFromView[0].entity;
+        
+        if (!targetEntity || targetEntity === player) {
+            player.sendMessage("§cInvalid target entity!");
+            return;
+        }
+        
+        // Get all tags from entity
+        const entityTags = targetEntity.getTags();
+        
+        if (entityTags.length === 0) {
+            player.sendMessage("§eTarget entity has no tags to remove.");
+            return;
+        }
+        
+        // Remove all tags
+        let removedCount = 0;
+        for (const tag of entityTags) {
+            try {
+                targetEntity.removeTag(tag);
+                removedCount++;
+            } catch (e) {
+                console.log(`Failed to remove tag ${tag}: ${e}`);
+            }
+        }
+        
+        // Show results
+        const distance = Math.floor(entitiesFromView[0].distance);
+        const entityType = targetEntity.typeId.replace("minecraft:", "");
+        
+        player.sendMessage(`§aTarget: §f${entityType} §7(${distance} blocks)`);
+        player.sendMessage(`§cRemoved ${removedCount} tag${removedCount > 1 ? 's' : ''}`);
+        
+        if (removedCount > 0) {
+            player.sendMessage(`§7Removed: ${entityTags.slice(0, 5).join(", ")}${entityTags.length > 5 ? "..." : ""}`);
+        }
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to remove tags: ${e}`);
+        console.log("Failed to handle remove tag tool: " + e);
+    }
+}
+
+
+
+// Global storage for copy paste tool states
+const COPY_PASTE_STATES = new Map(); // playerId -> { pos1, pos2, copiedStructureId }
+// Generate random 7-character code for structures
+function generateStructureCode(length = 7) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = 'mystructure:';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// Main copy paste tool function
+function copyPasteToolFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") {
+                console.log("Copy paste tool requires a player");
+                return;
+            }
+            
+            createCopyPasteTool(player);
+            
+        } catch (e) {
+            console.log("Failed to create copy paste tool: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to create copy paste tool: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Create copy paste tool
+function createCopyPasteTool(player) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        
+        // Create copy paste tool (blaze rod with special lore)
+        const copyTool = new ItemStack("minecraft:blaze_rod", 1);
+        copyTool.nameTag = "§6Copy Paste Tool";
+        
+        // Initialize player state
+        COPY_PASTE_STATES.set(player.id, { pos1: null, pos2: null, copiedStructureId: null });
+        
+        // Create initial lore
+        const loreLines = [
+            "§7Left-click: Set position 1",
+            "§7Right-click: Paste at location", 
+            "§7Shift+Right-click: Set position 2",
+            "§8§l--- POSITIONS ---",
+            "§7Position 1: §cNot set",
+            "§7Position 2: §cNot set",
+            "§8§l--- CLIPBOARD ---",
+            "§7No structure copied"
+        ];
+        
+        copyTool.setLore(loreLines);
+        
+        equippable.setEquipment(EquipmentSlot.Mainhand, copyTool);
+        
+        player.sendMessage("§aCopy Paste Tool created!");
+        player.sendMessage("§7Left-click blocks to set positions");
+        player.sendMessage("§7Right-click to paste, Shift+Right-click to set pos2");
+        
+    } catch (e) {
+        player.sendMessage(`§cFailed to create copy paste tool: ${e}`);
+        console.log("Failed to create copy paste tool: " + e);
+    }
+}
+
+// Update tool lore with current state
+function updateToolLoreCopyTool(player, tool, toolState) {
+    const loreLines = [
+        "§7Left-click: Set position 1",
+        "§7Right-click: Paste at location",
+        "§7Shift+Right-click: Set position 2", 
+        "§8§l--- POSITIONS ---"
+    ];
+    
+    // Add position information
+    if (toolState.pos1) {
+        loreLines.push(`§7Position 1: §a${toolState.pos1.x}, ${toolState.pos1.y}, ${toolState.pos1.z}`);
+    } else {
+        loreLines.push("§7Position 1: §cNot set");
+    }
+    
+    if (toolState.pos2) {
+        loreLines.push(`§7Position 2: §a${toolState.pos2.x}, ${toolState.pos2.y}, ${toolState.pos2.z}`);
+        
+        // Calculate area size if both positions set
+        if (toolState.pos1) {
+            const dx = Math.abs(toolState.pos2.x - toolState.pos1.x) + 1;
+            const dy = Math.abs(toolState.pos2.y - toolState.pos1.y) + 1;
+            const dz = Math.abs(toolState.pos2.z - toolState.pos1.z) + 1;
+            const volume = dx * dy * dz;
+            
+            loreLines.push(`§7Area: §f${dx}×${dy}×${dz} §7(${volume.toLocaleString()} blocks)`);
+        }
+    } else {
+        loreLines.push("§7Position 2: §cNot set");
+    }
+    
+    loreLines.push("§8§l--- CLIPBOARD ---");
+    
+    // Add clipboard information
+    if (toolState.copiedStructureId) {
+        loreLines.push(`§7Structure: §f${toolState.copiedStructureId}`);
+        loreLines.push("§7Ready to paste");
+    } else {
+        loreLines.push("§7No structure copied");
+        loreLines.push("§7Use /copy to copy selection");
+    }
+    
+    return loreLines;
+}
+
+// Set position function
+function setposFunction(origin, location1 = null, location2 = null, posNumber = null) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            
+            let toolState = COPY_PASTE_STATES.get(player.id);
+            if (!toolState) {
+                toolState = { pos1: null, pos2: null, copiedStructureId: null };
+                COPY_PASTE_STATES.set(player.id, toolState);
+            }
+            
+            // Set position
+            if (posNumber == null) {
+                const pos1 = { x: Math.floor(location1.x), y: Math.floor(location1.y), z: Math.floor(location1.z) };
+                const pos2 = { x: Math.floor(location2.x), y: Math.floor(location2.y), z: Math.floor(location2.z) };
+                
+                toolState.pos1 = pos1;
+                player.sendMessage(`§aPosition 1 set to: §f${pos1.x}, ${pos1.y}, ${pos1.z}`);
+            
+                toolState.pos2 = pos2;
+                player.sendMessage(`§aPosition 2 set to: §f${pos2.x}, ${pos2.y}, ${pos2.z}`);
+            } else if (posNumber == 1) {
+                const pos1 = { x: Math.floor(location1.x), y: Math.floor(location1.y), z: Math.floor(location1.z) };
+                toolState.pos1 = pos1;
+                player.sendMessage(`§aPosition 1 set to: §f${pos1.x}, ${pos1.y}, ${pos1.z}`);
+            } else if (posNumber == 2) {
+                const pos2 = { x: Math.floor(location2.x), y: Math.floor(location2.y), z: Math.floor(location2.z) };
+                toolState.pos2 = pos2;
+                player.sendMessage(`§aPosition 2 set to: §f${pos2.x}, ${pos2.y}, ${pos2.z}`);
+            }
+           
+            
+            // Update tool if player has it
+            updatePlayerTool(player, toolState);
+            
+        } catch (e) {
+            console.log("Failed to set position: " + e);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Position 1 function
+function pos1Function(origin, location = null) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const pos = location || player.location;
+            setposFunction(origin, pos, null, 1);
+            
+        } catch (e) {
+            console.log("Failed to set pos1: " + e);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Position 2 function  
+function pos2Function(origin, location = null) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const pos = location || player.location;
+            setposFunction(origin, null, pos, 2);
+            
+        } catch (e) {
+            console.log("Failed to set pos2: " + e);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Clear positions function
+function clearposFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            let toolState = COPY_PASTE_STATES.get(player.id);
+            if (!toolState) {
+                player.sendMessage("§7No positions to clear.");
+                return;
+            }
+            
+            toolState.pos1 = null;
+            toolState.pos2 = null;
+            
+            player.sendMessage("§aPositions cleared!");
+            
+            // Update tool if player has it
+            updatePlayerTool(player, toolState);
+            
+        } catch (e) {
+            console.log("Failed to clear positions: " + e);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Copy function
+function copyFunction(origin, includeEntities = false) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const toolState = COPY_PASTE_STATES.get(player.id);
+            if (!toolState || !toolState.pos1 || !toolState.pos2) {
+                player.sendMessage("§cBoth positions must be set! Use /pos1 and /pos2 or the copy paste tool.");
+                return;
+            }
+            
+            // Calculate area
+            const volume = calculateVolume(toolState.pos1, toolState.pos2);
+            if (volume > 1000000) {
+                player.sendMessage(`§cArea too large! ${volume.toLocaleString()} blocks. Maximum is 1000,000.`);
+                return;
+            }
+            
+            // Generate structure ID
+            const structureId = generateStructureCode();
+            
+            player.sendMessage("§7Copying structure...");
+            
+            // Copy structure
+            const success = copyStructure(player, toolState.pos1, toolState.pos2, structureId, includeEntities);
+            
+            if (success) {
+                toolState.copiedStructureId = structureId;
+                player.sendMessage(`§aStructure copied! ID: §f${structureId}`);
+                player.sendMessage(`§7Size: ${volume.toLocaleString()} blocks${includeEntities ? " (with entities)" : ""}`);
+                
+                // Update tool
+                updatePlayerTool(player, toolState);
+            } else {
+                player.sendMessage("§cFailed to copy structure!");
+            }
+            
+        } catch (e) {
+            console.log("Failed to copy: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to copy: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Paste function
+function pasteFunction(origin, location = null) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const toolState = COPY_PASTE_STATES.get(player.id);
+            if (!toolState || !toolState.copiedStructureId) {
+                player.sendMessage("§cNo structure in clipboard! Use /copy first.");
+                return;
+            }
+            
+            const pasteLocation = location || {
+                x: Math.floor(player.location.x),
+                y: Math.floor(player.location.y), 
+                z: Math.floor(player.location.z)
+            };
+            
+            player.sendMessage("§7Pasting structure...");
+            
+            // Paste structure
+            const success = pasteStructure(player, toolState.copiedStructureId, pasteLocation);
+            
+            if (success) {
+                player.sendMessage(`§aStructure pasted at: §f${pasteLocation.x}, ${pasteLocation.y}, ${pasteLocation.z}`);
+            } else {
+                player.sendMessage("§cFailed to paste structure!");
+            }
+            
+        } catch (e) {
+            console.log("Failed to paste: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to paste: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Cut function
+function cutFunction(origin, includeEntities = false) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const toolState = COPY_PASTE_STATES.get(player.id);
+            if (!toolState || !toolState.pos1 || !toolState.pos2) {
+                player.sendMessage("§cBoth positions must be set! Use /pos1 and /pos2 or the copy paste tool.");
+                return;
+            }
+            
+            // First copy the structure
+            copyFunction(origin, includeEntities);
+            
+            // Then clear the original area
+            player.sendMessage("§7Clearing original area...");
+            system.runTimeout(() => clearArea(player, toolState.pos1, toolState.pos2, includeEntities), 20);
+            
+            player.sendMessage("§aStructure cut (copied and cleared original area)!");
+            
+        } catch (e) {
+            console.log("Failed to cut: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to cut: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Move function
+function moveFunction(origin, newLocation, includeEntities = false) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player || player.typeId !== "minecraft:player") return;
+            
+            const toolState = COPY_PASTE_STATES.get(player.id);
+            if (!toolState || !toolState.pos1 || !toolState.pos2) {
+                player.sendMessage("§cBoth positions must be set! Use /pos1 and /pos2 or the copy paste tool.");
+                return;
+            }
+            
+            // Copy, paste, then clear original
+            const volume = calculateVolume(toolState.pos1, toolState.pos2);
+            player.sendMessage(`§7Moving structure (${volume.toLocaleString()} blocks)...`);
+            
+            // Generate structure ID for temporary storage
+            const structureId = generateStructureCode();
+            
+            // Copy structure
+            const copySuccess = copyStructure(player, toolState.pos1, toolState.pos2, structureId, includeEntities);
+            
+            if (copySuccess) {
+                // Paste at new location
+                const pasteSuccess = pasteStructure(player, structureId, newLocation);
+                
+                if (pasteSuccess) {
+                    // Clear original area
+                    clearArea(player, toolState.pos1, toolState.pos2, includeEntities);
+                    
+                    player.sendMessage(`§aStructure moved to: §f${newLocation.x}, ${newLocation.y}, ${newLocation.z}`);
+                    
+                    // Update positions to new location
+                    const offset = {
+                        x: newLocation.x - toolState.pos1.x,
+                        y: newLocation.y - toolState.pos1.y,
+                        z: newLocation.z - toolState.pos1.z
+                    };
+                    
+                    toolState.pos1 = newLocation;
+                    toolState.pos2 = {
+                        x: toolState.pos2.x + offset.x,
+                        y: toolState.pos2.y + offset.y,
+                        z: toolState.pos2.z + offset.z
+                    };
+                    
+                    updatePlayerTool(player, toolState);
+                } else {
+                    player.sendMessage("§cFailed to paste structure at new location!");
+                }
+                
+                // Clean up temporary structure
+                try {
+                    world.structureManager.delete(structureId);
+                } catch (e) {
+                    console.log(`Failed to delete temporary structure: ${e}`);
+                }
+            } else {
+                player.sendMessage("§cFailed to copy structure for moving!");
+            }
+            
+        } catch (e) {
+            console.log("Failed to move: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to move: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Update player tool lore if they have the tool
+function updatePlayerTool(player, toolState) {
+    try {
+        const equippable = player.getComponent("minecraft:equippable");
+        const heldItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+        
+        if (heldItem && heldItem.nameTag && heldItem.nameTag.includes("Copy Paste Tool")) {
+            const newTool = heldItem.clone();
+            const updatedLore = updateToolLoreCopyTool(player, newTool, toolState);
+            newTool.setLore(updatedLore);
+            equippable.setEquipment(EquipmentSlot.Mainhand, newTool);
+        }
+    } catch (e) {
+        console.log(`Failed to update tool: ${e}`);
+    }
+}
+
+// Helper functions
+function calculateVolume(pos1, pos2) {
+    const dx = Math.abs(pos2.x - pos1.x) + 1;
+    const dy = Math.abs(pos2.y - pos1.y) + 1;
+    const dz = Math.abs(pos2.z - pos1.z) + 1;
+    return dx * dy * dz;
+}
+
+function copyStructure(player, pos1, pos2, structureId, includeEntities) {
+    try {
+        const structureManager = world.structureManager;
+        
+        // Calculate bounds
+        const from = {
+            x: Math.min(pos1.x, pos2.x),
+            y: Math.min(pos1.y, pos2.y),
+            z: Math.min(pos1.z, pos2.z)
+        };
+        
+        const to = {
+            x: Math.max(pos1.x, pos2.x),
+            y: Math.max(pos1.y, pos2.y),
+            z: Math.max(pos1.z, pos2.z)
+        };
+        
+        // Save structure
+        structureManager.createFromWorld(structureId, player.dimension, from, to, {
+            includeEntities: includeEntities,
+            includeBlocks: true
+        });
+        
+        return true;
+    } catch (e) {
+        console.log(`Failed to copy structure: ${e}`);
+        return false;
+    }
+}
+
+function pasteStructure(player, structureId, location) {
+    try {
+        const structureManager = world.structureManager;
+        
+        structureManager.place(structureId, player.dimension, location);
+        
+        return true;
+    } catch (e) {
+        console.log(`Failed to paste structure: ${e}`);
+        return false;
+    }
+}
+
+function clearArea(player, pos1, pos2, includeEntities) {
+    try {
+        // Fill area with air blocks
+        const from = {
+            x: Math.min(pos1.x, pos2.x),
+            y: Math.min(pos1.y, pos2.y),
+            z: Math.min(pos1.z, pos2.z)
+        };
+        
+        const to = {
+            x: Math.max(pos1.x, pos2.x),
+            y: Math.max(pos1.y, pos2.y),
+            z: Math.max(pos1.z, pos2.z)
+        };
+        
+        // Use fill command to clear area
+        player.runCommand(`largefill ${from.x} ${from.y} ${from.z} ${to.x} ${to.y} ${to.z} air replace`);
+        
+        // Clear entities if requested
+        if (includeEntities) {
+            const centerX = (from.x + to.x) / 2;
+            const centerY = (from.y + to.y) / 2;
+            const centerZ = (from.z + to.z) / 2;
+            const radius = Math.max(to.x - from.x, to.y - from.y, to.z - from.z) / 2 + 2;
+            
+            const entities = player.dimension.getEntities({
+                location: { x: centerX, y: centerY, z: centerZ },
+                maxDistance: radius
+            });
+            
+            for (const entity of entities) {
+                if (entity.typeId !== "minecraft:player" && 
+                    entity.location.x >= from.x && entity.location.x <= to.x &&
+                    entity.location.y >= from.y && entity.location.y <= to.y &&
+                    entity.location.z >= from.z && entity.location.z <= to.z) {
+                    try {
+                        entity.remove();
+                    } catch (e) {
+                        console.log(`Failed to remove entity: ${e}`);
+                    }
+                }
+            }
+        }
+        
+    } catch (e) {
+        console.log(`Failed to clear area: ${e}`);
+    }
+}
+
+// Event handlers
+world.beforeEvents.playerBreakBlock.subscribe((ev) => {
+    const player = ev.player;
+    const equippable = player.getComponent("minecraft:equippable");
+    const heldItem = equippable?.getEquipment(EquipmentSlot.Mainhand);
+    
+    // Check if holding copy paste tool
+    if (!heldItem || !heldItem.nameTag || !heldItem.nameTag.includes("Copy Paste Tool")) return;
+    
+    // Cancel the break event
+    ev.cancel = true;
+    
+    // Set position 1
+    const location = ev.block.location;
+    pos1Function({ sourceEntity: player }, location);
+});
+
+world.afterEvents.itemUse.subscribe((ev) => {
+    if (ev.source.typeId !== "minecraft:player" || !ev.itemStack) return;
+    
+    const player = ev.source;
+    const itemStack = ev.itemStack;
+    
+    // Check if it's the copy paste tool
+    if (!itemStack.nameTag || !itemStack.nameTag.includes("Copy Paste Tool")) return;
+    
+    try {
+        // Check if player is sneaking (shift+right-click)
+        if (player.isSneaking) {
+            // Set position 2 at block player is looking at
+            const blockFromView = player.getBlockFromViewDirection({ maxDistance: 100 });
+            if (blockFromView && blockFromView.block) {
+                pos2Function({ sourceEntity: player }, blockFromView.block.location);
+            } else {
+                pos2Function({ sourceEntity: player }, null);
+            }
+        } else {
+            // Paste at block player is looking at (or current location)
+            const blockFromView = player.getBlockFromViewDirection({ maxDistance: 100 });
+            if (blockFromView && blockFromView.block) {
+                pasteFunction({ sourceEntity: player }, blockFromView.block.location);
+            } else {
+                pasteFunction({ sourceEntity: player }, null);
+            }
+        }
+    } catch (e) {
+        console.log("Error using copy paste tool: " + e);
+        player.sendMessage("§cFailed to use copy paste tool!");
+    }
+});
+
+
+
+// Main math function (unrestricted)
+function mathFunction(origin, expression) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Math command requires a player source");
+                return;
+            }
+            
+            // Check if player is in creative mode (additional safety)
+            try {
+                const gamemode = player.runCommand("testfor @s[m=c]");
+                // If this doesn't throw an error, player is in creative mode
+            } catch (e) {
+                player.sendMessage("§cMath command requires creative mode!");
+                return;
+            }
+            
+            evaluateMathExpression(player, expression, false);
+            
+        } catch (e) {
+            console.log("Failed to execute math command: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to evaluate expression: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Safe math function (restricted)
+function mathSafeFunction(origin, expression) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) {
+                console.log("Math safe command requires a player source");
+                return;
+            }
+            
+            evaluateMathExpression(player, expression, true);
+            
+        } catch (e) {
+            console.log("Failed to execute math safe command: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to evaluate expression: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Evaluate mathematical expression
+function evaluateMathExpression(player, expression, safeMode) {
+    try {
+        // Clean the expression
+        const cleanExpression = expression.trim();
+        
+        if (!cleanExpression) {
+            player.sendMessage("§cEmpty expression provided!");
+            return;
+        }
+        
+        // Show what we're evaluating
+        player.sendMessage(`§7Evaluating${safeMode ? " (safe mode)" : ""}: §f${cleanExpression}`);
+        
+        let result;
+        
+        if (safeMode) {
+            result = evaluateSafeExpression(cleanExpression);
+        } else {
+            result = evaluateUnrestrictedExpression(cleanExpression);
+        }
+        
+        // Format and display result
+        displayMathResult(player, cleanExpression, result, safeMode);
+        
+    } catch (e) {
+        player.sendMessage(`§cError evaluating expression: ${e.message || e}`);
+        
+        if (safeMode) {
+            player.sendMessage("§7Safe mode allows: +, -, *, /, ^, sqrt(), sin(), cos(), tan(), log(), abs(), ceil(), floor(), round()");
+        }
+    }
+}
+
+// Evaluate safe mathematical expression (restricted functions)
+function evaluateSafeExpression(expression) {
+    // Whitelist of allowed characters and functions for safe mode
+    const allowedPattern = /^[0-9+\-*/.()^, \s]*$/;
+    const allowedFunctions = ['sqrt', 'sin', 'cos', 'tan', 'log', 'abs', 'ceil', 'floor', 'round', 'max', 'min', 'pi', 'e'];
+    
+    // Check for basic safety
+    if (!allowedPattern.test(expression.replace(/sqrt|sin|cos|tan|log|abs|ceil|floor|round|max|min|pi|e/g, ''))) {
+        throw new Error("Expression contains unsafe characters");
+    }
+    
+    // Replace some common mathematical constants and functions for JavaScript
+    let jsExpression = expression
+        .replace(/\^/g, '**')  // Power operator
+        .replace(/pi/g, 'Math.PI')
+        .replace(/e/g, 'Math.E')
+        .replace(/sqrt/g, 'Math.sqrt')
+        .replace(/sin/g, 'Math.sin')
+        .replace(/cos/g, 'Math.cos')
+        .replace(/tan/g, 'Math.tan')
+        .replace(/log/g, 'Math.log')
+        .replace(/abs/g, 'Math.abs')
+        .replace(/ceil/g, 'Math.ceil')
+        .replace(/floor/g, 'Math.floor')
+        .replace(/round/g, 'Math.round')
+        .replace(/max/g, 'Math.max')
+        .replace(/min/g, 'Math.min');
+    
+    // Evaluate using Function constructor (safer than eval)
+    try {
+        const result = new Function('Math', `"use strict"; return (${jsExpression})`)(Math);
+        
+        if (typeof result !== 'number' || !isFinite(result)) {
+            throw new Error("Result is not a valid number");
+        }
+        
+        return result;
+    } catch (e) {
+        throw new Error(`Invalid mathematical expression: ${e.message}`);
+    }
+}
+
+// Evaluate unrestricted mathematical expression (creative mode only)
+function evaluateUnrestrictedExpression(expression) {
+    try {
+        // More advanced mathematical operations allowed in creative mode
+        let jsExpression = expression
+            .replace(/\^/g, '**')  // Power operator
+            .replace(/pi/g, 'Math.PI')
+            .replace(/e/g, 'Math.E')
+            .replace(/sqrt/g, 'Math.sqrt')
+            .replace(/sin/g, 'Math.sin')
+            .replace(/cos/g, 'Math.cos')
+            .replace(/tan/g, 'Math.tan')
+            .replace(/asin/g, 'Math.asin')
+            .replace(/acos/g, 'Math.acos')
+            .replace(/atan/g, 'Math.atan')
+            .replace(/log/g, 'Math.log')
+            .replace(/log10/g, 'Math.log10')
+            .replace(/log2/g, 'Math.log2')
+            .replace(/abs/g, 'Math.abs')
+            .replace(/ceil/g, 'Math.ceil')
+            .replace(/floor/g, 'Math.floor')
+            .replace(/round/g, 'Math.round')
+            .replace(/max/g, 'Math.max')
+            .replace(/min/g, 'Math.min')
+            .replace(/random/g, 'Math.random')
+            .replace(/pow/g, 'Math.pow');
+        
+        // Still use Function constructor for safety
+        const result = new Function('Math', `"use strict"; return (${jsExpression})`)(Math);
+        
+        if (typeof result !== 'number') {
+            throw new Error("Result is not a number");
+        }
+        
+        return result;
+    } catch (e) {
+        throw new Error(`Invalid mathematical expression: ${e.message}`);
+    }
+}
+
+// Display mathematical result with formatting
+function displayMathResult(player, expression, result, safeMode) {
+    try {
+        // Format the result based on its value
+        let formattedResult;
+        
+        if (Math.abs(result) < 0.0001 && result !== 0) {
+            // Scientific notation for very small numbers
+            formattedResult = result.toExponential(6);
+        } else if (Math.abs(result) > 999999999) {
+            // Scientific notation for very large numbers
+            formattedResult = result.toExponential(6);
+        } else if (result % 1 === 0) {
+            // Integer result
+            formattedResult = result.toString();
+        } else {
+            // Decimal result - limit to 8 decimal places
+            formattedResult = parseFloat(result.toFixed(8)).toString();
+        }
+        
+        // Main result
+        player.sendMessage(`§a= §f${formattedResult}`);
+        
+        // Additional information for certain results
+        if (result === Math.PI) {
+            player.sendMessage("§7(π - Pi)");
+        } else if (result === Math.E) {
+            player.sendMessage("§7(e - Euler's number)");
+        } else if (Math.abs(result - Math.PI) < 0.0001) {
+            player.sendMessage("§7(≈ π)");
+        } else if (Math.abs(result - Math.E) < 0.0001) {
+            player.sendMessage("§7(≈ e)");
+        }
+        
+        // Show binary/hex for integers in unrestricted mode
+        if (!safeMode && result % 1 === 0 && Math.abs(result) < 2147483648) {
+            const intResult = Math.floor(result);
+            if (intResult !== 0) {
+                player.sendMessage(`§7Binary: ${intResult.toString(2)}`);
+                player.sendMessage(`§7Hex: 0x${intResult.toString(16).toUpperCase()}`);
+            }
+        }
+        
+        // Show calculation time for complex expressions
+        if (expression.length > 20 || expression.includes('sin') || expression.includes('cos') || expression.includes('log')) {
+            player.sendMessage("§7Calculation completed");
+        }
+        
+    } catch (e) {
+        player.sendMessage(`§aResult: ${result}`);
+        console.log("Failed to format math result: " + e);
+    }
+}
+
+
+function mathHelpFunction(origin) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) return;
+            
+            player.sendMessage("§a--- Mathematical Functions ---");
+            player.sendMessage("§7Available in /mathsafe:");
+            player.sendMessage("§f• Basic: §7+, -, *, /, ^ (power)");
+            player.sendMessage("§f• Functions: §7sqrt(), sin(), cos(), tan()");
+            player.sendMessage("§f• Logarithms: §7log() (natural log)");
+            player.sendMessage("§f• Rounding: §7abs(), ceil(), floor(), round()");
+            player.sendMessage("§f• Comparison: §7max(), min()");
+            player.sendMessage("§f• Constants: §7pi, e");
+            
+            player.sendMessage("");
+            player.sendMessage("§7Additional in /math (creative only):");
+            player.sendMessage("§f• Inverse trig: §7asin(), acos(), atan()");
+            player.sendMessage("§f• More logs: §7log10(), log2()");
+            player.sendMessage("§f• Advanced: §7pow(), random()");
+            player.sendMessage("§f• Number formats: §7binary, hex display");
+            
+            player.sendMessage("");
+            player.sendMessage("§7Examples:");
+            player.sendMessage("§f/mathsafe 2^3 + sqrt(16)");
+            player.sendMessage("§f/mathsafe sin(pi/4) * cos(pi/4)");
+            player.sendMessage("§f/math log10(1000) + random()");
+            
+        } catch (e) {
+            console.log("Failed to show math help: " + e);
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+function convertFunction(origin, value, fromUnit, toUnit) {
+    system.run(() => {
+        try {
+            const player = origin.sourceEntity;
+            if (!player) return;
+            
+            const result = performUnitConversion(value, fromUnit.toLowerCase(), toUnit.toLowerCase());
+            
+            if (result !== null) {
+                player.sendMessage(`§7Converting: §f${value} ${fromUnit}`);
+                player.sendMessage(`§a= §f${result} ${toUnit}`);
+            } else {
+                player.sendMessage("§cUnsupported unit conversion!");
+                player.sendMessage("§7Supported: meters/feet, celsius/fahrenheit, kg/lbs");
+            }
+            
+        } catch (e) {
+            console.log("Failed to convert units: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cConversion failed: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Perform unit conversion
+function performUnitConversion(value, fromUnit, toUnit) {
+    const conversions = {
+        // Length
+        'm_to_ft': value => value * 3.28084,
+        'ft_to_m': value => value / 3.28084,
+        'm_to_in': value => value * 39.3701,
+        'in_to_m': value => value / 39.3701,
+        
+        // Temperature
+        'c_to_f': value => (value * 9/5) + 32,
+        'f_to_c': value => (value - 32) * 5/9,
+        'c_to_k': value => value + 273.15,
+        'k_to_c': value => value - 273.15,
+        
+        // Weight
+        'kg_to_lbs': value => value * 2.20462,
+        'lbs_to_kg': value => value / 2.20462,
+        'g_to_oz': value => value * 0.035274,
+        'oz_to_g': value => value / 0.035274
+    };
+    
+    const conversionKey = `${fromUnit}_to_${toUnit}`;
+    
+    if (conversions[conversionKey]) {
+        const result = conversions[conversionKey](value);
+        return Math.round(result * 100000) / 100000; // Round to 5 decimal places
+    }
+    
+    return null;
+}
+
+
+
+
+// Initialize scoreboard on startup
+system.runTimeout(() => {
+    try {
+        // Create scoreboard for freeze tracking
+        world.scoreboard.addObjective("vertxfreezejail", "Freeze Jail Timer");
+        console.log("Freeze jail scoreboard initialized");
+    } catch (e) {
+        // Scoreboard might already exist
+        console.log("Freeze jail scoreboard already exists or failed to create: " + e);
+    }
+    
+    // Start freeze timer system
+    startFreezeTimerSystem();
+}, 20); // Wait 1 second after startup
+
+// Main freeze function
+function freezeFunction(origin, targets, showMessage = true, customMessage = "", freezeTime = 60) {
+    system.run(() => {
+        try {
+            const executor = origin.sourceEntity;
+            let frozenCount = 0;
+            
+            for (const target of targets) {
+                if (!target || target.typeId !== "minecraft:player") {
+                    if (executor) {
+                        executor.sendMessage(`§cTarget must be a player! Skipped ${target?.typeId || "invalid target"}`);
+                    }
+                    continue;
+                }
+                
+                // Apply freeze
+                const success = applyFreeze(target, freezeTime, executor);
+                
+                if (success) {
+                    frozenCount++;
+                    
+                    // Send message to frozen player
+                    if (showMessage) {
+                        const message = customMessage || getDefaultFreezeMessage(freezeTime);
+                        target.sendMessage(message);
+                    }
+                    
+                    // Log action
+                    const executorName = executor?.name || "Console";
+                    const timeText = freezeTime === -1 ? "indefinitely" : `for ${freezeTime} seconds`;
+                    console.log(`Player ${target.name} frozen by ${executorName} ${timeText}`);
+                }
+            }
+            
+            // Confirmation message to executor
+            if (executor && frozenCount > 0) {
+                const timeText = freezeTime === -1 ? "indefinitely" : `for ${freezeTime} seconds`;
+                executor.sendMessage(`§aFroze ${frozenCount} player(s) ${timeText}`);
+            }
+            
+        } catch (e) {
+            console.log("Failed to freeze players: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to freeze: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Main unfreeze function
+function unfreezeFunction(origin, targets, showMessage = true, customMessage = "") {
+    system.run(() => {
+        try {
+            const executor = origin.sourceEntity;
+            let unFrozenCount = 0;
+            
+            for (const target of targets) {
+                if (!target || target.typeId !== "minecraft:player") {
+                    if (executor) {
+                        executor.sendMessage(`§cTarget must be a player! Skipped ${target?.typeId || "invalid target"}`);
+                    }
+                    continue;
+                }
+                
+                // Check if player is frozen
+                if (!isPlayerFrozen(target)) {
+                    if (executor) {
+                        executor.sendMessage(`§e${target.name} is not frozen`);
+                    }
+                    continue;
+                }
+                
+                // Remove freeze
+                const success = removeFreeze(target, executor);
+                
+                if (success) {
+                    unFrozenCount++;
+                    
+                    // Send message to unfrozen player
+                    if (showMessage) {
+                        const message = customMessage || "§aYou have been unfrozen! You can now move and use commands.";
+                        target.sendMessage(message);
+                    }
+                    
+                    // Log action
+                    const executorName = executor?.name || "Console";
+                    console.log(`Player ${target.name} unfrozen by ${executorName}`);
+                }
+            }
+            
+            // Confirmation message to executor
+            if (executor && unFrozenCount > 0) {
+                executor.sendMessage(`§aUnfroze ${unFrozenCount} player(s)`);
+            }
+            
+        } catch (e) {
+            console.log("Failed to unfreeze players: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to unfreeze: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
+
+// Apply freeze to a player
+function applyFreeze(player, freezeTime, executor) {
+    try {
+        // Store freeze time in scoreboard (-10 for infinite, positive for timed)
+        const scoreboardTime = freezeTime === -1 ? -10 : freezeTime;
+        
+        const objective = world.scoreboard.getObjective("vertxfreezejail");
+        if (!objective) {
+            console.log("Freeze jail scoreboard not found!");
+            return false;
+        }
+        
+        // Set score for player
+        objective.setScore(player, scoreboardTime);
+        
+        // Disable player permissions
+        player.runCommand("inputpermission set @s movement disabled");
+        player.runCommand("inputpermission set @s camera disabled");
+        
+        // Add freeze tag for easy identification
+        player.addTag("vertx_frozen");
+        
+        return true;
+        
+    } catch (e) {
+        console.log(`Failed to apply freeze to ${player.name}: ${e}`);
+        return false;
+    }
+}
+
+// Remove freeze from a player
+function removeFreeze(player, executor) {
+    try {
+        const objective = world.scoreboard.getObjective("vertxfreezejail");
+        if (!objective) {
+            console.log("Freeze jail scoreboard not found!");
+            return false;
+        }
+        
+        // Remove from scoreboard
+        objective.setScore(player, 0);
+        
+        // Restore player permissions
+        player.runCommand("inputpermission set @s movement enabled");
+        player.runCommand("inputpermission set @s camera enabled");
+        
+        // Remove effects
+        player.removeEffect("slowness");
+        player.removeEffect("mining_fatigue");
+        player.removeEffect("weakness");
+        
+        // Remove freeze tag
+        player.removeTag("vertx_frozen");
+        
+        return true;
+        
+    } catch (e) {
+        console.log(`Failed to remove freeze from ${player.name}: ${e}`);
+        return false;
+    }
+}
+
+// Check if player is frozen
+function isPlayerFrozen(player) {
+    try {
+        const objective = world.scoreboard.getObjective("vertxfreezejail");
+        if (!objective) return false;
+        
+        const score = objective.getScore(player);
+        return score !== undefined && score !== 0;
+        
+    } catch (e) {
+        return false;
+    }
+}
+
+// Get default freeze message
+function getDefaultFreezeMessage(freezeTime) {
+    if (freezeTime === -1) {
+        return "§c§lYou have been FROZEN indefinitely!\n§7You cannot move or use commands until unfrozen by staff.";
+    } else {
+        const minutes = Math.floor(freezeTime / 60);
+        const seconds = freezeTime % 60;
+        const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+        return `§c§lYou have been FROZEN for ${timeText}!\n§7You cannot move or use commands during this time.`;
+    }
+}
+
+// Freeze timer system - runs every second
+function startFreezeTimerSystem() {
+    system.runInterval(() => {
+        try {
+            const objective = world.scoreboard.getObjective("vertxfreezejail");
+            if (!objective) return;
+            
+            // Get all players
+            const players = world.getAllPlayers();
+            
+            for (const player of players) {
+                try {
+                    const score = objective.getScore(player);
+                    
+                    if (score !== undefined && score > 0) {
+                        // Player has active freeze timer
+                        const newScore = score - 1;
+                        
+                        if (newScore <= 0) {
+                            // Timer expired, unfreeze player
+                            removeFreeze(player, null);
+                            player.sendMessage("§aYour freeze time has expired! You can now move freely.");
+                            console.log(`Player ${player.name} automatically unfrozen (timer expired)`);
+                        } else {
+                            // Update timer
+                            objective.setScore(player, newScore);
+                            
+                            // Send periodic reminders
+                            if (newScore % 30 === 0 && newScore <= 120) { // Every 30s for last 2 minutes
+                                const minutes = Math.floor(newScore / 60);
+                                const seconds = newScore % 60;
+                                const timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                                player.sendMessage(`§e§lFreeze time remaining: ${timeText}`);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log(`Error processing freeze timer for ${player.name}: ${e}`);
+                }
+            }
+            
+        } catch (e) {
+            console.log("Error in freeze timer system: " + e);
+        }
+    }, 20); // Run every second (20 ticks)
+}
+
+
+function freezeStatusFunction(origin, targets = null) {
+    system.run(() => {
+        try {
+            const executor = origin.sourceEntity;
+            if (!executor) return;
+            
+            const objective = world.scoreboard.getObjective("vertxfreezejail");
+            if (!objective) {
+                executor.sendMessage("§cFreeze system not initialized!");
+                return;
+            }
+            
+            let playersToCheck = targets;
+            if (!playersToCheck) {
+                // Check all players if no target specified
+                playersToCheck = world.getAllPlayers();
+            }
+            
+            const frozenPlayers = [];
+            
+            for (const player of playersToCheck) {
+                if (player.typeId !== "minecraft:player") continue;
+                
+                try {
+                    const score = objective.getScore(player);
+                    
+                    if (score !== undefined && score !== 0) {
+                        let timeText;
+                        if (score === -10) {
+                            timeText = "Infinite";
+                        } else {
+                            const minutes = Math.floor(score / 60);
+                            const seconds = score % 60;
+                            timeText = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                        }
+                        
+                        frozenPlayers.push({
+                            name: player.name,
+                            timeRemaining: timeText,
+                            score: score
+                        });
+                    }
+                } catch (e) {
+                    console.log(`Error checking freeze status for ${player.name}: ${e}`);
+                }
+            }
+            
+            if (frozenPlayers.length === 0) {
+                executor.sendMessage("§aNo players are currently frozen");
+            } else {
+                executor.sendMessage("§c--- Frozen Players ---");
+                for (const frozen of frozenPlayers) {
+                    executor.sendMessage(`§7${frozen.name}: §f${frozen.timeRemaining}`);
+                }
+                executor.sendMessage(`§7Total: ${frozenPlayers.length} frozen players`);
+            }
+            
+        } catch (e) {
+            console.log("Failed to check freeze status: " + e);
+            if (origin.sourceEntity) {
+                origin.sourceEntity.sendMessage(`§cFailed to check freeze status: ${e.message || e}`);
+            }
+        }
+    });
+    
+    return { status: CustomCommandStatus.Success };
+}
