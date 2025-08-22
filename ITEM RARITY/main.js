@@ -1102,7 +1102,8 @@ function divineMenu(player) {
     let divineLevelBar = "";
     for (const line of loreArray) {
         if (line.includes(DIVINE_LEVEL_MARKER)) {
-            divineLevelBar = line.slice(DIVINE_LEVEL_MARKER.length).replace(" ", "\n");
+            const markerIndex = line.indexOf(DIVINE_LEVEL_MARKER);
+            divineLevelBar = line.substring(markerIndex + DIVINE_LEVEL_MARKER.length).replace(" ", "\n");
             break;
         }
     }
@@ -3289,13 +3290,14 @@ function updateItemPoints(itemStack, newPoints) {
     if (dataLineIndex === -1) {
         
         const newDataLine = `${DIVINE_DATA_MARKER}${DIVINE_DATA_STRING_BASE}`;
+        const newDataEndLine = `${DIVINE_DATA_MARKER_END}`;
         // Add new points line - try to place it after the divine level line
         const divinePointsLineIndex = newLore.findIndex(line => line.includes(DIVINE_POINTS_MARKER));
         if (divinePointsLineIndex !== -1) {
-            newLore.splice(divinePointsLineIndex + 1, 0, newDataLine);
+            newLore.splice(divinePointsLineIndex + 1, 0, newDataLine, newDataEndLine);
         } else {
             // If no divine level line found, add at the end
-            newLore.push(newDataLine);
+            newLore.push(newDataLine, newDataEndLine);
         }
     }
     
