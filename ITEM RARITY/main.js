@@ -88,7 +88,18 @@ const DIVINE_LEVEL_BAR = [
     '', '', '', '', '', '', '', '', ''
 ];
 
-const DIVINE_STATS_UPGRADE_BAR = [];
+const DIVINE_STATS_UPGRADE_BAR = [
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "", "",
+    ""
+];
 
 // XP Level costs for reforge and evolution (indexed by current rarity id - 1)
 const LEVEL_COST_MAP = [4, 5, 6, 8, 10, 17, 75];
@@ -362,6 +373,8 @@ const DIVINE_POINTS_MARKER = "§d§v§n§p§s§r§b"; // Marker to identify the 
 
 const DIVINE_DATA_MARKER = "§d§v§n§d§t";
 const DIVINE_DATA_MARKER_END = "§d§v§n§d§t§e§n§d";
+
+const DIVINE_DATA_STRING_BASE = "§0§-§0§_§0§-§0§_§0§-§0§_§0§-§0§_§0§-§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0§_§0";
 
 
 //=====================================UTILITY FUNCTIONS===========================================
@@ -1090,6 +1103,7 @@ function divineMenu(player) {
     for (const line of loreArray) {
         if (line.includes(DIVINE_LEVEL_MARKER)) {
             divineLevelBar = line.slice(DIVINE_LEVEL_MARKER.length).replace(" ", "\n");
+            break;
         }
     }
     menu.button(divineLevelBar, "textures/ui/divine_button_background");
@@ -1127,12 +1141,12 @@ function openDivineStats(player, equipment, itemStack, loreArray) {
     
     const progressBarAscending = DIVINE_LEVEL_BAR[divineData.ascending.stageBoostBarId];
     let divinePointsData = `§b${divineUpgradePoints.stats}${DIVINE_ITEM_POINTS_ICONS.stats}   ${divineCores}  ${progressBarAscending}`;
-    const ascendingBonus = 1 + (divineData.ascending.boost.maxStat / 100);
+    const ascendingBonus = 1 + (divineData.ascending.bonus.maxStat / 100);
     
     const upgradeForm = new ActionFormData()
-        .title('§d§lDIVINE STATS')
+        .title('§b§lDIVINE STATS')
         .body('menu.invisible.rrs')
-        .button(divinePointsData, 'textures/ui/divine_button_background');
+        .button(divinePointsData, 'textures/ui/divine_button_background_long');
         
     const availableDivineStats = divineData.stats.stats
         .filter(stat => stat.id !== 0 && stat.value !== 0)
@@ -1158,7 +1172,7 @@ function openDivineStats(player, equipment, itemStack, loreArray) {
     for (const divineStat of availableDivineStats) {
         const percent = Math.max(0, Math.min(81, Math.floor(divineStat.value / divineStat.maxValue * 81)));
         let progressBar = DIVINE_STATS_UPGRADE_BAR[percent];
-        upgradeForm.button(`${divineStat.allData.name}  ${divineStat.value}${divineStat.allData.measure.replace("%", "%%")} ${progressBar} §b${divineStat.price.cores}`, 'textures/ui/divine_button_background_stats_upgrade');
+        upgradeForm.button(`${divineStat.allData.name}  ${divineStat.value}${divineStat.allData.measure?.replace("%", "%%")} ${progressBar} §b${divineStat.price.cores}`, 'textures/ui/divine_button_background_stats_upgrade');
     }
     
     if (availableDivineStats.length < 5) {
@@ -1301,44 +1315,44 @@ function parseDivineDataToVisibleLore(divineData) {
         }
     }
     
-    // Add passive section
-    if (divineData.passive && divineData.passive.id && divineData.passive.id !== 0 && divineData.passive.value) {
-        const passiveInfo = DIVINE_PASSIVES[divineData.passive.id];
-        if (passiveInfo) {
-            loreArray.push(""); // Empty line for spacing
-            loreArray.push("§bPassive");
-            loreArray.push(`${passiveInfo.name}`);
-            
-            // Format passive description with value
-            let description = passiveInfo.description || "";
-            if (description.includes("{value}")) {
-                description = description.replace("{value}", divineData.passive.value);
-            } else {
-                description += ` (${divineData.passive.value})`;
-            }
-            loreArray.push(`§7${description}`);
-        }
-    }
-    
-    // Add skill section
-    if (divineData.skill && divineData.skill.id && divineData.skill.id !== 0 && divineData.skill.value) {
-        const skillInfo = DIVINE_SKILLS[divineData.skill.id];
-        if (skillInfo) {
-            loreArray.push(""); // Empty line for spacing
-            loreArray.push("§bSkill");
-            loreArray.push(`${skillInfo.name}`);
-            
-            // Format skill description with value
-            let description = skillInfo.description || "";
-            if (description.includes("{value}")) {
-                description = description.replace("{value}", divineData.skill.value);
-            } else {
-                description += ` (Level ${divineData.skill.value})`;
-            }
-            loreArray.push(`§7${description}`);
-        }
-    }
-    
+//     // Add passive section
+//     if (divineData.passive && divineData.passive.id && divineData.passive.id !== 0 && divineData.passive.value) {
+//         const passiveInfo = DIVINE_PASSIVES[divineData.passive.id];
+//         if (passiveInfo) {
+//             loreArray.push(""); // Empty line for spacing
+//             loreArray.push("§bPassive");
+//             loreArray.push(`${passiveInfo.name}`);
+//             
+//             // Format passive description with value
+//             let description = passiveInfo.description || "";
+//             if (description.includes("{value}")) {
+//                 description = description.replace("{value}", divineData.passive.value);
+//             } else {
+//                 description += ` (${divineData.passive.value})`;
+//             }
+//             loreArray.push(`§7${description}`);
+//         }
+//     }
+//     
+//     // Add skill section
+//     if (divineData.skill && divineData.skill.id && divineData.skill.id !== 0 && divineData.skill.value) {
+//         const skillInfo = DIVINE_SKILLS[divineData.skill.id];
+//         if (skillInfo) {
+//             loreArray.push(""); // Empty line for spacing
+//             loreArray.push("§bSkill");
+//             loreArray.push(`${skillInfo.name}`);
+//             
+//             // Format skill description with value
+//             let description = skillInfo.description || "";
+//             if (description.includes("{value}")) {
+//                 description = description.replace("{value}", divineData.skill.value);
+//             } else {
+//                 description += ` (Level ${divineData.skill.value})`;
+//             }
+//             loreArray.push(`§7${description}`);
+//         }
+//     }
+//     
     return loreArray;
 }
 
@@ -3273,43 +3287,8 @@ function updateItemPoints(itemStack, newPoints) {
     
     
     if (dataLineIndex === -1) {
-        const dataArray = [];
-        const newDataObject = {
-            stats: {
-                stats: [
-                    {id: Number(dataArray[0].split("-")[0]) ?? 0, value: Number(dataArray[0].split("-")[1]) ?? 0},
-                    {id: Number(dataArray[1].split("-")[0]) ?? 0, value: Number(dataArray[1].split("-")[1]) ?? 0},
-                    {id: Number(dataArray[2].split("-")[0]) ?? 0, value: Number(dataArray[2].split("-")[1]) ?? 0},
-                    {id: Number(dataArray[3].split("-")[0]) ?? 0, value: Number(dataArray[3].split("-")[1]) ?? 0},
-                    {id: Number(dataArray[4].split("-")[0]) ?? 0, value: Number(dataArray[4].split("-")[1]) ?? 0}
-                ],
-                rerollId1: Number(dataArray[5]) ?? 0,
-                rerollId2: Number(dataArray[6]) ?? 0,
-                rerollId3: Number(dataArray[7]) ?? 0
-            },
-            passive: {
-                id: Number(dataArray[8]) ?? 0,
-                value: Number(dataArray[9]) ?? 0,
-                rerollId: Number(dataArray[10]) ?? 0
-            },
-            skill: {
-                id: Number(dataArray[11]) ?? 0,
-                value: Number(dataArray[12]) ?? 0,
-                rerollId: Number(dataArray[13]) ?? 0
-            },
-            ascending: {
-                stage: Number(dataArray[14]) ?? 0,
-                bonus: {
-                    maxStat: Number(dataArray[15]) ?? 0,
-                    maxPassive: Number(dataArray[16]) ?? 0,
-                    maxSkill: Number(dataArray[17]) ?? 0,
-                },
-                geoId: Number(dataArray[18]) ?? 0,
-                stageBoostBarId: Number(dataArray[19]) ?? 0
-            }
-        };
         
-        const newDataLine = parseDivineDataToLore(newDataObject);
+        const newDataLine = `${DIVINE_DATA_MARKER}${DIVINE_DATA_STRING_BASE}`;
         // Add new points line - try to place it after the divine level line
         const divinePointsLineIndex = newLore.findIndex(line => line.includes(DIVINE_POINTS_MARKER));
         if (divinePointsLineIndex !== -1) {

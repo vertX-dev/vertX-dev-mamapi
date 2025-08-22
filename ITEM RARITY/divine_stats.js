@@ -10,7 +10,7 @@ import {
 export const DIVINE_STATS = [
     {
         id: 1,
-        name: "§7Damage",
+        name: "§bDamage",
         type: allItems,
         min: 1,
         max: 2,
@@ -19,7 +19,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 2,
-        name: "§7Defense",
+        name: "§bDefense",
         type: allItems,
         min: 1,
         max: 3,
@@ -29,7 +29,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 3,
-        name: "§7Speed",
+        name: "§bSpeed",
         type: allItems,
         min: 1,
         max: 3,
@@ -39,7 +39,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 4,
-        name: "§7Health",
+        name: "§bHealth",
         type: allItems,
         min: 1,
         max: 2,
@@ -48,7 +48,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 5,
-        name: "§7Crit Chance",
+        name: "§bCrit Chance",
         type: allItems,
         min: 1,
         max: 3,
@@ -58,7 +58,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 6,
-        name: "§7Crit Damage",
+        name: "§bCrit Damage",
         type: allItems,
         min: 1,
         max: 5,
@@ -78,7 +78,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 8,
-        name: "§7Damage§x",
+        name: "§bDamage§x",
         type: allItems,
         min: 1,
         max: 3,
@@ -88,7 +88,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 9,
-        name: "§9Lifesteal",
+        name: "§bLifesteal",
         type: allItems,
         min: 1,
         max: 3,
@@ -98,7 +98,7 @@ export const DIVINE_STATS = [
     },
     {
         id: 10,
-        name: "§7Health§x",
+        name: "§bHealth§x",
         type: allItems,
         min: 1,
         max: 3,
